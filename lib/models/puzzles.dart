@@ -37,7 +37,7 @@ class PuzzleService {
   /// The heavy parsing function that runs in the background.
   static List<Puzzle> _parseCsv(String csvString) {
     // Headers: PuzzleId,FEN,Moves,Rating,RatingDeviation,Popularity,NbPlays,Themes,GameUrl,OpeningTags
-    final rows = const CsvToListConverter(eol: '\n').convert(csvString);
+    final rows = Csv(lineDelimiter: '\n').decode(csvString);
     final puzzles = <Puzzle>[];
     
     // Skip header row
