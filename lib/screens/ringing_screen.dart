@@ -18,6 +18,7 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
   final ChessBoardController _chessController = ChessBoardController();
   late Puzzle _currentPuzzle;
   bool _isLoading = true;
+  bool _isProcessing = false; // CRITICAL: The new board lock state
   int _currentMoveIndex = 0;
   int _userElo = 400;
   bool _isSuccess = false;
@@ -48,11 +49,7 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     _currentPuzzle = PuzzleService.getRandomPuzzle(_userElo);
     _chessController.loadFen(_currentPuzzle.fen);
     
-    if (_currentPuzzle.fen.contains(' b ')) {
-      _playerColor = PlayerColor.black;
-    } else {
-      _playerColor = PlayerColor.white;
-    }
+    _playerColor = _currentPuzzle.fen.contains(' b ') ? PlayerColor.black : PlayerColor.white;
 
     _chessController.addListener(_onBoardChange);
     if (mounted) {
@@ -63,20 +60,24 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
   }
 
   void _onBoardChange() async {
-    if (_isSuccess || _isLoading) return;
+    // If the board is processing a move, ignore all other inputs
+    if (_isSuccess || _isLoading || _isProcessing) return;
 
     final history = _chessController.game.history;
-    if (_currentMoveIndex % 2 != 0) return; // Opponent moving
     if (history.isEmpty) return;
 
     final lastMoveState = history.last;
     final lastMove = lastMoveState.move;
     final uciMove = '${lastMove.fromAlgebraic}${lastMove.toAlgebraic}${lastMove.promotion?.name ?? ""}';
 
-    // Prevent index out of bounds if they somehow make a move after solving
     if (_currentMoveIndex >= _currentPuzzle.moves.length) return;
 
     final expectedMove = _currentPuzzle.moves[_currentMoveIndex];
+
+    // INSTANTLY LOCK THE BOARD
+    setState(() {
+      _isProcessing = true;
+    });
 
     if (uciMove == expectedMove) {
       _currentMoveIndex++;
@@ -96,6 +97,8 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     if (!mounted) return;
 
     final opponentMove = _currentPuzzle.moves[_currentMoveIndex];
+    
+    // Temporarily remove listener so the engine making a move doesn't trigger our validation
     _chessController.removeListener(_onBoardChange);
     
     final from = opponentMove.substring(0, 2);
@@ -111,7 +114,14 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     }
     
     _currentMoveIndex++;
+    
+    // Add listener back and UNLOCK THE BOARD
     _chessController.addListener(_onBoardChange);
+    if (mounted) {
+      setState(() {
+        _isProcessing = false;
+      });
+    }
   }
 
   void _handleIncorrectMove() async {
@@ -127,8 +137,6 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     await EloService.updateElo(-5);
     final newElo = await EloService.getElo();
 
-    // Critical Bug Fix: Micro-delay before undoing to let the flutter_chess_board
-    // complete its drop animation and internal state updates without crashing.
     await Future.delayed(const Duration(milliseconds: 150));
     _chessController.undoMove();
     
@@ -139,19 +147,21 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     }
 
     await Future.delayed(const Duration(milliseconds: 300));
+    
+    _chessController.addListener(_onBoardChange);
     if (mounted) {
       setState(() {
         _isFlashingRed = false;
+        _isProcessing = false; // UNLOCK THE BOARD
       });
     }
-    
-    _chessController.addListener(_onBoardChange);
   }
 
   void _handleSuccess() async {
     if (mounted) {
       setState(() {
         _isSuccess = true;
+        _isProcessing = true; // Keep board locked on success
       });
     }
     HapticFeedback.vibrate();
@@ -168,7 +178,6 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     
     await Alarm.stop(widget.alarmSettings.id);
     if (mounted) {
-      // Alarm dismissed, return to home
       Navigator.pop(context);
     }
   }
@@ -193,7 +202,6 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     final turnText = _playerColor == PlayerColor.white ? 'WHITE TO PLAY' : 'BLACK TO PLAY';
 
     return PopScope(
-      // CRITICAL FIX: Allow pop only if the puzzle is successfully solved.
       canPop: _isSuccess,
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -223,7 +231,6 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Premium Glassmorphic Elo Badge
                           ClipRRect(
                             borderRadius: BorderRadius.circular(20),
                             child: BackdropFilter(
@@ -255,8 +262,6 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
                             ),
                           ),
                           const SizedBox(height: 40),
-                          
-                          // Turn Indicator / Success Message
                           Text(
                             _isSuccess ? 'CHECKMATE!' : 'WAKE UP',
                             style: TextStyle(
@@ -273,7 +278,6 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
                             ),
                           ),
                           const SizedBox(height: 8),
-                          
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                             decoration: BoxDecoration(
@@ -291,8 +295,6 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
                             ),
                           ),
                           const SizedBox(height: 40),
-                          
-                          // Chessboard with Premium Shadow
                           Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(4),
@@ -307,13 +309,17 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(2),
-                              child: ChessBoard(
-                                controller: _chessController,
-                                boardColor: BoardColor.brown,
-                                boardOrientation: _playerColor,
-                                size: MediaQuery.of(context).size.shortestSide > 500
-                                    ? 450
-                                    : MediaQuery.of(context).size.shortestSide - 36,
+                              // CRITICAL FIX: AbsorbPointer physically disables touch inputs when processing
+                              child: AbsorbPointer(
+                                absorbing: _isProcessing,
+                                child: ChessBoard(
+                                  controller: _chessController,
+                                  boardColor: BoardColor.brown,
+                                  boardOrientation: _playerColor,
+                                  size: MediaQuery.of(context).size.shortestSide > 500
+                                      ? 450
+                                      : MediaQuery.of(context).size.shortestSide - 36,
+                                ),
                               ),
                             ),
                           ),

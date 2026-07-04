@@ -71,125 +71,132 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('CHESS ALARMS', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2.0)),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.greenAccent.withOpacity(0.3), width: 1.5),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.military_tech, color: Colors.amberAccent, size: 20),
-                        const SizedBox(width: 6),
-                        Text(
-                          '$_userElo',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: alarms.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+      backgroundColor: Colors.black, // Ensure consistent dark background
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Safe Custom Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(Icons.alarm_off_rounded, size: 80, color: Colors.white.withOpacity(0.1)),
-                  const SizedBox(height: 16),
                   const Text(
-                    'No alarms set.',
-                    style: TextStyle(fontSize: 18, color: Colors.white54, fontWeight: FontWeight.w600),
+                    'CHESS ALARMS', 
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: 2.0, color: Colors.white)
                   ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16.0),
-              itemCount: alarms.length,
-              itemBuilder: (context, index) {
-                final alarm = alarms[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: GestureDetector(
-                    onTap: () => navigateToAlarmScreen(alarm),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surface.withOpacity(0.6),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: Colors.white.withOpacity(0.05)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              )
-                            ]
-                          ),
-                          padding: const EdgeInsets.all(24.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    DateFormat('h:mm a').format(alarm.dateTime),
-                                    style: const TextStyle(
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.w900,
-                                      color: Colors.white,
-                                      letterSpacing: 1.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    DateFormat('EEEE, MMM d').format(alarm.dateTime),
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.greenAccent,
-                                      letterSpacing: 1.1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 28),
-                                onPressed: () async {
-                                  await Alarm.stop(alarm.id);
-                                  loadAlarms();
-                                },
-                              ),
-                            ],
-                          ),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.greenAccent.withOpacity(0.3), width: 1.5),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.military_tech, color: Colors.amberAccent, size: 20),
+                            const SizedBox(width: 6),
+                            Text(
+                              '$_userElo',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                );
-              },
+                ],
+              ),
             ),
+            
+            // Expanded List View
+            Expanded(
+              child: alarms.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.alarm_off_rounded, size: 80, color: Colors.white.withOpacity(0.1)),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'No alarms set.',
+                            style: TextStyle(fontSize: 18, color: Colors.white54, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16.0),
+                      itemCount: alarms.length,
+                      itemBuilder: (context, index) {
+                        final alarm = alarms[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: GestureDetector(
+                            onTap: () => navigateToAlarmScreen(alarm),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.surface.withOpacity(0.6),
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(color: Colors.white.withOpacity(0.05)),
+                                  ),
+                                  padding: const EdgeInsets.all(24.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            DateFormat('h:mm a').format(alarm.dateTime),
+                                            style: const TextStyle(
+                                              fontSize: 36,
+                                              fontWeight: FontWeight.w900,
+                                              color: Colors.white,
+                                              letterSpacing: 1.5,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            DateFormat('EEEE, MMM d').format(alarm.dateTime),
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.greenAccent,
+                                              letterSpacing: 1.1,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 28),
+                                        onPressed: () async {
+                                          await Alarm.stop(alarm.id);
+                                          loadAlarms();
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => navigateToAlarmScreen(null),
         icon: const Icon(Icons.add_alarm_rounded),
