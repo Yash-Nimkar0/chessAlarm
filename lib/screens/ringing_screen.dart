@@ -28,6 +28,9 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
   late Animation<Color?> _pulseAnimation;
   bool _isFlashingRed = false;
 
+  int _hintsRemaining = 3;
+  List<BoardArrow> _arrows = [];
+
   @override
   void initState() {
     super.initState();
@@ -46,7 +49,7 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
 
   void _initPuzzle() async {
     _userElo = await EloService.getElo();
-    _currentPuzzle = PuzzleService.getRandomPuzzle(_userElo);
+    _currentPuzzle = await PuzzleService.getRandomPuzzle(_userElo);
     _chessController.loadFen(_currentPuzzle.fen);
     
     _playerColor = _currentPuzzle.fen.contains(' b ') ? PlayerColor.black : PlayerColor.white;
@@ -55,6 +58,39 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     if (mounted) {
       setState(() {
         _isLoading = false;
+      });
+    }
+  }
+
+  String _getObjective(String themes) {
+    if (themes.contains("mateIn1")) return "FIND THE MATE IN 1";
+    if (themes.contains("mateIn2")) return "FIND THE MATE IN 2";
+    if (themes.contains("mateIn3")) return "FIND THE MATE IN 3";
+    if (themes.contains("mate")) return "FIND THE CHECKMATE";
+    if (themes.contains("fork")) return "FIND THE FORK";
+    if (themes.contains("pin")) return "EXPLOIT THE PIN";
+    if (themes.contains("advantage")) return "WIN MATERIAL";
+    return "FIND THE BEST MOVE";
+  }
+
+  void _useHint() {
+    if (_hintsRemaining <= 0 || _isProcessing || _isSuccess) return;
+    
+    if (_currentMoveIndex >= _currentPuzzle.moves.length) return;
+    
+    final expectedMove = _currentPuzzle.moves[_currentMoveIndex];
+    if (expectedMove.length >= 2) {
+      final startSquare = expectedMove.substring(0, 2);
+      
+      setState(() {
+        _hintsRemaining--;
+        _arrows = [
+          BoardArrow(
+            from: startSquare,
+            to: startSquare, // Point to itself to just highlight the piece
+            color: Colors.blueAccent.withOpacity(0.7),
+          )
+        ];
       });
     }
   }
@@ -77,6 +113,7 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     // INSTANTLY LOCK THE BOARD
     setState(() {
       _isProcessing = true;
+      _arrows = []; // Clear arrows on move
     });
 
     if (uciMove == expectedMove) {
@@ -134,7 +171,8 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     }
 
     HapticFeedback.heavyImpact();
-    await EloService.updateElo(-5);
+    // Standard penalty regardless of hints
+    await EloService.updateElo(-10);
     final newElo = await EloService.getElo();
 
     await Future.delayed(const Duration(milliseconds: 150));
@@ -165,7 +203,14 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
       });
     }
     HapticFeedback.vibrate();
-    await EloService.updateElo(15);
+    
+    // Diminishing Returns Elo logic based on hints used
+    int eloReward = 10;
+    if (_hintsRemaining == 2) eloReward = 5;
+    else if (_hintsRemaining == 1) eloReward = 2;
+    else if (_hintsRemaining == 0) eloReward = 0;
+    
+    await EloService.updateElo(eloReward);
     final newElo = await EloService.getElo();
     
     if (mounted) {
@@ -195,11 +240,20 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: Colors.redAccent)),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(color: Colors.redAccent),
+              SizedBox(height: 16),
+              Text('Fetching real puzzles...', style: TextStyle(color: Colors.white54)),
+            ],
+          ),
+        ),
       );
     }
 
-    final turnText = _playerColor == PlayerColor.white ? 'WHITE TO PLAY' : 'BLACK TO PLAY';
+    final objectiveText = _getObjective(_currentPuzzle.themes);
 
     return PopScope(
       canPop: _isSuccess,
@@ -261,11 +315,14 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
                               ),
                             ),
                           ),
-                          const SizedBox(height: 40),
+                          const SizedBox(height: 20),
+                          
+                          // Puzzle Objective Header
                           Text(
-                            _isSuccess ? 'CHECKMATE!' : 'WAKE UP',
+                            _isSuccess ? 'CHECKMATE!' : objectiveText,
+                            textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: 48, 
+                              fontSize: _isSuccess ? 48 : 28, 
                               fontWeight: FontWeight.w900, 
                               color: _isSuccess ? Colors.greenAccent : Colors.white,
                               letterSpacing: 2.0,
@@ -278,23 +335,27 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: _isSuccess ? Colors.green.withOpacity(0.2) : Colors.white.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              _isSuccess ? '+15 ELO GAINED' : turnText,
-                              style: TextStyle(
-                                fontSize: 18, 
-                                color: _isSuccess ? Colors.greenAccent : Colors.white70, 
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 3.0,
+                          
+                          // Elo gain feedback
+                          if (_isSuccess)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '+${_hintsRemaining == 3 ? 10 : _hintsRemaining == 2 ? 5 : _hintsRemaining == 1 ? 2 : 0} ELO GAINED',
+                                style: const TextStyle(
+                                  fontSize: 18, 
+                                  color: Colors.greenAccent, 
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 3.0,
+                                ),
                               ),
                             ),
-                          ),
                           const SizedBox(height: 40),
+                          
                           Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(4),
@@ -316,6 +377,7 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
                                   controller: _chessController,
                                   boardColor: BoardColor.brown,
                                   boardOrientation: _playerColor,
+                                  arrows: _arrows,
                                   size: MediaQuery.of(context).size.shortestSide > 500
                                       ? 450
                                       : MediaQuery.of(context).size.shortestSide - 36,
@@ -323,6 +385,26 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
                               ),
                             ),
                           ),
+                          const SizedBox(height: 30),
+                          
+                          // Hint Button
+                          if (!_isSuccess)
+                            ElevatedButton.icon(
+                              onPressed: _hintsRemaining > 0 ? _useHint : null,
+                              icon: const Icon(Icons.lightbulb_outline),
+                              label: Text('HINT ($_hintsRemaining LEFT)'),
+                              style: ElevatedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                backgroundColor: Colors.white.withOpacity(0.1),
+                                disabledForegroundColor: Colors.white24,
+                                disabledBackgroundColor: Colors.white.withOpacity(0.05),
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                  side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
