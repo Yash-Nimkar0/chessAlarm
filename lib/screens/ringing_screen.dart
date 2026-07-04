@@ -167,11 +167,15 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     final newElo = await EloService.getElo();
 
     await Future.delayed(const Duration(milliseconds: 150));
-    _chessController.undoMove();
+    
+    // THE LOGICAL FIX: Hard reset the board to circumvent the drag-and-drop bug
+    _chessController.loadFen(_currentPuzzle.fen);
+    _currentMoveIndex = 0;
     
     if (mounted) {
       setState(() {
         _userElo = newElo;
+        _hintsRemaining = 3; // Reset hints since they have to restart the puzzle
       });
     }
 
@@ -181,6 +185,7 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
       setState(() {
         _isFlashingRed = false;
         _isProcessing = false; // UNLOCK THE BOARD
+        _arrows = []; // Clear arrows
       });
     }
   }
