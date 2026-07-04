@@ -54,7 +54,6 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     
     _playerColor = _currentPuzzle.fen.contains(' b ') ? PlayerColor.black : PlayerColor.white;
 
-    _chessController.addListener(_onBoardChange);
     if (mounted) {
       setState(() {
         _isLoading = false;
@@ -95,8 +94,8 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     }
   }
 
-  void _onBoardChange() async {
-    // If the board is processing a move, ignore all other inputs
+  void _onUserMove() async {
+    // This is ONLY called when the user successfully makes a legal move on the board via Drag and Drop.
     if (_isSuccess || _isLoading || _isProcessing) return;
 
     final history = _chessController.game.history;
@@ -110,7 +109,6 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
 
     final expectedMove = _currentPuzzle.moves[_currentMoveIndex];
 
-    // INSTANTLY LOCK THE BOARD
     setState(() {
       _isProcessing = true;
       _arrows = []; // Clear arrows on move
@@ -135,9 +133,6 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
 
     final opponentMove = _currentPuzzle.moves[_currentMoveIndex];
     
-    // Temporarily remove listener so the engine making a move doesn't trigger our validation
-    _chessController.removeListener(_onBoardChange);
-    
     final from = opponentMove.substring(0, 2);
     final to = opponentMove.substring(2, 4);
     if (opponentMove.length > 4) {
@@ -152,8 +147,6 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     
     _currentMoveIndex++;
     
-    // Add listener back and UNLOCK THE BOARD
-    _chessController.addListener(_onBoardChange);
     if (mounted) {
       setState(() {
         _isProcessing = false;
@@ -162,8 +155,6 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
   }
 
   void _handleIncorrectMove() async {
-    _chessController.removeListener(_onBoardChange);
-    
     if (mounted) {
       setState(() {
         _isFlashingRed = true;
@@ -186,7 +177,6 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
 
     await Future.delayed(const Duration(milliseconds: 300));
     
-    _chessController.addListener(_onBoardChange);
     if (mounted) {
       setState(() {
         _isFlashingRed = false;
@@ -230,7 +220,6 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
   @override
   void dispose() {
     _pulseController.dispose();
-    _chessController.removeListener(_onBoardChange);
     _chessController.dispose();
     super.dispose();
   }
@@ -378,6 +367,8 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
                                   boardColor: BoardColor.brown,
                                   boardOrientation: _playerColor,
                                   arrows: _arrows,
+                                  enableUserMoves: !_isProcessing,
+                                  onMove: _onUserMove,
                                   size: MediaQuery.of(context).size.shortestSide > 500
                                       ? 450
                                       : MediaQuery.of(context).size.shortestSide - 36,
