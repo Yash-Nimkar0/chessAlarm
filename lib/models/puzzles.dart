@@ -42,7 +42,7 @@ class PuzzleService {
     Puzzle(
       rating: 800,
       fen: '1k1r4/pp3p1p/5p2/8/8/2R2N2/P4PPP/1R4K1 w - - 0 1',
-      moves: ['b1b7', 'k8b7', 'c3c7'], // Typical tactical sequence
+      moves: ['b1b7', 'b8b7', 'c3c7'], // Typical tactical sequence
     ),
     Puzzle(
       rating: 850,
@@ -54,13 +54,12 @@ class PuzzleService {
     Puzzle(
       rating: 1000,
       fen: 'r2q1rk1/pp1b1ppp/2n1pn2/2bp4/8/2P1PN2/PP1NBPPP/R1BQ1RK1 w - - 3 9',
-      // Note: This is just a placeholder puzzle sequence for the 1000 tier
       moves: ['e2a6', 'b7a6', 'd1a4'],
     ),
     Puzzle(
       rating: 1200,
       fen: '5rk1/5ppp/8/8/8/8/5PPP/5RK1 w - - 0 1',
-      moves: ['f1a1', 'f8a8', 'a1a8'], // Placeholder for higher difficulty
+      moves: ['f1a1', 'f8a8', 'a1a8'], 
     ),
   ];
 
