@@ -3,24 +3,101 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:alarm/alarm.dart';
 import 'screens/home_screen.dart';
+import 'screens/main_screen.dart';
 import 'screens/ringing_screen.dart';
+import 'screens/slide_to_stop_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'services/weather_service.dart';
+import 'services/analytics_service.dart';
+import 'services/elo_service.dart';
+import 'services/sleep_service.dart';
+import 'services/notification_service.dart';
+import 'models/puzzles.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:dynamic_color/dynamic_color.dart';
+import 'services/theme_service.dart';
+import 'services/preferences_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Enforce portrait mode for the alarm clock
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
   
-  // Initialize the alarm manager
-  await Alarm.init();
+  runApp(const ChessAlarmAppLoader());
+}
 
-  runApp(const ChessAlarmApp());
+class ChessAlarmAppLoader extends StatefulWidget {
+  const ChessAlarmAppLoader({Key? key}) : super(key: key);
+
+  @override
+  State<ChessAlarmAppLoader> createState() => _ChessAlarmAppLoaderState();
+}
+
+class _ChessAlarmAppLoaderState extends State<ChessAlarmAppLoader> {
+  late Future<bool> _initFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _initFuture = _initApp();
+  }
+
+  Future<bool> _initApp() async {
+    // Timeout Alarm.init in case of audio session deadlocks on iOS
+    try {
+      // Restore Alarm.init() since we resolved the crash
+      await Alarm.init().timeout(const Duration(seconds: 5));
+      
+      await NotificationService.initialize();
+      await NotificationService.setupSleepReminders();
+      await SleepService.cleanupOldClips();
+      
+      await AnalyticsService.init();
+      await AnalyticsService.checkRetention();
+
+      // Try to load puzzles early
+      PuzzleService.getRandomPuzzle(1000);
+    } catch (e) {
+      debugPrint("Alarm init failed or timed out: $e");
+    }
+
+    // Pre-fetch weather in the background
+    WeatherService.getCurrentWeather();
+
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('has_seen_onboarding') ?? false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: _initFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const MaterialApp(
+            debugShowCheckedModeBanner: false,
+            home: Scaffold(
+              backgroundColor: Colors.black,
+              body: Center(
+                child: CircularProgressIndicator(color: Colors.greenAccent),
+              ),
+            ),
+          );
+        }
+        
+        final hasSeenOnboarding = snapshot.data ?? false;
+        return ChessAlarmApp(hasSeenOnboarding: hasSeenOnboarding);
+      },
+    );
+  }
 }
 
 class ChessAlarmApp extends StatefulWidget {
-  const ChessAlarmApp({Key? key}) : super(key: key);
+  final bool hasSeenOnboarding;
+  const ChessAlarmApp({Key? key, required this.hasSeenOnboarding}) : super(key: key);
 
   @override
   State<ChessAlarmApp> createState() => _ChessAlarmAppState();
@@ -30,10 +107,12 @@ class _ChessAlarmAppState extends State<ChessAlarmApp> {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   StreamSubscription? _ringSubscription;
 
+  // Default seed color for fallback (A modern Google-esque Green)
+  static const _defaultSeedColor = Color(0xFF00C853);
+
   @override
   void initState() {
     super.initState();
-    // Listen to the alarm ring stream. When an alarm fires, push the puzzle screen!
     _ringSubscription = Alarm.ringing.listen((alarmSet) {
       if (alarmSet.alarms.isNotEmpty) {
         navigateToRingScreen(alarmSet.alarms.first);
@@ -44,7 +123,7 @@ class _ChessAlarmAppState extends State<ChessAlarmApp> {
   void navigateToRingScreen(AlarmSettings alarmSettings) {
     navigatorKey.currentState?.push(
       MaterialPageRoute(
-        builder: (context) => RingingScreen(alarmSettings: alarmSettings),
+        builder: (context) => SlideToStopScreen(alarmSettings: alarmSettings),
       ),
     );
   }
@@ -57,53 +136,91 @@ class _ChessAlarmAppState extends State<ChessAlarmApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      title: 'Chess Alarm',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0F0F13), // Deep premium dark mode
-        fontFamily: 'Inter', // Sleek modern typography
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          centerTitle: true,
-          titleTextStyle: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-            letterSpacing: 1.2,
-          ),
-        ),
-        floatingActionButtonTheme: FloatingActionButtonThemeData(
-          backgroundColor: Colors.greenAccent.shade400,
-          foregroundColor: Colors.black,
-          elevation: 10,
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.greenAccent.shade400,
-            foregroundColor: Colors.black,
-            elevation: 8,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+    return ListenableBuilder(
+      listenable: ThemeService(),
+      builder: (context, _) {
+        return DynamicColorBuilder(
+      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+        ColorScheme darkColorScheme;
+        ColorScheme lightColorScheme;
+
+        if (darkDynamic != null && lightDynamic != null) {
+          darkColorScheme = darkDynamic.harmonized();
+          lightColorScheme = lightDynamic.harmonized();
+        } else {
+          darkColorScheme = ColorScheme.fromSeed(
+            seedColor: _defaultSeedColor,
+            brightness: Brightness.dark,
+          );
+          lightColorScheme = ColorScheme.fromSeed(
+            seedColor: _defaultSeedColor,
+            brightness: Brightness.light,
+          );
+        }
+
+        return MaterialApp(
+          navigatorKey: navigatorKey,
+          title: 'Chess Alarm',
+          debugShowCheckedModeBanner: false,
+          themeMode: ThemeService().themeMode,
+          theme: ThemeData(
+            useMaterial3: true,
+            colorScheme: lightColorScheme,
+            fontFamily: 'Inter',
+            appBarTheme: const AppBarTheme(
+              centerTitle: true,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              foregroundColor: Colors.black,
             ),
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            textStyle: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.1,
+            cardTheme: CardThemeData(
+              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+              ),
+              elevation: 0,
+              color: lightColorScheme.surfaceContainerHighest,
+            ),
+            filledButtonTheme: FilledButtonThemeData(
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+              ),
             ),
           ),
-        ),
-        colorScheme: ColorScheme.dark(
-          primary: Colors.greenAccent.shade400,
-          secondary: Colors.tealAccent,
-          surface: const Color(0xFF1C1C23),
-        ),
-      ),
-      home: const HomeScreen(),
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            colorScheme: darkColorScheme,
+            fontFamily: 'Inter',
+            appBarTheme: const AppBarTheme(
+              centerTitle: true,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+            ),
+            cardTheme: CardThemeData(
+              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+              ),
+              elevation: 0,
+              color: darkColorScheme.surfaceContainerHighest,
+            ),
+            filledButtonTheme: FilledButtonThemeData(
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+              ),
+            ),
+          ),
+          home: widget.hasSeenOnboarding ? const MainScreen() : const OnboardingScreen(),
+        );
+      },
+    );
+      }
     );
   }
 }

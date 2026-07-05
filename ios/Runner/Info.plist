@@ -6,14 +6,32 @@
 	<array>
 		<string>audio</string>
 		<string>fetch</string>
-		<string>remote-notification</string>
 	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We need access to your microphone to track ambient noise levels during sleep to provide a sleep score.</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.gdelataillade.fetch</string>
+	</array>
+
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Knightly requires access to your location to fetch the local weather forecast.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Knightly requires access to your location to fetch the local weather forecast.</string>
+
+	<key>NSAppleMusicUsageDescription</key>
+	<string>Knightly requires access to your music library to select custom alarm sounds.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Knightly requires access to select files.</string>
+
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSUserNotificationUsageDescription</key>
+	<string>Knightly requires notification permissions to wake you up reliably when the alarm fires.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Chess Alarm</string>
+	<string>Knightly</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
