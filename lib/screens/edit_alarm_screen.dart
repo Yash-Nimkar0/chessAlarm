@@ -309,12 +309,19 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                               title: const Text('Sleep Goal'),
                               trailing: Text('8 Hours', style: TextStyle(color: colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold)),
                             ),
-                            ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              leading: const Icon(Icons.psychology, color: Colors.purpleAccent),
-                              title: const Text('Mission'),
-                              trailing: Text('Chess Puzzle', style: TextStyle(color: colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold)),
-                            ),
+                            _buildMissionTile(colorScheme),
+                          ],
+                        ),
+                      )
+                    else
+                      PlatformCard(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Task Settings', style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 12),
+                            _buildMissionTile(colorScheme),
                           ],
                         ),
                       ),
@@ -381,6 +388,53 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
           ],
         ),
       ),
+    );
+  }
+  
+  Widget _buildMissionTile(ColorScheme colorScheme) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: const Icon(Icons.psychology, color: Colors.purpleAccent),
+      title: const Text('Mission'),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(_missionSettings.mission == 'chess' ? 'Chess Puzzle' : 'None', style: TextStyle(color: colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold)),
+          const Icon(Icons.chevron_right, color: Colors.white54),
+        ],
+      ),
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          builder: (context) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const ListTile(title: Text("Select Task")),
+              ListTile(
+                title: const Text("Chess Puzzle"),
+                trailing: _missionSettings.mission == 'chess' ? const Icon(Icons.check, color: Colors.greenAccent) : null,
+                onTap: () {
+                  setState(() {
+                    _missionSettings = _missionSettings.copyWith(mission: 'chess');
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text("None (Just ring)"),
+                trailing: _missionSettings.mission == 'none' ? const Icon(Icons.check, color: Colors.greenAccent) : null,
+                onTap: () {
+                  setState(() {
+                    _missionSettings = _missionSettings.copyWith(mission: 'none');
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -53,19 +53,6 @@ class PuzzleService {
       // For demonstration, we'll fetch a dummy or rely on the vast built-in library.
       // We simulate a network delay.
       await Future.delayed(const Duration(seconds: 2));
-      
-      // Simulate receiving a new puzzle CSV format:
-      // PuzzleId,FEN,Moves,Rating,RatingDeviation,Popularity,NbPlays,Themes,GameUrl,OpeningTags
-      final newPuzzleCsv = "\n99999,r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQK2R w KQkq - 4 5,c4f7 e8f7 f3e5 c6e5,1200,75,100,10,crushing,https://lichess.org/,";
-      
-      final prefs = await SharedPreferences.getInstance();
-      final existing = prefs.getString(_syncKey) ?? "";
-      await prefs.setString(_syncKey, "$existing\n$newPuzzleCsv");
-      
-      // Reload puzzles in memory
-      final parsed = _parseCsv(newPuzzleCsv);
-      _puzzles.addAll(parsed);
-      
       _isSyncing = false;
       return true;
     } catch (e) {

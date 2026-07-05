@@ -92,11 +92,23 @@ class _SleepScreenState extends State<SleepScreen> {
     }
   }
 
-  String _formatTime(DateTime time) {
-    String hour = time.hour > 12 ? '${time.hour - 12}' : (time.hour == 0 ? '12' : '${time.hour}');
-    String min = time.minute.toString().padLeft(2, '0');
-    String ampm = time.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$min $ampm';
+  String _formatTime(DateTime dateTime) {
+    return DateFormat('h:mm a').format(dateTime);
+  }
+  
+  String _formatDuration(Duration diff) {
+    if (diff.isNegative) return "0m";
+    final days = diff.inDays;
+    final hours = diff.inHours.remainder(24);
+    final minutes = diff.inMinutes.remainder(60);
+    
+    if (days > 0) {
+      return "$days day${days > 1 ? 's' : ''} and $hours hr${hours != 1 ? 's' : ''}";
+    } else if (hours > 0) {
+      return "${hours}h ${minutes}m";
+    } else {
+      return "${minutes}m";
+    }
   }
   
   Widget _buildTomorrowPreview() {
@@ -186,7 +198,7 @@ class _SleepScreenState extends State<SleepScreen> {
                       children: [
                         Text(
                           _nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now()).isNegative ? "Past bedtime" :
-                          '${_nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now()).inHours}h ${_nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now()).inMinutes % 60}m',
+                          _formatDuration(_nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now())),
                           style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: _nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now()).isNegative ? Colors.orangeAccent : Colors.white),
                         ),
                         const SizedBox(width: 12),
@@ -219,7 +231,7 @@ class _SleepScreenState extends State<SleepScreen> {
                     ),
                   ),
                   Text(
-                    'Time until wake: ${_nextAlarm!.dateTime.difference(DateTime.now()).inHours}h ${_nextAlarm!.dateTime.difference(DateTime.now()).inMinutes % 60}m',
+                    'Time until wake: ${_formatDuration(_nextAlarm!.dateTime.difference(DateTime.now()))}',
                     style: const TextStyle(color: Colors.white54, fontSize: 16),
                   ),
                 ],

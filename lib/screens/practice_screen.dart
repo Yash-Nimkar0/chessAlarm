@@ -393,7 +393,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Text(
-                    "CHECKMATE!",
+                    "SOLVED!",
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -417,12 +417,18 @@ class _PracticeScreenState extends State<PracticeScreen> {
             const SizedBox(height: 16),
             
             Expanded(
+              flex: 8,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Center(
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: Container(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    double size = constraints.maxWidth < constraints.maxHeight ? constraints.maxWidth : constraints.maxHeight;
+                    return Align(
+                      alignment: Alignment.center,
+                      child: SizedBox(
+                        width: size,
+                        height: size,
+                        child: Container(
                     decoration: BoxDecoration(
                       border: Border.all(
                         color: _isFlashingRed ? Colors.red : colorScheme.outline.withOpacity(0.3),
@@ -451,11 +457,13 @@ class _PracticeScreenState extends State<PracticeScreen> {
                         promotionBehaviour: PromotionBehaviour.autoPremove,
                       ),
                     ),
-                  ),
-                ),
-              ),
+                      ),
+                    ),
+                );
+              },
             ),
-            ),
+          ),
+        ),
             
             const Spacer(),
             

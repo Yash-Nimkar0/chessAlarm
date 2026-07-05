@@ -312,7 +312,7 @@ class _MorningScreenState extends State<MorningScreen> {
                 const SizedBox(height: 16),
                 const WeatherWidget(),
                 const SizedBox(height: 24),
-                Text('${GreetingUtils.getGreeting()}, $_userName', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                Text(GreetingUtils.getGreeting(), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
                 const SizedBox(height: 16),
                 _buildMorningScoreCard(),
                 const SizedBox(height: 24),

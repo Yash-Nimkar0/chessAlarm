@@ -71,19 +71,18 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
   void _onSlideComplete() async {
     Haptics.vibrate(HapticsType.heavy);
     
-    bool isWakeRoutine = true;
+    bool hasMission = true;
     if (widget.alarmSettings.payload != null) {
       try {
-
         final settings = MissionSettings.fromJsonString(widget.alarmSettings.payload!);
-        isWakeRoutine = settings.type == 'wakeRoutine';
+        hasMission = settings.mission != 'none';
       } catch (e) {
         // Default to true
       }
     }
     
     if (!mounted) return;
-    if (isWakeRoutine) {
+    if (hasMission) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => RingingScreen(alarmSettings: widget.alarmSettings),
@@ -135,7 +134,7 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
               child: Column(
                 children: [
                   const SizedBox(height: 60),
-                  Text('${GreetingUtils.getGreeting()}, $_userName', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text(GreetingUtils.getGreeting(), style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
                   if (_weatherData != null)
                      Text('${_weatherData!.iconEmoji} ${_weatherData!.conditionTitle} · ${_weatherData!.temperature.floor()}°C', style: const TextStyle(color: Colors.white70, fontSize: 18)),

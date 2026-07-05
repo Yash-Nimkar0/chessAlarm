@@ -578,15 +578,17 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
         const Spacer(),
         
         Expanded(
+          flex: 8,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: LayoutBuilder(
               builder: (context, constraints) {
+                double size = constraints.maxWidth < constraints.maxHeight ? constraints.maxWidth : constraints.maxHeight;
                 return Align(
                   alignment: Alignment.center,
                   child: SizedBox(
-                    width: constraints.maxWidth,
-                    height: constraints.maxWidth,
+                    width: size,
+                    height: size,
                     child: Container(
                       decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(4),

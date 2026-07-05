@@ -71,11 +71,36 @@ class MissionSettings {
 
   String toJsonString() => jsonEncode(toJson());
 
-  factory MissionSettings.fromJsonString(String str) {
+  factory MissionSettings.fromJsonString(String jsonStr) {
     try {
-      return MissionSettings.fromJson(jsonDecode(str));
+      return MissionSettings.fromJson(jsonDecode(jsonStr));
     } catch (e) {
       return MissionSettings();
     }
+  }
+
+  MissionSettings copyWith({
+    String? type,
+    int? version,
+    double? sleepGoal,
+    String? mission,
+    bool? sleepTracking,
+    bool? sleepSounds,
+    String? difficultyMode,
+    bool? smartLock,
+    int? difficultyOverride,
+  }) {
+    return MissionSettings(
+      type: type ?? this.type,
+      version: version ?? this.version,
+      sleepGoal: sleepGoal ?? this.sleepGoal,
+      mission: mission ?? this.mission,
+      sleepTracking: sleepTracking ?? this.sleepTracking,
+      sleepSounds: sleepSounds ?? this.sleepSounds,
+      createdAt: this.createdAt,
+      difficultyMode: difficultyMode ?? this.difficultyMode,
+      smartLock: smartLock ?? this.smartLock,
+      difficultyOverride: difficultyOverride ?? this.difficultyOverride,
+    );
   }
 }

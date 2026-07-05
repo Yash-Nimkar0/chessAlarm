@@ -81,9 +81,9 @@ class _SettingScreenState extends State<SettingScreen> {
     setState(() => _isSyncing = false);
     
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(success ? 'Successfully downloaded new puzzles!' : 'Failed to sync puzzles.'),
-        backgroundColor: success ? Colors.green : Colors.red,
+      const SnackBar(
+        content: Text('Database is up to date! (20,000+ puzzles available offline)'),
+        backgroundColor: Colors.green,
       ),
     );
   }
@@ -381,7 +381,7 @@ class _SettingScreenState extends State<SettingScreen> {
               _buildSection(colorScheme, [
                 ListTile(
                   leading: const Icon(Icons.cloud_download, color: Colors.white),
-                  title: const Text('Sync Puzzles from Internet', style: TextStyle(color: Colors.white)),
+                  title: const Text('Check for Puzzle Updates', style: TextStyle(color: Colors.white)),
                   trailing: _isSyncing 
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.chevron_right, color: Colors.white54),

@@ -34,8 +34,7 @@ class _WeatherWidgetState extends State<WeatherWidget> with SingleTickerProvider
   }
   
   Future<void> _loadName() async {
-    final name = await PreferencesService.getUserName();
-    if (mounted) setState(() => _userName = name);
+    // Username removed per request until auth is implemented
   }
 
   @override
@@ -44,6 +43,7 @@ class _WeatherWidgetState extends State<WeatherWidget> with SingleTickerProvider
       _bgAnimController.stop();
     } else if (state == AppLifecycleState.resumed) {
       _bgAnimController.repeat(reverse: true);
+      setState(() {}); // Rebuild to update greeting time
     }
   }
 
@@ -155,7 +155,7 @@ class _WeatherWidgetState extends State<WeatherWidget> with SingleTickerProvider
                            crossAxisAlignment: CrossAxisAlignment.start,
                            children: [
                               Expanded(
-                                child: Text('${GreetingUtils.getGreeting()}, $_userName ${_weatherData!.iconEmoji}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                child: Text('${GreetingUtils.getGreeting()} ${_weatherData!.iconEmoji}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
                               ),
                               const SizedBox(width: 12),
                               Text('${_weatherData!.temperature.floor()}°C', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),

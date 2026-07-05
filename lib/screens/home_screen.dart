@@ -118,7 +118,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     
     String text;
     if (days > 0) {
-      text = "Next alarm in ${days}d ${hours}h";
+      text = "Next alarm in $days day${days > 1 ? 's' : ''} and $hours hr${hours != 1 ? 's' : ''}";
     } else if (hours > 0) {
       text = "Next alarm in ${hours}h ${minutes}m";
     } else if (minutes > 0) {
