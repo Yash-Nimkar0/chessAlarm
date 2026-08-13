@@ -184,6 +184,46 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.keyboard, color: Colors.indigo),
+                title: const Text('Typing'),
+                subtitle: const Text('Type a motivational phrase.'),
+                trailing: _missionSettings.mission == 'typing' ? const Icon(Icons.check, color: Colors.indigo) : null,
+                onTap: () {
+                  setState(() => _missionSettings = _missionSettings.copyWith(mission: 'typing'));
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.grid_view, color: Colors.teal),
+                title: const Text('Color Tiles'),
+                subtitle: const Text('Find all tiles of a target color.'),
+                trailing: _missionSettings.mission == 'color_tiles' ? const Icon(Icons.check, color: Colors.teal) : null,
+                onTap: () {
+                  setState(() => _missionSettings = _missionSettings.copyWith(mission: 'color_tiles'));
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.question_mark, color: Colors.orange),
+                title: const Text('Missing Symbol'),
+                subtitle: const Text('Find the missing math operator.'),
+                trailing: _missionSettings.mission == 'missing_symbol' ? const Icon(Icons.check, color: Colors.orange) : null,
+                onTap: () {
+                  setState(() => _missionSettings = _missionSettings.copyWith(mission: 'missing_symbol'));
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.vibration, color: Colors.redAccent),
+                title: const Text('Shake'),
+                subtitle: const Text('Shake your phone vigorously.'),
+                trailing: _missionSettings.mission == 'shake' ? const Icon(Icons.check, color: Colors.redAccent) : null,
+                onTap: () {
+                  setState(() => _missionSettings = _missionSettings.copyWith(mission: 'shake'));
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
                 leading: const Icon(Icons.swipe, color: Colors.green),
                 title: const Text('None'),
                 subtitle: const Text('Just slide to turn off the alarm.'),

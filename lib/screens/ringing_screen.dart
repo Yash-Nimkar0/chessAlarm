@@ -6,6 +6,10 @@ import 'dart:io';
 import '../models/mission_settings.dart';
 import 'missions/math_mission.dart';
 import 'missions/memory_mission.dart';
+import 'missions/typing_mission.dart';
+import 'missions/color_tiles_mission.dart';
+import 'missions/missing_symbol_mission.dart';
+import 'missions/shake_mission.dart';
 import 'mission_complete_screen.dart';
 import '../widgets/platform_theme.dart';
 import '../services/analytics_service.dart';
@@ -194,6 +198,14 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
       content = MathMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, difficulty: difficulty);
     } else if (_missionSettings.mission == 'memory') {
       content = MemoryMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, difficulty: difficulty);
+    } else if (_missionSettings.mission == 'typing') {
+      content = TypingMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, difficulty: difficulty);
+    } else if (_missionSettings.mission == 'color_tiles') {
+      content = ColorTilesMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, difficulty: difficulty);
+    } else if (_missionSettings.mission == 'missing_symbol') {
+      content = MissingSymbolMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, difficulty: difficulty);
+    } else if (_missionSettings.mission == 'shake') {
+      content = ShakeMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, difficulty: difficulty);
     } else {
       content = Center(
         child: ElevatedButton(
