@@ -37,8 +37,8 @@ class PlatformScaffold extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: isDark 
-                    ? const [Color(0xFF1E1E2C), Color(0xFF121212), Color(0xFF2B1B40)]
-                    : const [Color(0xFFE8EAF6), Color(0xFFFFFFFF), Color(0xFFD1C4E9)],
+                    ? [const Color(0xFF1E1E2C), const Color(0xFF121212), const Color(0xFF2B1B40)]
+                    : [const Color(0xFFE8EAF6), const Color(0xFFFFFFFF), const Color(0xFFD1C4E9)],
                 ),
               ),
             ),
@@ -88,21 +88,24 @@ class PlatformCard extends StatelessWidget {
             child: Container(
               padding: padding,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
                     spreadRadius: 1,
                   )
                 ],
               ),
-              child: child,
+              child: Material(
+                type: MaterialType.transparency,
+                child: child,
+              ),
             ),
           ),
         ),
@@ -170,12 +173,12 @@ class PlatformButton extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               decoration: BoxDecoration(
                 color: backgroundColor != null 
-                    ? backgroundColor!.withOpacity(0.4)
+                    ? backgroundColor!.withValues(alpha: 0.4)
                     : (onPressed != null 
-                        ? Colors.white.withOpacity(0.15) 
-                        : Colors.white.withOpacity(0.05)),
+                        ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15) 
+                        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withOpacity(0.2)),
+                border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -187,7 +190,7 @@ class PlatformButton extends StatelessWidget {
                   ],
                   DefaultTextStyle(
                     style: TextStyle(
-                      color: onPressed != null ? Colors.white : Colors.white54,
+                      color: onPressed != null ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
@@ -211,8 +214,8 @@ class PlatformButton extends StatelessWidget {
       }
       return FilledButton(
         onPressed: onPressed,
-        child: child,
         style: backgroundColor != null ? FilledButton.styleFrom(backgroundColor: backgroundColor) : null,
+        child: child,
       );
     }
   }

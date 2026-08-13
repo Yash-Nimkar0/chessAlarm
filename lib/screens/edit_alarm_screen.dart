@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:alarm/alarm.dart';
@@ -7,7 +6,6 @@ import 'package:intl/intl.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:file_picker/file_picker.dart';
 import '../models/mission_settings.dart';
 import '../widgets/platform_theme.dart';
 
@@ -152,6 +150,56 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
     }
   }
 
+  void _showMissionPicker() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('Select Mission', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+              ListTile(
+                leading: const Icon(Icons.calculate, color: Colors.blue),
+                title: const Text('Math Problem'),
+                subtitle: const Text('Solve a math equation to wake up.'),
+                trailing: _missionSettings.mission == 'math' ? const Icon(Icons.check, color: Colors.blue) : null,
+                onTap: () {
+                  setState(() => _missionSettings = _missionSettings.copyWith(mission: 'math'));
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.psychology, color: Colors.purple),
+                title: const Text('Memory Match'),
+                subtitle: const Text('Memorize and recall a sequence.'),
+                trailing: _missionSettings.mission == 'memory' ? const Icon(Icons.check, color: Colors.purple) : null,
+                onTap: () {
+                  setState(() => _missionSettings = _missionSettings.copyWith(mission: 'memory'));
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.swipe, color: Colors.green),
+                title: const Text('None'),
+                subtitle: const Text('Just slide to turn off the alarm.'),
+                trailing: _missionSettings.mission == 'none' ? const Icon(Icons.check, color: Colors.green) : null,
+                onTap: () {
+                  setState(() => _missionSettings = _missionSettings.copyWith(mission: 'none'));
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      }
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -195,7 +243,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                     Container(
                       height: 220,
                       decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(32),
                       ),
                       child: CupertinoTheme(
@@ -298,26 +346,56 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                     if (widget.isWakeRoutine)
                       PlatformCard(
                         padding: const EdgeInsets.all(16.0),
+                        child: Material(
+                          type: MaterialType.transparency,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Wake Routine Settings', style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 12),
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: const Icon(Icons.bedtime, color: Colors.blueAccent),
+                                title: const Text('Sleep Goal'),
+                                trailing: Text('8 Hours', style: TextStyle(color: colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold)),
+                              ),
+                              ],
+                          ),
+                        ),
+                      ),
+
+                    const SizedBox(height: 16),
+                    // Mission Selection (Available for all alarms)
+                    PlatformCard(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Material(
+                        type: MaterialType.transparency,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Wake Routine Settings', style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14, fontWeight: FontWeight.bold)),
+                            Text('Alarm Mission', style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 12),
-                            ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              leading: const Icon(Icons.bedtime, color: Colors.blueAccent),
-                              title: const Text('Sleep Goal'),
-                              trailing: Text('8 Hours', style: TextStyle(color: colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold)),
-                            ),
                             ListTile(
                               contentPadding: EdgeInsets.zero,
                               leading: const Icon(Icons.psychology, color: Colors.purpleAccent),
                               title: const Text('Mission'),
-                              trailing: Text('Chess Puzzle', style: TextStyle(color: colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold)),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    _missionSettings.mission == 'math' ? 'Math' : (_missionSettings.mission == 'none' ? 'None' : 'Memory'),
+                                    style: TextStyle(color: colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant, size: 20),
+                                ],
+                              ),
+                              onTap: _showMissionPicker,
                             ),
                           ],
                         ),
                       ),
+                    ),
 
                     const SizedBox(height: 16),
                     // Sound & Vibrate settings
@@ -353,7 +431,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                           SwitchListTile(
                             secondary: Icon(Icons.vibration, color: colorScheme.primary),
                             title: const Text('Vibrate'),
-                            activeColor: colorScheme.primary,
+                            activeThumbColor: colorScheme.primary,
                             value: vibrate,
                             onChanged: (val) {
                               Haptics.vibrate(HapticsType.selection);

@@ -134,7 +134,7 @@ class SleepService {
   static DateTime? _lastMovementTime;
   static DateTime? _lastSoundTime;
   
-  static List<Uint8List> _pcmBuffer = [];
+  static final List<Uint8List> _pcmBuffer = [];
   static bool _isRecordingToDisk = false;
   static DateTime? _recordingStartTime;
   static DateTime? _soundSpikeStartTime;
@@ -330,8 +330,9 @@ class SleepService {
 
     // Confidence
     String confidence = 'High';
-    if (durationHours < 3) confidence = 'Low';
-    else if (_movementEvents > 30) confidence = 'Medium';
+    if (durationHours < 3) {
+      confidence = 'Low';
+    } else if (_movementEvents > 30) confidence = 'Medium';
     
     final session = SleepSession(
       startTime: _startTime!,
@@ -358,8 +359,9 @@ class SleepService {
       if (!isSkip) {
         wakeBonus += 10;
         
-        if (hintsRemaining == 3) wakeBonus += 5;
-        else if (hintsRemaining == 2) wakeBonus += 3;
+        if (hintsRemaining == 3) {
+          wakeBonus += 5;
+        } else if (hintsRemaining == 2) wakeBonus += 3;
         else if (hintsRemaining == 1) wakeBonus += 1;
         
         // Compare with personal average

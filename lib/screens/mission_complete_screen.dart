@@ -84,8 +84,8 @@ class _MissionCompleteScreenState extends State<MissionCompleteScreen> with Sing
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                '♟ Morning Won',
+              const Text(
+                '🌟 Morning Won',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.w900,
@@ -97,11 +97,11 @@ class _MissionCompleteScreenState extends State<MissionCompleteScreen> with Sing
               if (!widget.isSkip) ...[
                 Text(
                   'Solved in ${widget.elapsedSeconds}s',
-                  style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 24, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  '+${widget.eloChange} Rating',
+                  '+${widget.eloChange} Points',
                   style: const TextStyle(fontSize: 24, color: Colors.greenAccent, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
@@ -117,9 +117,9 @@ class _MissionCompleteScreenState extends State<MissionCompleteScreen> with Sing
                 style: const TextStyle(fontSize: 24, color: Colors.orange, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 64),
-              const Text(
+              Text(
                 'Your mind is awake.',
-                style: TextStyle(fontSize: 18, color: Colors.white54, fontStyle: FontStyle.italic),
+                style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurfaceVariant, fontStyle: FontStyle.italic),
               ),
             ],
           ),

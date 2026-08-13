@@ -5,7 +5,6 @@ import 'dart:async';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import 'ringing_screen.dart';
 import '../models/mission_settings.dart';
-import 'dart:ui';
 import '../services/weather_service.dart';
 import '../services/preferences_service.dart';
 import '../utils/greeting_utils.dart';
@@ -20,7 +19,7 @@ class SlideToStopScreen extends StatefulWidget {
 }
 
 class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTickerProviderStateMixin {
-  String _userName = "Grandmaster";
+  String _userName = "";
   late AnimationController _bgAnimController;
   WeatherData? _weatherData;
   
@@ -101,7 +100,7 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
                 children: [
                   const Icon(Icons.check_circle_outline, color: Colors.greenAccent, size: 80),
                   const SizedBox(height: 20),
-                  const Text("Alarm Complete ✓", style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+                  Text(_userName.isEmpty ? 'Wake up!' : 'Wake up, $_userName!', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                   const SizedBox(height: 40),
                   ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
@@ -138,7 +137,7 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
                   Text('${GreetingUtils.getGreeting()}, $_userName', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
                   if (_weatherData != null)
-                     Text('${_weatherData!.iconEmoji} ${_weatherData!.conditionTitle} · ${_weatherData!.temperature.floor()}°C', style: const TextStyle(color: Colors.white70, fontSize: 18)),
+                     Text('${_weatherData!.iconEmoji} ${_weatherData!.conditionTitle} · ${_weatherData!.temperature.floor()}°C', style: const TextStyle(color: Colors.white54, fontSize: 18)),
                   const SizedBox(height: 40),
                   const Spacer(),
 
@@ -146,12 +145,12 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.lock, color: Colors.white.withOpacity(0.5), size: 16),
+                Icon(Icons.lock, color: Colors.white.withValues(alpha: 0.5), size: 16),
                 const SizedBox(width: 8),
                 Text(
                   "Wake up early",
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withValues(alpha: 0.5),
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -170,9 +169,9 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
             ),
             const SizedBox(height: 10),
             Text(
-              "Chess Alarm",
+              "Wakely",
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 fontSize: 20,
                 fontWeight: FontWeight.w500,
               ),
@@ -220,7 +219,7 @@ class _SlideActionState extends State<SlideAction> {
           width: trackWidth,
           height: trackHeight,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(trackHeight / 2),
           ),
           child: Stack(
@@ -232,7 +231,7 @@ class _SlideActionState extends State<SlideAction> {
                   child: Text(
                     "slide to stop",
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.4),
+                      color: Colors.white.withValues(alpha: 0.4),
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
                     ),
@@ -268,7 +267,7 @@ class _SlideActionState extends State<SlideAction> {
                     width: thumbWidth,
                     height: trackHeight,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(trackHeight / 2),
                     ),
                     child: const Center(

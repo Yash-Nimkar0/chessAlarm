@@ -59,13 +59,13 @@ class _MainScreenState extends State<MainScreen> {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            color: Colors.white.withOpacity(0.05),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
             child: BottomNavigationBar(
               backgroundColor: Colors.transparent,
               elevation: 0,
               currentIndex: _currentIndex,
-              selectedItemColor: Colors.white,
-              unselectedItemColor: Colors.white54,
+              selectedItemColor: Theme.of(context).colorScheme.onSurface,
+              unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
               onTap: (index) {
                 setState(() {
                   _currentIndex = index;

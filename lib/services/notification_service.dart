@@ -61,9 +61,9 @@ class NotificationService {
   static Future<void> _scheduleBedtimeReminder(int id, DateTime reminderTime, DateTime wakeTime) async {
     final List<String> messages = [
       "🌙 Time to prepare tomorrow. Your Wake Routine is ready.",
-      "♟ Tomorrow starts tonight. Rest up for your challenge.",
+      "🌟 Tomorrow starts tonight. Rest up for your morning.",
       "🌙 Prepare your sleep. Your routine is waiting.",
-      "♟ Tomorrow's challenge is waiting. Rest up for your next move."
+      "🌟 Tomorrow's goal is waiting. Rest up for a good start."
     ];
     
     final message = messages[Random().nextInt(messages.length)];

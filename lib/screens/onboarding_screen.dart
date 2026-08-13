@@ -2,9 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'home_screen.dart';
+import 'main_screen.dart';
 import 'edit_alarm_screen.dart';
-import '../services/elo_service.dart';
 import '../services/analytics_service.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -19,7 +18,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _currentPage = 0;
   
   String? _selectedImprovement;
-  int? _selectedElo;
 
   @override
   void initState() {
@@ -34,7 +32,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (mounted) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => const MainScreen()),
       );
     }
   }
@@ -97,7 +95,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: (_currentPage + 1) / 3,
-                        backgroundColor: Colors.white24,
+                        backgroundColor: Colors.white.withValues(alpha: 0.24),
                         valueColor: const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
                         minHeight: 8,
                       ),
@@ -116,7 +114,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 },
                 children: [
                   _buildSlide1(),
-                  _buildSlide2(),
                   _buildSlide3(),
                 ],
               ),
@@ -139,14 +136,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       AnalyticsService.logEvent('identity_selected', {'goal': _selectedImprovement});
                       _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
                     } else if (_currentPage == 1) {
-                      if (_selectedElo == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select your level.')));
-                        return;
-                      }
-                      await EloService.setElo(_selectedElo!);
-                      AnalyticsService.logEvent('level_selected', {'elo': _selectedElo});
-                      _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-                    } else if (_currentPage == 2) {
                       _openAlarmCreation();
                     }
                   },
@@ -157,7 +146,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   child: Text(
-                    _currentPage == 2 ? "CREATE FIRST ALARM" : "CONTINUE",
+                    _currentPage == 1 ? "CREATE FIRST ALARM" : "CONTINUE",
                     style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1.2),
                   ),
                 ),
@@ -191,8 +180,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             style: TextStyle(fontSize: 16, color: Colors.white70),
           ),
           const SizedBox(height: 40),
-          
-          _buildSelectionButton("♟", "Chess Skill", _selectedImprovement, (val) => setState(() => _selectedImprovement = val)),
+          _buildSelectionButton("🎯", "Consistency", _selectedImprovement, (val) => setState(() => _selectedImprovement = val)),
           const SizedBox(height: 16),
           _buildSelectionButton("🧠", "Mental Sharpness", _selectedImprovement, (val) => setState(() => _selectedImprovement = val)),
           const SizedBox(height: 16),
@@ -213,7 +201,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.greenAccent.withOpacity(0.15) : Colors.white.withOpacity(0.05),
+          color: isSelected ? Colors.greenAccent.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.05),
           border: Border.all(color: isSelected ? Colors.greenAccent : Colors.transparent, width: 2),
           borderRadius: BorderRadius.circular(16),
         ),
@@ -235,63 +223,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildSlide2() {
-    return Padding(
-      padding: const EdgeInsets.all(32.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "What's your chess level?",
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-              height: 1.2,
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            "We'll calibrate your morning puzzles so they wake you up without frustrating you.",
-            style: TextStyle(fontSize: 16, color: Colors.white70),
-          ),
-          const SizedBox(height: 40),
-          
-          _buildEloSelectionButton("New to Chess", 400),
-          const SizedBox(height: 16),
-          _buildEloSelectionButton("Casual Player", 1000),
-          const SizedBox(height: 16),
-          _buildEloSelectionButton("Experienced Player", 1800),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildEloSelectionButton(String label, int eloValue) {
-    bool isSelected = _selectedElo == eloValue;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedElo = eloValue),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.blueAccent.withOpacity(0.15) : Colors.white.withOpacity(0.05),
-          border: Border.all(color: isSelected ? Colors.blueAccent : Colors.transparent, width: 2),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: isSelected ? Colors.blueAccent : Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildSlide3() {
     return Padding(
@@ -316,7 +247,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             "You are committing to building a stronger mind.\nSet your wake up time.",
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.7), height: 1.5),
+            style: TextStyle(fontSize: 16, color: Colors.white.withValues(alpha: 0.7), height: 1.5),
           ),
         ],
       ),

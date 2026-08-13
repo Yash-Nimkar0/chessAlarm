@@ -4,7 +4,6 @@ import 'package:alarm/alarm.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
-import 'package:intl/intl.dart';
 import '../widgets/platform_theme.dart';
 import '../services/sleep_service.dart';
 import '../services/elo_service.dart';
@@ -125,7 +124,7 @@ class _SleepScreenState extends State<SleepScreen> {
         margin: const EdgeInsets.only(bottom: 24),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-           color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+           color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
            borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -136,9 +135,9 @@ class _SleepScreenState extends State<SleepScreen> {
                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                       const Text("Tomorrow Morning", style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold, fontSize: 12)),
-                       Text("${morningForecast.temperature.floor()}°C", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                       Text(weatherStr, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                       Text("Tomorrow Morning", style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold, fontSize: 12)),
+                       Text("${morningForecast.temperature.floor()}°C", style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
+                       Text(weatherStr, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
                     ]
                  )
               )
@@ -161,17 +160,17 @@ class _SleepScreenState extends State<SleepScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Tonight 🌙',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
               ),
               const SizedBox(height: 24),
               
               if (_nextAlarm == null)
-                const Center(
+                Center(
                   child: Padding(
-                    padding: EdgeInsets.all(32.0),
-                    child: Text('No alarms set for tonight.', style: TextStyle(color: Colors.white54)),
+                    padding: const EdgeInsets.all(32.0),
+                    child: Text('No alarms set for tonight.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                   ),
                 )
               else ...[
@@ -187,7 +186,7 @@ class _SleepScreenState extends State<SleepScreen> {
                         Text(
                           _nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now()).isNegative ? "Past bedtime" :
                           '${_nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now()).inHours}h ${_nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now()).inMinutes % 60}m',
-                          style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: _nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now()).isNegative ? Colors.orangeAccent : Colors.white),
+                          style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: _nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now()).isNegative ? Colors.orangeAccent : Theme.of(context).colorScheme.onSurface),
                         ),
                         const SizedBox(width: 12),
                         const Text(
@@ -199,7 +198,7 @@ class _SleepScreenState extends State<SleepScreen> {
                   ),
                   Text(
                     'Wake up at ${_formatTime(_nextAlarm!.dateTime)}',
-                    style: const TextStyle(color: Colors.white54, fontSize: 16),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16),
                   ),
                 ] else ...[
                   FittedBox(
@@ -209,18 +208,18 @@ class _SleepScreenState extends State<SleepScreen> {
                       crossAxisAlignment: CrossAxisAlignment.baseline,
                       textBaseline: TextBaseline.alphabetic,
                       children: [
-                        Text(_formatTime(_nextAlarm!.dateTime), style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white)),
+                        Text(_formatTime(_nextAlarm!.dateTime), style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                         const SizedBox(width: 12),
-                        const Text(
+                        Text(
                           'Quick Alarm',
-                          style: TextStyle(color: Colors.white54, fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
                   ),
                   Text(
                     'Time until wake: ${_nextAlarm!.dateTime.difference(DateTime.now()).inHours}h ${_nextAlarm!.dateTime.difference(DateTime.now()).inMinutes % 60}m',
-                    style: const TextStyle(color: Colors.white54, fontSize: 16),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16),
                   ),
                 ],
                 
@@ -241,7 +240,7 @@ class _SleepScreenState extends State<SleepScreen> {
                       ),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
-                        BoxShadow(color: Colors.purple.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4)),
+                        BoxShadow(color: Colors.purple.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4)),
                       ],
                     ),
                     child: Column(
@@ -250,11 +249,11 @@ class _SleepScreenState extends State<SleepScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text("Tomorrow's Mission ♟", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                            const Text("Tomorrow's Mission", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                              child: Text('$_userElo Elo', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
+                              child: Text('$_userElo Points', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                             )
                           ],
                         ),
@@ -269,7 +268,7 @@ class _SleepScreenState extends State<SleepScreen> {
                   const SizedBox(height: 24),
                   
                   // Sleep Readiness Checklist
-                  const Text('Sleep Readiness', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text('Sleep Readiness', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
                   _buildChecklistItem(Icons.alarm_on, 'Alarm armed for ${_formatTime(_nextAlarm!.dateTime)}'),
                   _buildChecklistItem(Icons.bedtime, 'Sleep goal: ${_missionSettings!.sleepGoal}h'),
@@ -288,7 +287,7 @@ class _SleepScreenState extends State<SleepScreen> {
                       color: _isTracking ? Colors.green.shade800 : colorScheme.primary,
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
-                        if (!_isTracking) BoxShadow(color: colorScheme.primary.withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 8)),
+                        if (!_isTracking) BoxShadow(color: colorScheme.primary.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8)),
                       ],
                     ),
                     child: Column(
@@ -296,7 +295,7 @@ class _SleepScreenState extends State<SleepScreen> {
                         Icon(_isTracking ? Icons.nights_stay : Icons.bedtime, color: Colors.white, size: 32),
                         const SizedBox(height: 12),
                         Text(
-                          _isTracking ? 'Grandmaster Wake Active' : 'Start Sleep Mode',
+                          _isTracking ? 'Hardcore Wake Active' : 'Start Sleep Mode',
                           style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                         if (_isTracking)
@@ -310,7 +309,7 @@ class _SleepScreenState extends State<SleepScreen> {
                 ),
                 
                 const SizedBox(height: 40),
-                const Text('Relax Sounds', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                Text('Relax Sounds', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 
                 Row(
@@ -339,7 +338,7 @@ class _SleepScreenState extends State<SleepScreen> {
            children: [
               Icon(icon, color: Colors.greenAccent, size: 20),
               const SizedBox(width: 12),
-              Text(text, style: const TextStyle(color: Colors.white70, fontSize: 15)),
+              Text(text, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 15)),
            ]
         )
      );
@@ -358,7 +357,7 @@ class _SleepScreenState extends State<SleepScreen> {
             width: 70,
             height: 70,
             decoration: BoxDecoration(
-              color: isPlaying ? Theme.of(context).colorScheme.primary.withOpacity(0.2) : Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              color: isPlaying ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               shape: BoxShape.circle,
               border: Border.all(
                 color: isPlaying ? Theme.of(context).colorScheme.primary : Colors.transparent,
@@ -370,7 +369,7 @@ class _SleepScreenState extends State<SleepScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          Text(name, style: TextStyle(color: isPlaying ? Theme.of(context).colorScheme.primary : Colors.white54, fontWeight: isPlaying ? FontWeight.bold : FontWeight.normal)),
+          Text(name, style: TextStyle(color: isPlaying ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: isPlaying ? FontWeight.bold : FontWeight.normal)),
         ],
       ),
     );

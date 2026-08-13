@@ -2,22 +2,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:alarm/alarm.dart';
-import 'screens/home_screen.dart';
 import 'screens/main_screen.dart';
-import 'screens/ringing_screen.dart';
 import 'screens/slide_to_stop_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/weather_service.dart';
 import 'services/analytics_service.dart';
-import 'services/elo_service.dart';
 import 'services/sleep_service.dart';
 import 'services/notification_service.dart';
-import 'models/puzzles.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:dynamic_color/dynamic_color.dart';
 import 'services/theme_service.dart';
-import 'services/preferences_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,17 +21,17 @@ Future<void> main() async {
     DeviceOrientation.portraitUp,
   ]);
   
-  runApp(const ChessAlarmAppLoader());
+  runApp(const WakelyAppLoader());
 }
 
-class ChessAlarmAppLoader extends StatefulWidget {
-  const ChessAlarmAppLoader({Key? key}) : super(key: key);
+class WakelyAppLoader extends StatefulWidget {
+  const WakelyAppLoader({Key? key}) : super(key: key);
 
   @override
-  State<ChessAlarmAppLoader> createState() => _ChessAlarmAppLoaderState();
+  State<WakelyAppLoader> createState() => _WakelyAppLoaderState();
 }
 
-class _ChessAlarmAppLoaderState extends State<ChessAlarmAppLoader> {
+class _WakelyAppLoaderState extends State<WakelyAppLoader> {
   late Future<bool> _initFuture;
 
   @override
@@ -58,8 +53,7 @@ class _ChessAlarmAppLoaderState extends State<ChessAlarmAppLoader> {
       await AnalyticsService.init();
       await AnalyticsService.checkRetention();
 
-      // Try to load puzzles early
-      PuzzleService.getRandomPuzzle(1000);
+
     } catch (e) {
       debugPrint("Alarm init failed or timed out: $e");
     }
@@ -89,21 +83,21 @@ class _ChessAlarmAppLoaderState extends State<ChessAlarmAppLoader> {
         }
         
         final hasSeenOnboarding = snapshot.data ?? false;
-        return ChessAlarmApp(hasSeenOnboarding: hasSeenOnboarding);
+        return WakelyApp(hasSeenOnboarding: hasSeenOnboarding);
       },
     );
   }
 }
 
-class ChessAlarmApp extends StatefulWidget {
+class WakelyApp extends StatefulWidget {
   final bool hasSeenOnboarding;
-  const ChessAlarmApp({Key? key, required this.hasSeenOnboarding}) : super(key: key);
+  const WakelyApp({Key? key, required this.hasSeenOnboarding}) : super(key: key);
 
   @override
-  State<ChessAlarmApp> createState() => _ChessAlarmAppState();
+  State<WakelyApp> createState() => _WakelyAppState();
 }
 
-class _ChessAlarmAppState extends State<ChessAlarmApp> {
+class _WakelyAppState extends State<WakelyApp> {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   StreamSubscription? _ringSubscription;
 
@@ -150,7 +144,7 @@ class _ChessAlarmAppState extends State<ChessAlarmApp> {
 
         return MaterialApp(
           navigatorKey: navigatorKey,
-          title: 'Chess Alarm',
+          title: 'Wakely',
           debugShowCheckedModeBanner: false,
           themeMode: ThemeService().themeMode,
           theme: ThemeData(

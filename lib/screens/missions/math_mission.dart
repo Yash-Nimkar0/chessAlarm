@@ -134,7 +134,7 @@ class _MathMissionState extends State<MathMission> {
         const SizedBox(height: 40),
         TextButton(
           onPressed: widget.onSkip,
-          child: Text('Skip (-10 Elo)', style: TextStyle(color: colorScheme.error, fontSize: 16)),
+          child: Text('Skip (-10 Points)', style: TextStyle(color: colorScheme.error, fontSize: 16)),
         ),
       ],
     );

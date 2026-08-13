@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/weather_service.dart';
 import '../services/preferences_service.dart';
-import '../utils/greeting_utils.dart';
 import 'dart:ui';
 
 
@@ -17,7 +16,7 @@ class WeatherWidget extends StatefulWidget {
 class _WeatherWidgetState extends State<WeatherWidget> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   WeatherData? _weatherData;
   bool _isLoading = true;
-  String _userName = "Grandmaster";
+  String _userName = "";
   late AnimationController _bgAnimController;
 
   @override
@@ -138,7 +137,7 @@ class _WeatherWidgetState extends State<WeatherWidget> with SingleTickerProvider
               end: Alignment(1.0, _bgAnimController.value * 2 - 1.0), // subtle movement
             ),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 5)),
+              BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 5)),
             ],
           ),
           child: ClipRRect(
@@ -155,7 +154,7 @@ class _WeatherWidgetState extends State<WeatherWidget> with SingleTickerProvider
                            crossAxisAlignment: CrossAxisAlignment.start,
                            children: [
                               Expanded(
-                                child: Text('${GreetingUtils.getGreeting()}, $_userName ${_weatherData!.iconEmoji}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                child: Text(_userName.isEmpty ? 'Good morning!' : 'Good morning, $_userName', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
                               ),
                               const SizedBox(width: 12),
                               Text('${_weatherData!.temperature.floor()}°C', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
@@ -186,8 +185,9 @@ class _WeatherWidgetState extends State<WeatherWidget> with SingleTickerProvider
                                  
                                  // Basic icon mapping for hourly
                                  String emoji = '☀️';
-                                 if (h.weatherCode >= 51 && h.weatherCode <= 67) emoji = '🌧️';
-                                 else if (h.weatherCode >= 1 && h.weatherCode <= 3) emoji = '☁️';
+                                 if (h.weatherCode >= 51 && h.weatherCode <= 67) {
+                                   emoji = '🌧️';
+                                 } else if (h.weatherCode >= 1 && h.weatherCode <= 3) emoji = '☁️';
                                  else if (h.weatherCode >= 71) emoji = '❄️';
                                  
                                  return Padding(

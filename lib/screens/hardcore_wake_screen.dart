@@ -2,17 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
-import '../services/elo_service.dart';
 
-class GrandmasterWakeScreen extends StatefulWidget {
+class HardcoreWakeScreen extends StatefulWidget {
   final DateTime alarmTime;
-  const GrandmasterWakeScreen({Key? key, required this.alarmTime}) : super(key: key);
+  const HardcoreWakeScreen({Key? key, required this.alarmTime}) : super(key: key);
 
   @override
-  State<GrandmasterWakeScreen> createState() => _GrandmasterWakeScreenState();
+  State<HardcoreWakeScreen> createState() => _HardcoreWakeScreenState();
 }
 
-class _GrandmasterWakeScreenState extends State<GrandmasterWakeScreen> {
+class _HardcoreWakeScreenState extends State<HardcoreWakeScreen> {
   late Timer _timer;
   String _currentTimeString = "";
   int _currentStreak = 0;
@@ -27,10 +26,9 @@ class _GrandmasterWakeScreenState extends State<GrandmasterWakeScreen> {
   }
   
   void _loadStreak() async {
-    final stats = await EloService.getStats();
     if (mounted) {
       setState(() {
-        _currentStreak = stats['currentStreak'] ?? 0;
+        _currentStreak = 0;
       });
     }
   }
@@ -65,8 +63,8 @@ class _GrandmasterWakeScreenState extends State<GrandmasterWakeScreen> {
               const SizedBox(height: 24),
               Text(
                 _currentTimeString,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 72,
                   fontWeight: FontWeight.w200,
                   letterSpacing: -2,
@@ -74,7 +72,7 @@ class _GrandmasterWakeScreenState extends State<GrandmasterWakeScreen> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Grandmaster Wake Mode',
+                'Hardcore Wake Mode',
                 style: TextStyle(
                   color: Colors.blueAccent,
                   fontSize: 20,
@@ -85,8 +83,8 @@ class _GrandmasterWakeScreenState extends State<GrandmasterWakeScreen> {
               const SizedBox(height: 8),
               Text(
                 'Alarm armed for ${DateFormat('h:mm a').format(widget.alarmTime)}',
-                style: const TextStyle(
-                  color: Colors.white54,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 16,
                 ),
               ),
@@ -95,15 +93,15 @@ class _GrandmasterWakeScreenState extends State<GrandmasterWakeScreen> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white12),
+                  border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
                 ),
                 child: Column(
                   children: [
-                    const Text('Tomorrow\'s Challenge', style: TextStyle(color: Colors.white54, fontSize: 14)),
+                    Text('Tomorrow\'s Challenge', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
                     const SizedBox(height: 8),
-                    const Text('♟ Daily Puzzle', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                    Text('🌟 Daily Mission', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -117,15 +115,15 @@ class _GrandmasterWakeScreenState extends State<GrandmasterWakeScreen> {
                 ),
               ),
               const Spacer(),
-              const Text('Sleep well.', style: TextStyle(color: Colors.white38, fontSize: 18, fontStyle: FontStyle.italic)),
+              Text('Sleep well.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), fontSize: 18, fontStyle: FontStyle.italic)),
               const SizedBox(height: 24),
               
               Opacity(
                 opacity: 0.3,
                 child: TextButton.icon(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  label: const Text('Exit Wake Mode', style: TextStyle(color: Colors.white)),
+                  icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface),
+                  label: Text('Exit Wake Mode', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                 ),
               ),
             ],

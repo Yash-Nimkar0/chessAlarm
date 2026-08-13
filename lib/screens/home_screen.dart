@@ -1,19 +1,14 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:alarm/alarm.dart';
 import 'dart:async';
 import 'dart:io';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/mission_settings.dart';
 import 'edit_alarm_screen.dart';
-import 'practice_screen.dart';
-import 'grandmaster_wake_screen.dart';
-import '../services/elo_service.dart';
+
 import '../widgets/platform_theme.dart';
-import '../widgets/weather_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -25,8 +20,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   late List<AlarmSettings> alarms = [];
   StreamSubscription? subscription;
-  int _userElo = 400;
-  List<int> _eloHistory = [];
   Timer? _countdownTimer;
   String _timeUntilNextAlarm = "";
   bool _permissionsGranted = true;
@@ -37,10 +30,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _checkPermissions();
     loadAlarms();
-    _loadElo();
     subscription = Alarm.ringing.listen((_) {
       loadAlarms();
-      _loadElo();
     });
     
     _countdownTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
@@ -66,15 +57,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (mounted && granted != _permissionsGranted) {
       setState(() {
         _permissionsGranted = granted;
-      });
-    }
-  }
-
-  void _loadElo() async {
-    final elo = await EloService.getElo();
-    if (mounted) {
-      setState(() {
-        _userElo = elo;
       });
     }
   }
@@ -107,9 +89,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
     }
     
-    if (nextAlarm == null) {
-      nextAlarm = alarms.first;
-    }
+    nextAlarm ??= alarms.first;
 
     final diff = nextAlarm.dateTime.difference(now);
     final days = diff.inDays;
@@ -152,28 +132,30 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('What are you setting?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+              Text('What are you setting?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 24),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.wb_sunny, color: Colors.orangeAccent, size: 32),
-                title: const Text('🌅 Wake Routine', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                subtitle: const Text('Sleep better.\nWake with a challenge.\nTrack your progress.', style: TextStyle(color: Colors.white54)),
+                title: Text('🌅 Wake Routine', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
+                subtitle: Text('Sleep better.\nWake with a challenge.\nTrack your progress.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 onTap: () {
                   Navigator.pop(context);
                   _openEditScreen(null, true);
                 },
               ),
-              const Divider(color: Colors.white12, height: 32),
+              Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), height: 32),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.alarm, color: Colors.blueAccent, size: 32),
-                title: const Text('⏰ Quick Alarm', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                subtitle: const Text('Simple alarms for reminders,\nnaps, and daily tasks.', style: TextStyle(color: Colors.white54)),
+                title: Text('⏰ Quick Alarm', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
+                subtitle: Text('Simple alarms for reminders,\nnaps, and daily tasks.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 onTap: () {
                   Navigator.pop(context);
                   _openEditScreen(null, false);
@@ -181,6 +163,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
               const SizedBox(height: 24),
             ],
+          ),
           ),
         ),
       );
@@ -206,7 +189,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     if (res != null) {
       loadAlarms();
-      _loadElo();
     }
   }
   bool _isLocked(AlarmSettings alarm) {
@@ -255,91 +237,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 children: [
                   Flexible(
                     child: Text(
-                      'CHESS ALARMS', 
+                      'MY ALARMS', 
                       style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: 2.0, color: colorScheme.onSurface),
                       overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  Row(
-                    children: [
-
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.military_tech, color: Colors.amberAccent, size: 20),
-                            const SizedBox(width: 6),
-                            Text(
-                              '$_userElo',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: colorScheme.onSurfaceVariant),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),
             ),
 
-            // Daily Training Banner
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: PlatformCard(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const PracticeScreen()),
-                  );
-                },
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primaryContainer,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(Icons.psychology, color: colorScheme.onPrimaryContainer),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                "Daily Brain Training",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: colorScheme.onSurface,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                "Practice puzzles to improve your rating without an alarm.",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(Icons.arrow_forward_ios, size: 16, color: colorScheme.onSurfaceVariant),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+
 
             // Next Alarm Banner
             if (_timeUntilNextAlarm.isNotEmpty)
@@ -366,7 +273,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.alarm_off_rounded, size: 80, color: colorScheme.onSurface.withOpacity(0.1)),
+                          Icon(Icons.alarm_off_rounded, size: 80, color: colorScheme.onSurface.withValues(alpha: 0.1)),
                           const SizedBox(height: 16),
                           Text(
                             'Set your first wake-up challenge.',
@@ -405,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                         style: TextStyle(
                                           fontSize: 36,
                                           fontWeight: FontWeight.w900,
-                                          color: locked ? colorScheme.onSurface.withOpacity(0.5) : colorScheme.onSurface,
+                                          color: locked ? colorScheme.onSurface.withValues(alpha: 0.5) : colorScheme.onSurface,
                                           letterSpacing: 1.5,
                                         ),
                                       ),
@@ -415,7 +322,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                         style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w500,
-                                          color: locked ? colorScheme.onSurfaceVariant.withOpacity(0.5) : colorScheme.primary,
+                                          color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : colorScheme.primary,
                                           letterSpacing: 1.1,
                                         ),
                                       ),

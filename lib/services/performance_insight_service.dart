@@ -6,7 +6,7 @@ class PerformanceInsightService {
     if (history.isEmpty) {
        return {
           'hasInsight': false,
-          'message': 'Keep sleeping with Chess Alarm to build your profile.'
+          'message': 'Keep sleeping with Wakely to build your profile.'
        };
     }
     

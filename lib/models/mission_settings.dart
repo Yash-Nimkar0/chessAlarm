@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 enum MissionType {
-  chess,
   math,
   memory,
   none,
@@ -11,7 +10,7 @@ class MissionSettings {
   final String type; // "wakeRoutine" or "quickAlarm"
   final int version;
   final double sleepGoal;
-  final String mission; // "chess"
+  final String mission; // "memory"
   final bool sleepTracking;
   final bool sleepSounds;
   final String createdAt;
@@ -24,14 +23,14 @@ class MissionSettings {
     this.type = "quickAlarm",
     this.version = 1,
     this.sleepGoal = 8.0,
-    this.mission = "chess",
+    this.mission = "memory",
     this.sleepTracking = true,
     this.sleepSounds = true,
     String? createdAt,
     this.difficultyMode = "adaptive",
     this.smartLock = true,
     this.difficultyOverride,
-  }) : this.createdAt = createdAt ?? DateTime.now().toIso8601String();
+  }) : createdAt = createdAt ?? DateTime.now().toIso8601String();
 
   Map<String, dynamic> toJson() {
     return {
@@ -48,6 +47,32 @@ class MissionSettings {
     };
   }
 
+  MissionSettings copyWith({
+    String? type,
+    int? version,
+    double? sleepGoal,
+    String? mission,
+    bool? sleepTracking,
+    bool? sleepSounds,
+    String? createdAt,
+    String? difficultyMode,
+    bool? smartLock,
+    int? difficultyOverride,
+  }) {
+    return MissionSettings(
+      type: type ?? this.type,
+      version: version ?? this.version,
+      sleepGoal: sleepGoal ?? this.sleepGoal,
+      mission: mission ?? this.mission,
+      sleepTracking: sleepTracking ?? this.sleepTracking,
+      sleepSounds: sleepSounds ?? this.sleepSounds,
+      createdAt: createdAt ?? this.createdAt,
+      difficultyMode: difficultyMode ?? this.difficultyMode,
+      smartLock: smartLock ?? this.smartLock,
+      difficultyOverride: difficultyOverride ?? this.difficultyOverride,
+    );
+  }
+
   factory MissionSettings.fromJson(Map<String, dynamic> json) {
     // Handle legacy conversion
     String typeStr = json['type'] ?? 'quickAlarm';
@@ -59,7 +84,7 @@ class MissionSettings {
       type: typeStr,
       version: json['version'] ?? 1,
       sleepGoal: (json['sleepGoal'] as num?)?.toDouble() ?? 8.0,
-      mission: json['mission'] ?? 'chess',
+      mission: (json['mission'] == 'chess' || json['mission'] == null) ? 'memory' : json['mission'],
       sleepTracking: json['sleepTracking'] ?? true,
       sleepSounds: json['sleepSounds'] ?? true,
       createdAt: json['createdAt'] ?? DateTime.now().toIso8601String(),

@@ -25,8 +25,8 @@ class _MemoryMissionState extends State<MemoryMission> {
     Colors.orangeAccent,
   ];
   
-  List<int> _sequence = [];
-  List<int> _userSequence = [];
+  final List<int> _sequence = [];
+  final List<int> _userSequence = [];
   int _activeFlash = -1;
   bool _isPlayingSequence = false;
   
@@ -139,10 +139,10 @@ class _MemoryMissionState extends State<MemoryMission> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
                   decoration: BoxDecoration(
-                    color: isFlashing ? _baseColors[index] : _baseColors[index].withOpacity(0.1),
+                    color: isFlashing ? _baseColors[index] : _baseColors[index].withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isFlashing ? colorScheme.onSurface : _baseColors[index].withOpacity(0.3),
+                      color: isFlashing ? colorScheme.onSurface : _baseColors[index].withValues(alpha: 0.3),
                       width: isFlashing ? 4 : 2,
                     ),
                   ),
@@ -154,7 +154,7 @@ class _MemoryMissionState extends State<MemoryMission> {
         const SizedBox(height: 60),
         TextButton(
           onPressed: widget.onSkip,
-          child: Text('Skip (-10 Elo)', style: TextStyle(color: colorScheme.error, fontSize: 16)),
+          child: Text('Skip (-10 Points)', style: TextStyle(color: colorScheme.error, fontSize: 16)),
         ),
       ],
     );

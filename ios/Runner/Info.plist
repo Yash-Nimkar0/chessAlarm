@@ -15,23 +15,23 @@
 	</array>
 
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Knightly requires access to your location to fetch the local weather forecast.</string>
+	<string>Wakely requires access to your location to fetch the local weather forecast.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Knightly requires access to your location to fetch the local weather forecast.</string>
+	<string>Wakely requires access to your location to fetch the local weather forecast.</string>
 
 	<key>NSAppleMusicUsageDescription</key>
-	<string>Knightly requires access to your music library to select custom alarm sounds.</string>
+	<string>Wakely requires access to your music library to select custom alarm sounds.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Knightly requires access to select files.</string>
+	<string>Wakely requires access to select files.</string>
 
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>NSUserNotificationUsageDescription</key>
-	<string>Knightly requires notification permissions to wake you up reliably when the alarm fires.</string>
+	<string>Wakely requires notification permissions to wake you up reliably when the alarm fires.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Knightly</string>
+	<string>Wakely</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -39,7 +39,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>chess_alarm</string>
+	<string>wakely</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

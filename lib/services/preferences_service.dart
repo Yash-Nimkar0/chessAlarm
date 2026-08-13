@@ -8,7 +8,7 @@ class PreferencesService {
   static Future<String> getUserName() async {
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString(_keyUserName);
-    return (name != null && name.trim().isNotEmpty) ? name : "Grandmaster";
+    return (name != null && name.trim().isNotEmpty) ? name : "";
   }
 
   static Future<void> setUserName(String name) async {
