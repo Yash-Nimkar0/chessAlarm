@@ -1,17 +1,11 @@
-# chess_alarm
+# Wakely
 
-A new Flutter project.
+Wakely is an alarm and sleep tracking application designed to help you build better morning habits. It forces you to wake up by presenting cognitive missions (like math puzzles or memory games) before the alarm can be turned off. It also securely tracks sleep sessions to provide insights into your nighttime habits.
 
-## Getting Started
+## Features
+- **Cognitive Wake Missions:** Math and memory challenges required to dismiss the alarm.
+- **Sleep Tracking:** Uses local sensors and audio analysis to track movement and sleep moments securely on your device.
+- **Progress Insights:** Tracks your streak and missions beaten to build momentum.
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Privacy and Permissions
+Wakely requires microphone and location permissions to power the sleep tracking engine. No audio recordings leave your device, and all analytics remain local.

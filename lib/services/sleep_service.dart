@@ -9,6 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 class AudioEvent {
   final DateTime time;
@@ -37,7 +39,7 @@ class AudioEvent {
         time: DateTime.parse(json['time']),
         type: json['type'] ?? '🌙 Sleep Moment',
         durationSeconds: json['durationSeconds'] ?? 0,
-        file: json['file'],
+        file: json['file'] ?? '',
         isSaved: json['isSaved'] ?? false,
       );
 }
@@ -115,10 +117,26 @@ class SleepSession {
       );
 }
 
+@pragma('vm:entry-point')
+void startCallback() {
+  FlutterForegroundTask.setTaskHandler(SleepTaskHandler());
+}
+
+class SleepTaskHandler extends TaskHandler {
+  @override
+  Future<void> onStart(DateTime timestamp, TaskStarter starter) async {}
+  @override
+  void onRepeatEvent(DateTime timestamp) {}
+  @override
+  Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {}
+}
+
 class SleepService {
   static const String _historyKey = 'sleep_history';
+  static const String _checkpointKey = 'sleep_checkpoint';
   
   static bool _isTracking = false;
+  static final AudioPlayer _silentPlayer = AudioPlayer();
   static DateTime? _startTime;
   static int _movementEvents = 0;
   static int _soundEvents = 0;
@@ -133,6 +151,7 @@ class SleepService {
   
   static DateTime? _lastMovementTime;
   static DateTime? _lastSoundTime;
+  static Timer? _checkpointTimer;
   
   static final List<Uint8List> _pcmBuffer = [];
   static bool _isRecordingToDisk = false;
@@ -141,8 +160,57 @@ class SleepService {
 
   static bool get isTracking => _isTracking;
 
+  static void _initForegroundTask() {
+    FlutterForegroundTask.init(
+      androidNotificationOptions: AndroidNotificationOptions(
+        channelId: 'sleep_tracking',
+        channelName: 'Sleep Tracking',
+        channelDescription: 'Keeps sleep tracking alive in the background.',
+        channelImportance: NotificationChannelImportance.LOW,
+        priority: NotificationPriority.LOW,
+      ),
+      iosNotificationOptions: const IOSNotificationOptions(
+        showNotification: false,
+        playSound: false,
+      ),
+      foregroundTaskOptions: ForegroundTaskOptions(
+        eventAction: ForegroundTaskEventAction.nothing(),
+        autoRunOnBoot: false,
+        allowWakeLock: true,
+        allowWifiLock: true,
+      ),
+    );
+  }
+
+  static Future<void> _saveCheckpoint() async {
+    if (!_isTracking || _startTime == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final session = SleepSession(
+      startTime: _startTime!,
+      endTime: DateTime.now(),
+      score: 0,
+      confidence: 'Active',
+      totalMovementEvents: _movementEvents,
+      soundActivityEvents: _soundEvents,
+      additionalMoments: _additionalMoments,
+      audioEvents: _currentAudioEvents,
+    );
+    await prefs.setString(_checkpointKey, jsonEncode(session.toJson()));
+  }
+
   static Future<void> startTracking() async {
     if (_isTracking) return;
+    
+    _initForegroundTask();
+    if (await FlutterForegroundTask.isRunningService) {
+      await FlutterForegroundTask.restartService();
+    } else {
+      await FlutterForegroundTask.startService(
+        notificationTitle: 'Wakely Sleep Tracking',
+        notificationText: 'Tracking your sleep...',
+        callback: startCallback,
+      );
+    }
 
     final prefs = await SharedPreferences.getInstance();
     final privacyMode = prefs.getInt('privacy_mode') ?? 2; // 0=Off, 1=Detect, 2=Save Moments
@@ -175,6 +243,10 @@ class SleepService {
     _lastSoundTime = null;
     _pcmBuffer.clear();
 
+    _checkpointTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
+      _saveCheckpoint();
+    });
+
     double movementThreshold = 0.5; // Euclidean deviation
     _accelSub = accelerometerEventStream().listen((event) {
       double magnitude = sqrt(pow(event.x, 2) + pow(event.y, 2) + pow(event.z, 2));
@@ -186,6 +258,9 @@ class SleepService {
         }
       }
     });
+    
+    _silentPlayer.setReleaseMode(ReleaseMode.loop);
+    _silentPlayer.play(AssetSource('silent.mp3'), volume: 0.0);
   }
   
   static Future<void> _startAudioBuffer() async {
@@ -300,6 +375,13 @@ class SleepService {
     _audioStreamSub?.cancel();
     _audioRecorder?.dispose();
     _audioRecorder = null;
+    _silentPlayer.stop();
+    _checkpointTimer?.cancel();
+    FlutterForegroundTask.stopService();
+    
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_checkpointKey);
+    
     _isTracking = false;
 
     final endTime = DateTime.now();
@@ -314,7 +396,10 @@ class SleepService {
     List<SleepSession> history = await getHistory();
     if (history.isNotEmpty) {
        final last = history.last;
-       final timeDiff = _startTime!.difference(DateTime(_startTime!.year, _startTime!.month, _startTime!.day, last.startTime.hour, last.startTime.minute)).inMinutes.abs();
+       int todayMins = _startTime!.hour * 60 + _startTime!.minute;
+       int lastMins = last.startTime.hour * 60 + last.startTime.minute;
+       int timeDiff = (todayMins - lastMins).abs();
+       if (timeDiff > 720) timeDiff = 1440 - timeDiff;
        if (timeDiff > 60) {
           consistency -= (timeDiff / 30).clamp(0, 25).toInt();
        }
@@ -442,13 +527,68 @@ class SleepService {
       await prefs.setStringList(_historyKey, jsonList);
   }
 
-  static Future<void> _saveSession(SleepSession session) async {
+  static Future<SleepSession> _saveSession(SleepSession session) async {
     final prefs = await SharedPreferences.getInstance();
     List<SleepSession> history = await getHistory();
-    history.add(session);
     
-    final List<String> jsonList = history.map((s) => jsonEncode(s.toJson())).toList();
-    await prefs.setStringList(_historyKey, jsonList);
+    history.add(session);
+    await prefs.setStringList(_historyKey, history.map((s) => jsonEncode(s.toJson())).toList());
+
+    return session;
+  }
+  
+  static Future<void> recoverOrphanedSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final checkpointJson = prefs.getString(_checkpointKey);
+    if (checkpointJson == null) return;
+    
+    try {
+      final sessionData = jsonDecode(checkpointJson);
+      SleepSession session = SleepSession.fromJson(sessionData);
+      
+      final durationHours = session.duration.inMinutes / 60.0;
+      
+      int score = 50;
+      if (durationHours < 7.5) score -= ((7.5 - durationHours) * 6).toInt();
+      
+      int consistency = 25;
+      List<SleepSession> history = await getHistory();
+      if (history.isNotEmpty) {
+         final last = history.last;
+         int todayMins = session.startTime.hour * 60 + session.startTime.minute;
+         int lastMins = last.startTime.hour * 60 + last.startTime.minute;
+         int timeDiff = (todayMins - lastMins).abs();
+         if (timeDiff > 720) timeDiff = 1440 - timeDiff;
+         if (timeDiff > 60) {
+            consistency -= (timeDiff / 30).clamp(0, 25).toInt();
+         }
+      }
+      score += consistency;
+      
+      int disturbance = 5;
+      double movementsPerHour = durationHours > 0 ? (session.totalMovementEvents / durationHours) : 0;
+      disturbance -= (movementsPerHour * 0.5).toInt();
+      disturbance -= (session.soundActivityEvents).toInt();
+      score += disturbance.clamp(0, 5);
+
+      String confidence = 'High';
+      if (durationHours < 3) {
+        confidence = 'Low';
+      } else if (session.totalMovementEvents > 30) confidence = 'Medium';
+      
+      session = session.copyWith(
+        score: score.clamp(0, 80),
+        confidence: confidence,
+      );
+      
+      history.add(session);
+      await prefs.setStringList(_historyKey, history.map((s) => jsonEncode(s.toJson())).toList());
+      await prefs.remove(_checkpointKey);
+      
+    } catch (e) {
+      if (kDebugMode) print('Failed to recover orphaned session: $e');
+      await prefs.remove(_checkpointKey);
+    }
   }
 
   static Future<List<SleepSession>> getHistory() async {

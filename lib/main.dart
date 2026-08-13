@@ -49,6 +49,7 @@ class _WakelyAppLoaderState extends State<WakelyAppLoader> {
       await NotificationService.initialize();
       await NotificationService.setupSleepReminders();
       await SleepService.cleanupOldClips();
+      await SleepService.recoverOrphanedSession();
       
       await AnalyticsService.init();
       await AnalyticsService.checkRetention();

@@ -1,4 +1,4 @@
-package com.example.chess_alarm
+package com.yashnimkar.wakely
 
 import io.flutter.embedding.android.FlutterActivity
 
