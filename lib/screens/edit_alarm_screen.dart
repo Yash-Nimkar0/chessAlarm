@@ -150,20 +150,35 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
     }
   }
 
+  String _getMissionDisplayName(String missionStr) {
+    switch (missionStr) {
+      case 'math': return 'Math';
+      case 'memory': return 'Memory';
+      case 'typing': return 'Typing';
+      case 'color_tiles': return 'Color Tiles';
+      case 'missing_symbol': return 'Missing Symbol';
+      case 'shake': return 'Shake';
+      case 'none': return 'None';
+      default: return 'Memory';
+    }
+  }
+
   void _showMissionPicker() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) {
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text('Select Mission', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ),
-              ListTile(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text('Select Mission', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ),
+                ListTile(
                 leading: const Icon(Icons.calculate, color: Colors.blue),
                 title: const Text('Math Problem'),
                 subtitle: const Text('Solve a math equation to wake up.'),
@@ -235,9 +250,9 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
               ),
             ],
           ),
-        );
-      }
-    );
+        ),
+      );
+    });
   }
 
   @override
@@ -423,7 +438,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    _missionSettings.mission == 'math' ? 'Math' : (_missionSettings.mission == 'none' ? 'None' : 'Memory'),
+                                    _getMissionDisplayName(_missionSettings.mission),
                                     style: TextStyle(color: colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(width: 4),
