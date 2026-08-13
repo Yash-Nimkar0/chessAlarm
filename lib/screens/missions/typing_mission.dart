@@ -52,55 +52,57 @@ class _TypingMissionState extends State<TypingMission> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(Icons.keyboard, size: 64, color: Colors.blueAccent),
-        const SizedBox(height: 24),
-        Text(
-          "Type exactly what you see:",
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 18),
-        ),
-        const SizedBox(height: 24),
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.blueAccent.withOpacity(0.5)),
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.keyboard, size: 64, color: Colors.blueAccent),
+          const SizedBox(height: 24),
+          Text(
+            "Type exactly what you see:",
+            style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 18),
           ),
-          child: Text(
-            _targetPhrase,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.blueAccent.withOpacity(0.5)),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        const SizedBox(height: 40),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: TextField(
-            controller: _controller,
-            style: const TextStyle(color: Colors.white, fontSize: 20),
-            decoration: InputDecoration(
-              hintText: "Start typing...",
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-              filled: true,
-              fillColor: Colors.black26,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+            child: Text(
+              _targetPhrase,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
               ),
+              textAlign: TextAlign.center,
             ),
-            autocorrect: false,
-            autofocus: true,
           ),
-        ),
-      ],
+          const SizedBox(height: 40),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: TextField(
+              controller: _controller,
+              style: const TextStyle(color: Colors.white, fontSize: 20),
+              decoration: InputDecoration(
+                hintText: "Start typing...",
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                filled: true,
+                fillColor: Colors.black26,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              autocorrect: false,
+              autofocus: true,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
