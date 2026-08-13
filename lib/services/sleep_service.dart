@@ -178,6 +178,7 @@ class SleepService {
         autoRunOnBoot: false,
         allowWakeLock: true,
         allowWifiLock: true,
+        stopWithTask: false,
       ),
     );
   }
