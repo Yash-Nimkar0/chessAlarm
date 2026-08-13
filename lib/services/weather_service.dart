@@ -104,8 +104,11 @@ class WeatherService {
     if (!serviceEnabled) return false;
     
     permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
-      return false;
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return false;
+      }
     }
     if (permission == LocationPermission.deniedForever) return false;
     
@@ -119,17 +122,25 @@ class WeatherService {
       }
     }
 
-    final hasPermission = await _handleLocationPermission();
-    if (!hasPermission) return cachedWeather;
+    await _handleLocationPermission();
 
     try {
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.low,
-        timeLimit: const Duration(seconds: 5),
-      );
+      double lat = 37.7749; // Default to San Francisco
+      double lon = -122.4194;
+      
+      try {
+        Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.low,
+          timeLimit: const Duration(seconds: 4),
+        );
+        lat = position.latitude;
+        lon = position.longitude;
+      } catch (e) {
+        print('Using fallback location due to error: $e');
+      }
 
       final url = Uri.parse(
-        'https://api.open-meteo.com/v1/forecast?latitude=${position.latitude}&longitude=${position.longitude}&current_weather=true&hourly=temperature_2m,weathercode,precipitation_probability&daily=sunrise,sunset,weathercode,temperature_2m_max,temperature_2m_min&timezone=auto'
+        'https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true&hourly=temperature_2m,weathercode,precipitation_probability&daily=sunrise,sunset,weathercode,temperature_2m_max,temperature_2m_min&timezone=auto'
       );
 
       final response = await http.get(url).timeout(const Duration(seconds: 8));

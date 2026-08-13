@@ -139,24 +139,14 @@ class _ChessAlarmAppState extends State<ChessAlarmApp> {
     return ListenableBuilder(
       listenable: ThemeService(),
       builder: (context, _) {
-        return DynamicColorBuilder(
-      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-        ColorScheme darkColorScheme;
-        ColorScheme lightColorScheme;
-
-        if (darkDynamic != null && lightDynamic != null) {
-          darkColorScheme = darkDynamic.harmonized();
-          lightColorScheme = lightDynamic.harmonized();
-        } else {
-          darkColorScheme = ColorScheme.fromSeed(
-            seedColor: _defaultSeedColor,
-            brightness: Brightness.dark,
-          );
-          lightColorScheme = ColorScheme.fromSeed(
-            seedColor: _defaultSeedColor,
-            brightness: Brightness.light,
-          );
-        }
+        final darkColorScheme = ColorScheme.fromSeed(
+          seedColor: _defaultSeedColor,
+          brightness: Brightness.dark,
+        );
+        final lightColorScheme = ColorScheme.fromSeed(
+          seedColor: _defaultSeedColor,
+          brightness: Brightness.light,
+        );
 
         return MaterialApp(
           navigatorKey: navigatorKey,
@@ -218,8 +208,6 @@ class _ChessAlarmAppState extends State<ChessAlarmApp> {
           ),
           home: widget.hasSeenOnboarding ? const MainScreen() : const OnboardingScreen(),
         );
-      },
-    );
       }
     );
   }
