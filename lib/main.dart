@@ -142,10 +142,13 @@ class _WakelyAppState extends State<WakelyApp> {
           primary: AppTokens.signal,
         );
         final lightColorScheme = ColorScheme.fromSeed(
-          seedColor: AppTokens.signal,
+          // Deep pre-dawn indigo as primary in light mode — contrasts well against
+          // the cream daylightBg (#FFF8EE). Amber signal stays as secondary accent.
+          seedColor: AppTokens.dawnStart,
           brightness: Brightness.light,
           surface: AppTokens.daylightBg,
-          primary: AppTokens.signal,
+          primary: AppTokens.dawnStart,
+          secondary: AppTokens.signal,
         );
 
         return MaterialApp(
