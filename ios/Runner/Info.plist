@@ -23,6 +23,8 @@
 	<string>Wakely requires access to your music library to select custom alarm sounds.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Wakely requires access to select files.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Wakely requires access to your camera to scan QR codes and barcodes for alarm missions.</string>
 
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>

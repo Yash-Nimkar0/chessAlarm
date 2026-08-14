@@ -12,6 +12,7 @@ import '../widgets/platform_theme.dart';
 import 'missions/typing_config_screen.dart';
 import 'missions/shake_config_screen.dart';
 import 'missions/default_config_screen.dart';
+import 'missions/qr_config_screen.dart';
 
 class EditAlarmScreen extends StatefulWidget {
   final AlarmSettings? alarmSettings;
@@ -162,6 +163,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
       case 'color_tiles': return 'Color Tiles';
       case 'missing_symbol': return 'Missing Symbol';
       case 'shake': return 'Shake';
+      case 'qr': return 'QR / Barcode';
       case 'none': return 'None';
       default: return 'Memory';
     }
@@ -288,6 +290,22 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                   final result = await Navigator.push<MissionSettings>(
                     context,
                     MaterialPageRoute(builder: (context) => ShakeConfigScreen(
+                      initialSettings: _missionSettings,
+                    )),
+                  );
+                  if (result != null) setState(() => _missionSettings = result);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.qr_code_scanner, color: Colors.pink),
+                title: const Text('QR / Barcode'),
+                subtitle: const Text('Scan a specific barcode to wake up.'),
+                trailing: _missionSettings.mission == 'qr' ? const Icon(Icons.check, color: Colors.pink) : null,
+                onTap: () async {
+                  Navigator.pop(context);
+                  final result = await Navigator.push<MissionSettings>(
+                    context,
+                    MaterialPageRoute(builder: (context) => QRConfigScreen(
                       initialSettings: _missionSettings,
                     )),
                   );
