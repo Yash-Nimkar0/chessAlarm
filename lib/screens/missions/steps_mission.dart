@@ -27,6 +27,7 @@ class _StepsMissionState extends State<StepsMission> {
   int _initialSteps = -1;
   int _currentSteps = 0;
   bool _isSuccess = false;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -62,8 +63,10 @@ class _StepsMissionState extends State<StepsMission> {
   }
 
   void _onStepCountError(error) {
-    // If the sensor fails or permission isn't granted, fallback gracefully
-    _markSuccess();
+    if (!mounted) return;
+    setState(() {
+      _hasError = true;
+    });
   }
 
   void _markSuccess() {
@@ -120,14 +123,24 @@ class _StepsMissionState extends State<StepsMission> {
                   children: [
                     const Icon(Icons.directions_walk, size: 64, color: Colors.blueAccent),
                     const SizedBox(height: 8),
-                    Text(
-                      '$_currentSteps / $_targetSteps',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
+                    if (_hasError)
+                      Text(
+                        'Sensor Error',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.error,
+                        ),
+                      )
+                    else
+                      Text(
+                        '$_currentSteps / $_targetSteps',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ],

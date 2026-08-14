@@ -313,7 +313,23 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
               child: SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  child: content,
+                  child: Column(
+                    children: [
+                      if (_missionSettings.label != null && _missionSettings.label!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                          child: Text(
+                            _missionSettings.label!,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      Expanded(child: content),
+                    ],
+                  ),
                 ),
               ),
             );
