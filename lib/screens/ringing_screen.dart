@@ -100,16 +100,42 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     if (mounted) {
       int elapsed = DateTime.now().difference(_startTime).inSeconds;
       await SleepService.recordWakePerformance(elapsed, 0, true);
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MissionCompleteScreen(
-            elapsedSeconds: elapsed,
-            eloChange: 0,
-            isSkip: true,
+      if (_missionSettings.type == 'quickAlarm') {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => Scaffold(
+              backgroundColor: Colors.black,
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.check_circle_outline, color: Colors.greenAccent, size: 80),
+                    const SizedBox(height: 20),
+                    const Text('Wake up!', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const SizedBox(height: 40),
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                      child: const Text("Done", style: TextStyle(color: Colors.white, fontSize: 18)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
-      );
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MissionCompleteScreen(
+              elapsedSeconds: elapsed,
+              eloChange: 0,
+              isSkip: true,
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -161,16 +187,42 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
         'solve_time': elapsed,
       });
       await SleepService.recordWakePerformance(elapsed, 0, false);
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MissionCompleteScreen(
-            elapsedSeconds: elapsed,
-            eloChange: 0,
-            isSkip: false,
+      if (_missionSettings.type == 'quickAlarm') {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => Scaffold(
+              backgroundColor: Colors.black,
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.check_circle_outline, color: Colors.greenAccent, size: 80),
+                    const SizedBox(height: 20),
+                    const Text('Wake up!', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const SizedBox(height: 40),
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                      child: const Text("Done", style: TextStyle(color: Colors.white, fontSize: 18)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
-      );
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MissionCompleteScreen(
+              elapsedSeconds: elapsed,
+              eloChange: 0,
+              isSkip: false,
+            ),
+          ),
+        );
+      }
     }
   }
 

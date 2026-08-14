@@ -71,18 +71,19 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
     Haptics.vibrate(HapticsType.heavy);
     
     bool isWakeRoutine = true;
+    bool hasMission = false;
     if (widget.alarmSettings.payload != null) {
       try {
-
         final settings = MissionSettings.fromJsonString(widget.alarmSettings.payload!);
         isWakeRoutine = settings.type == 'wakeRoutine';
+        hasMission = settings.mission != 'none';
       } catch (e) {
         // Default to true
       }
     }
     
     if (!mounted) return;
-    if (isWakeRoutine) {
+    if (isWakeRoutine || hasMission) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => RingingScreen(alarmSettings: widget.alarmSettings),
