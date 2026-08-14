@@ -13,6 +13,7 @@ import 'services/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'services/theme_service.dart';
+import 'theme/design_tokens.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -134,29 +135,28 @@ class _WakelyAppState extends State<WakelyApp> {
     return ListenableBuilder(
       listenable: ThemeService(),
       builder: (context, _) {
-        final darkColorScheme = ColorScheme.fromSeed(
-          seedColor: _defaultSeedColor,
+        final colorScheme = ColorScheme.fromSeed(
+          seedColor: AppTokens.signal,
           brightness: Brightness.dark,
-        );
-        final lightColorScheme = ColorScheme.fromSeed(
-          seedColor: _defaultSeedColor,
-          brightness: Brightness.light,
+          surface: AppTokens.nightBg,
+          primary: AppTokens.signal,
         );
 
         return MaterialApp(
           navigatorKey: navigatorKey,
           title: 'Wakely',
           debugShowCheckedModeBanner: false,
-          themeMode: ThemeService().themeMode,
+          themeMode: ThemeMode.dark, // Force dark mode per design spec
           theme: ThemeData(
             useMaterial3: true,
-            colorScheme: lightColorScheme,
-            fontFamily: 'Inter',
+            colorScheme: colorScheme,
+            scaffoldBackgroundColor: AppTokens.nightBg,
+            textTheme: AppTokens.textTheme(ThemeData.dark().textTheme),
             appBarTheme: const AppBarTheme(
               centerTitle: true,
               backgroundColor: Colors.transparent,
               elevation: 0,
-              foregroundColor: Colors.black,
+              foregroundColor: Colors.white,
             ),
             cardTheme: CardThemeData(
               margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -164,33 +164,7 @@ class _WakelyAppState extends State<WakelyApp> {
                 borderRadius: BorderRadius.circular(28),
               ),
               elevation: 0,
-              color: lightColorScheme.surfaceContainerHighest,
-            ),
-            filledButtonTheme: FilledButtonThemeData(
-              style: FilledButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-              ),
-            ),
-          ),
-          darkTheme: ThemeData(
-            useMaterial3: true,
-            colorScheme: darkColorScheme,
-            fontFamily: 'Inter',
-            appBarTheme: const AppBarTheme(
-              centerTitle: true,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-            ),
-            cardTheme: CardThemeData(
-              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(28),
-              ),
-              elevation: 0,
-              color: darkColorScheme.surfaceContainerHighest,
+              color: Colors.white.withValues(alpha: 0.05),
             ),
             filledButtonTheme: FilledButtonThemeData(
               style: FilledButton.styleFrom(
