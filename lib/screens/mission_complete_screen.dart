@@ -73,11 +73,11 @@ class _MissionCompleteScreenState extends State<MissionCompleteScreen> with Sing
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(backgroundColor: Colors.black);
+      return Scaffold(backgroundColor: Theme.of(context).colorScheme.surface);
     }
     
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: Center(

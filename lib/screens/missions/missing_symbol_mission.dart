@@ -88,46 +88,49 @@ class _MissingSymbolMissionState extends State<MissingSymbolMission> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
           "Round ${_currentRound + 1} of $_totalRounds",
-          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5), fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
-        const Text(
+        Text(
           "Find the missing symbol",
-          style: TextStyle(color: Colors.white70, fontSize: 18),
+          style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 18),
         ),
         const SizedBox(height: 40),
         Container(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: colorScheme.onSurface.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(24),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text("$_num1", style: const TextStyle(color: Colors.white, fontSize: 48, fontWeight: FontWeight.bold)),
+              Text("$_num1", style: TextStyle(color: colorScheme.onSurface, fontSize: 48, fontWeight: FontWeight.bold)),
               const SizedBox(width: 16),
               Container(
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: colorScheme.onSurface.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blueAccent.withOpacity(0.5)),
+                  border: Border.all(color: colorScheme.primary, width: 2),
                 ),
-                child: const Center(child: Text("?", style: TextStyle(color: Colors.blueAccent, fontSize: 36, fontWeight: FontWeight.bold))),
+                child: Center(
+                  child: Text("?", style: TextStyle(color: colorScheme.primary, fontSize: 32, fontWeight: FontWeight.bold)),
+                ),
               ),
               const SizedBox(width: 16),
-              Text("$_num2", style: const TextStyle(color: Colors.white, fontSize: 48, fontWeight: FontWeight.bold)),
+              Text("$_num2", style: TextStyle(color: colorScheme.onSurface, fontSize: 48, fontWeight: FontWeight.bold)),
               const SizedBox(width: 16),
-              const Text("=", style: TextStyle(color: Colors.white54, fontSize: 48, fontWeight: FontWeight.bold)),
+              Text("=", style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 48, fontWeight: FontWeight.bold)),
               const SizedBox(width: 16),
-              Text("$_result", style: const TextStyle(color: Colors.white, fontSize: 48, fontWeight: FontWeight.bold)),
+              Text("$_result", style: TextStyle(color: colorScheme.onSurface, fontSize: 48, fontWeight: FontWeight.bold)),
             ],
           ),
         ),
@@ -136,28 +139,28 @@ class _MissingSymbolMissionState extends State<MissingSymbolMission> {
           padding: const EdgeInsets.symmetric(horizontal: 40),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: _symbols.map((s) => _buildSymbolButton(s)).toList(),
+            children: _symbols.map((s) => _buildSymbolButton(s, colorScheme)).toList(),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSymbolButton(String symbol) {
+  Widget _buildSymbolButton(String symbol, ColorScheme colorScheme) {
     return GestureDetector(
       onTap: () => _onSymbolTap(symbol),
       child: Container(
         width: 64,
         height: 64,
         decoration: BoxDecoration(
-          color: Colors.blueAccent.withOpacity(0.2),
+          color: colorScheme.primary.withOpacity(0.2),
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.blueAccent),
+          border: Border.all(color: colorScheme.primary),
         ),
         child: Center(
           child: Text(
             symbol,
-            style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+            style: TextStyle(color: colorScheme.onSurface, fontSize: 32, fontWeight: FontWeight.bold),
           ),
         ),
       ),

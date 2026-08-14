@@ -104,19 +104,23 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => Scaffold(
-              backgroundColor: Colors.black,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               body: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.check_circle_outline, color: Colors.greenAccent, size: 80),
+                    const Icon(Icons.check_circle_outline, color: Colors.green, size: 80),
                     const SizedBox(height: 20),
-                    const Text('Wake up!', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                    Text('Wake up!', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                     const SizedBox(height: 40),
                     ElevatedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                      child: const Text("Done", style: TextStyle(color: Colors.white, fontSize: 18)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary, 
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary, 
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                      ),
+                      child: const Text("Done", style: TextStyle(fontSize: 18)),
                     ),
                   ],
                 ),
@@ -191,19 +195,23 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => Scaffold(
-              backgroundColor: Colors.black,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               body: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.check_circle_outline, color: Colors.greenAccent, size: 80),
+                    const Icon(Icons.check_circle_outline, color: Colors.green, size: 80),
                     const SizedBox(height: 20),
-                    const Text('Wake up!', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                    Text('Wake up!', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                     const SizedBox(height: 40),
                     ElevatedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white24, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                      child: const Text("Done", style: TextStyle(color: Colors.white, fontSize: 18)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                      ),
+                      child: const Text("Done", style: TextStyle(fontSize: 18)),
                     ),
                   ],
                 ),

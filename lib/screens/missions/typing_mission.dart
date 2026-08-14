@@ -70,62 +70,64 @@ class _TypingMissionState extends State<TypingMission> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.keyboard, size: 64, color: Colors.blueAccent),
-          const SizedBox(height: 12),
-          Text(
-            "Round ${_currentRound + 1} of $_totalRounds",
-            style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16),
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          "Quote ${_currentRound + 1} of $_totalRounds",
+          style: TextStyle(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5), fontSize: 16),
+        ),
+        const SizedBox(height: 12),
+        const Icon(Icons.keyboard_outlined, size: 48, color: Colors.indigoAccent),
+        const SizedBox(height: 16),
+        Text(
+          'Type the phrase below:',
+          style: TextStyle(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7), fontSize: 18),
+        ),
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: colorScheme.onSurface.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.indigoAccent.withValues(alpha: 0.3)),
           ),
-          const SizedBox(height: 24),
-          Text(
-            "Type exactly what you see:",
-            style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 18),
+          child: Text(
+            _targetPhrase,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: colorScheme.onSurface,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.1,
+            ),
           ),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+        ),
+        const SizedBox(height: 40),
+        TextField(
+          controller: _controller,
+          autofocus: true,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: colorScheme.onSurface, fontSize: 20),
+          decoration: InputDecoration(
+            hintText: 'Start typing...',
+            hintStyle: TextStyle(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
+            filled: true,
+            fillColor: colorScheme.surfaceContainerHighest,
+            border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.blueAccent.withOpacity(0.5)),
+              borderSide: BorderSide.none,
             ),
-            child: Text(
-              _targetPhrase,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-              ),
-              textAlign: TextAlign.center,
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Colors.indigoAccent, width: 2),
             ),
           ),
-          const SizedBox(height: 40),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: TextField(
-              controller: _controller,
-              style: const TextStyle(color: Colors.white, fontSize: 20),
-              decoration: InputDecoration(
-                hintText: "Start typing...",
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-                filled: true,
-                fillColor: Colors.black26,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              autocorrect: false,
-              autofocus: true,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
+    ),
     );
   }
 }

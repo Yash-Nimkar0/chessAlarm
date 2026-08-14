@@ -115,17 +115,18 @@ class _ColorTilesMissionState extends State<ColorTilesMission> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
           "Round ${_currentRound + 1} of $_totalRounds",
-          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5), fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         Text(
           "Find all ${_getColorName(_targetColor)} tiles",
-          style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+          style: TextStyle(color: colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         Container(
@@ -156,11 +157,13 @@ class _ColorTilesMissionState extends State<ColorTilesMission> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   decoration: BoxDecoration(
-                    color: isSelected ? _gridColors[index].withOpacity(0.3) : _gridColors[index],
-                    borderRadius: BorderRadius.circular(12),
-                    border: isSelected ? Border.all(color: Colors.white54, width: 2) : null,
+                    color: isSelected ? _gridColors[index].withValues(alpha: 0.3) : _gridColors[index],
+                    borderRadius: BorderRadius.circular(16),
+                    border: isSelected ? Border.all(color: colorScheme.onSurface.withValues(alpha: 0.54), width: 2) : null,
                   ),
-                  child: isSelected ? const Icon(Icons.check, color: Colors.white) : null,
+                  child: Center(
+                    child: isSelected ? Icon(Icons.check, color: colorScheme.onSurface) : null,
+                  ),
                 ),
               );
             },
