@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import '../../models/mission_settings.dart';
+import '../../theme/design_tokens.dart';
 
 class QRConfigScreen extends StatefulWidget {
   final MissionSettings initialSettings;
@@ -109,7 +110,7 @@ class _QRConfigScreenState extends State<QRConfigScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   decoration: BoxDecoration(
                     color: Colors.black54,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(AppTokens.radiusLg),
                   ),
                   child: const Text(
                     'Scan a barcode to set it as your target',
@@ -125,7 +126,7 @@ class _QRConfigScreenState extends State<QRConfigScreen> {
               height: 250,
               decoration: BoxDecoration(
                 border: Border.all(color: colorScheme.primary, width: 4),
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(AppTokens.radiusLg),
               ),
             ),
           ),

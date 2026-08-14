@@ -3,6 +3,7 @@ import 'package:haptic_feedback/haptic_feedback.dart';
 import 'dart:math';
 
 import '../../models/mission_settings.dart';
+import '../../theme/design_tokens.dart';
 
 class MissingSymbolMission extends StatefulWidget {
   final VoidCallback onSuccess;
@@ -106,7 +107,7 @@ class _MissingSymbolMissionState extends State<MissingSymbolMission> {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           decoration: BoxDecoration(
             color: colorScheme.onSurface.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(AppTokens.radiusLg),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -118,7 +119,7 @@ class _MissingSymbolMissionState extends State<MissingSymbolMission> {
                 height: 60,
                 decoration: BoxDecoration(
                   color: colorScheme.onSurface.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                   border: Border.all(color: colorScheme.primary, width: 2),
                 ),
                 child: Center(

@@ -7,6 +7,7 @@ import 'package:square_bishop/square_bishop.dart';
 import '../models/puzzles.dart';
 import '../services/elo_service.dart';
 import '../widgets/platform_theme.dart';
+import '../theme/design_tokens.dart';
 
 class PracticeScreen extends StatefulWidget {
   const PracticeScreen({Key? key}) : super(key: key);
@@ -428,7 +429,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                         color: _isFlashingRed ? Colors.red : colorScheme.outline.withOpacity(0.3),
                         width: _isFlashingRed ? 4 : 2,
                       ),
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                       boxShadow: [
                         BoxShadow(
                           color: _isSuccess ? Colors.green.withOpacity(0.5) : Colors.transparent,

@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'main_screen.dart';
 import 'edit_alarm_screen.dart';
 import '../services/analytics_service.dart';
+import '../theme/design_tokens.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({Key? key}) : super(key: key);
@@ -94,7 +95,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   Expanded(
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                       child: LinearProgressIndicator(
                         value: (_currentPage + 1) / 3,
                         backgroundColor: Colors.white.withValues(alpha: 0.24),
@@ -145,7 +146,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     backgroundColor: Colors.greenAccent,
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm)),
                   ),
                   child: Text(
                     _currentPage == 1 ? "CREATE FIRST ALARM" : "CONTINUE",
@@ -205,7 +206,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         decoration: BoxDecoration(
           color: isSelected ? Colors.greenAccent.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.05),
           border: Border.all(color: isSelected ? Colors.greenAccent : Colors.transparent, width: 2),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppTokens.radiusSm),
         ),
         child: Row(
           children: [

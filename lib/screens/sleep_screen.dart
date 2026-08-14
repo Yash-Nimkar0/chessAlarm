@@ -131,7 +131,7 @@ class _SleepScreenState extends State<SleepScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-           borderRadius: BorderRadius.circular(16),
+           borderRadius: BorderRadius.circular(AppTokens.radiusSm),
         ),
         child: Row(
            children: [
@@ -243,7 +243,7 @@ class _SleepScreenState extends State<SleepScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusLg),
                       boxShadow: [
                         BoxShadow(color: Colors.purple.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4)),
                       ],
@@ -257,7 +257,7 @@ class _SleepScreenState extends State<SleepScreen> {
                             const Text("Tomorrow's Mission", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
+                              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(AppTokens.radiusSm)),
                               child: Text('$_userElo Points', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                             )
                           ],
@@ -290,7 +290,7 @@ class _SleepScreenState extends State<SleepScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 24),
                     decoration: BoxDecoration(
                       color: _isTracking ? Colors.green.shade800 : colorScheme.primary,
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusLg),
                       boxShadow: [
                         if (!_isTracking) BoxShadow(color: colorScheme.primary.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8)),
                       ],

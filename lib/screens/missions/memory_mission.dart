@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import '../../models/mission_settings.dart';
 import 'mission_interface.dart';
+import '../../theme/design_tokens.dart';
 
 class MemoryMission extends MissionWidget {
   final MissionSettings settings;
@@ -160,7 +161,7 @@ class _MemoryMissionState extends State<MemoryMission> {
                   duration: const Duration(milliseconds: 150),
                   decoration: BoxDecoration(
                     color: isFlashing ? _baseColors[index] : _baseColors[index].withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(AppTokens.radiusLg),
                     border: Border.all(
                       color: isFlashing ? colorScheme.onSurface : _baseColors[index].withValues(alpha: 0.3),
                       width: isFlashing ? 4 : 2,

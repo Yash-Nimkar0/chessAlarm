@@ -11,6 +11,10 @@ class AppTokens {
   static const Color signal = Color(0xFFFFB84D);
   static const Color signalDeep = Color(0xFF6A2B45);
 
+  // Border Radius
+  static const double radiusSm = 16.0;
+  static const double radiusLg = 24.0;
+
   // Typography
   static TextStyle get display => GoogleFonts.spaceGrotesk();
   static TextStyle get body => GoogleFonts.inter();

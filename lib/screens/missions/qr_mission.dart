@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
+import '../../theme/design_tokens.dart';
 
 class QRMission extends StatefulWidget {
   final Map<String, dynamic> missionData;
@@ -79,7 +80,7 @@ class _QRMissionState extends State<QRMission> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(AppTokens.radiusLg),
               child: Stack(
                 children: [
                   MobileScanner(
@@ -92,7 +93,7 @@ class _QRMissionState extends State<QRMission> {
                       height: 250,
                       decoration: BoxDecoration(
                         border: Border.all(color: colorScheme.primary, width: 4),
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
                       ),
                     ),
                   ),

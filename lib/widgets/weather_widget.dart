@@ -25,10 +25,10 @@ List<_P> _genParticles(int n, {required int seed, double yRange = 1.0}) {
   ));
 }
 
-final _rainParts  = _genParticles(30, seed: 42);
-final _snowParts  = _genParticles(22, seed: 17, yRange: 0.95);
-final _starParts  = _genParticles(18, seed: 99, yRange: 0.65);
-final _cloudParts = _genParticles( 5, seed: 55, yRange: 0.7);
+final _rainParts  = _genParticles(15, seed: 42);
+final _snowParts  = _genParticles(12, seed: 17, yRange: 0.95);
+final _starParts  = _genParticles(10, seed: 99, yRange: 0.65);
+final _cloudParts = _genParticles( 3, seed: 55, yRange: 0.7);
 
 // ─────────────────────────────────────────────────────────────────
 // Effect enum + selector
@@ -135,11 +135,11 @@ class _WeatherPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     for (final p in _rainParts) {
-      final yNorm = (p.y0 + t * p.spd) % 1.0;
+      final yNorm = (p.y0 + t * p.spd * 0.7) % 1.0;
       final x = p.x * size.width;
       final y = yNorm * size.height;
-      final alpha = 0.20 + 0.12 * math.sin(t * math.pi * 2 + p.ph);
-      paint.color = Colors.lightBlue.withValues(alpha: diagonal ? alpha + 0.12 : alpha);
+      final alpha = 0.10 + 0.06 * math.sin(t * math.pi * 2 + p.ph);
+      paint.color = Colors.lightBlue.withValues(alpha: diagonal ? alpha + 0.06 : alpha);
       canvas.drawLine(Offset(x, y), Offset(x + dx, y + dy), paint);
     }
   }
@@ -158,9 +158,9 @@ class _WeatherPainter extends CustomPainter {
   void _paintSnow(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
     for (final p in _snowParts) {
-      final yNorm = (p.y0 + t * p.spd * 0.35) % 1.0;
-      final xDrift = p.x + math.sin(t * math.pi * 2 + p.ph) * 0.035;
-      final alpha = 0.40 + 0.35 * math.sin(t * math.pi * 2 + p.ph);
+      final yNorm = (p.y0 + t * p.spd * 0.25) % 1.0;
+      final xDrift = p.x + math.sin(t * math.pi * 2 + p.ph) * 0.02;
+      final alpha = 0.20 + 0.17 * math.sin(t * math.pi * 2 + p.ph);
       paint.color = Colors.white.withValues(alpha: alpha);
       canvas.drawCircle(
         Offset(xDrift * size.width, yNorm * size.height),
@@ -173,7 +173,7 @@ class _WeatherPainter extends CustomPainter {
   void _paintStars(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
     for (final p in _starParts) {
-      final alpha = 0.20 + 0.50 * ((math.sin(t * math.pi * 2 + p.ph) + 1) / 2);
+      final alpha = 0.10 + 0.25 * ((math.sin(t * math.pi * 2 + p.ph) + 1) / 2);
       paint.color = Colors.white.withValues(alpha: alpha);
       canvas.drawCircle(Offset(p.x * size.width, p.y0 * size.height), 1.5, paint);
     }
@@ -188,11 +188,11 @@ class _WeatherPainter extends CustomPainter {
     for (int i = 0; i < _cloudParts.length; i++) {
       final p = _cloudParts[i];
       // Each cloud drifts across the width over ~1 full bgT cycle at its own speed.
-      final xNorm = (p.x + bgT * (0.08 + p.spd * 0.04)) % 1.2 - 0.1;
+      final xNorm = (p.x + bgT * (0.04 + p.spd * 0.02)) % 1.2 - 0.1;
       final y = p.y0 * size.height;
       final w = size.width * (0.25 + p.sz * 0.06);
       final h = w * 0.45;
-      final alpha = 0.07 + 0.05 * math.sin(bgT * math.pi * 2 + p.ph);
+      final alpha = 0.035 + 0.025 * math.sin(bgT * math.pi * 2 + p.ph);
       paint.color = Colors.white.withValues(alpha: alpha);
 
       // Draw a simple cloud: one large ellipse + two smaller overlapping ones.
@@ -291,32 +291,36 @@ class _WeatherWidgetState extends State<WeatherWidget>
     final code = _weatherData?.weatherCode ?? 0;
     final day = _isDay;
 
+    List<Color> rawGrads;
     // ── Night branch — anchored to nightBg/dawnStart family ───────
     if (!day) {
       // Cloudy night: slightly lifted indigo
-      if (code >= 1  && code <= 3)  return [AppTokens.nightBg, const Color(0xFF1A1640)];
+      if (code >= 1  && code <= 3)  rawGrads = [AppTokens.nightBg, const Color(0xFF1A1640)];
       // Rainy night: deep indigo, hint of violet-blue
-      if (code >= 51 && code <= 82) return [const Color(0xFF080D20), const Color(0xFF130E30)];
+      else if (code >= 51 && code <= 82) rawGrads = [const Color(0xFF080D20), const Color(0xFF130E30)];
       // Stormy night: near-black indigo
-      if (code >= 95)               return [const Color(0xFF05060F), const Color(0xFF0D0A1E)];
+      else if (code >= 95)               rawGrads = [const Color(0xFF05060F), const Color(0xFF0D0A1E)];
       // Clear / foggy night: stock nightBg with a violet whisper
-      return [AppTokens.nightBg, const Color(0xFF1E1340)];
+      else rawGrads = [AppTokens.nightBg, const Color(0xFF1E1340)];
+    } else {
+      // ── Day branch — routed through the warm palette ──────────────
+      // Clear day: sunrise amber-gold
+      if (code == 0)                  rawGrads = [AppTokens.dawnEnd, AppTokens.signal];
+      // Cloudy / overcast day: desaturated plum-grey (dawnStart family, muted)
+      else if (code >= 1  && code <= 3)    rawGrads = [const Color(0xFF4A3660), const Color(0xFF7B6680)];
+      // Foggy day: hazy lavender between dawnStart and daylightBg
+      else if (code >= 45 && code <= 48)   rawGrads = [const Color(0xFF5C4870), const Color(0xFF9E8DA8)];
+      // Rainy day: deep indigo with a cool undertone (nightBg territory, not navy)
+      else if (code >= 51 && code <= 82)   rawGrads = [const Color(0xFF1A1035), const Color(0xFF362860)];
+      // Snowy day: soft warm lavender — daylightBg tinted with dawnStart, not ice-blue
+      else if (code >= 71 && code <= 77)   rawGrads = [const Color(0xFFD4C0E4), const Color(0xFFEDE6F5)];
+      // Stormy day: full dawnStart drama
+      else if (code >= 95)                 rawGrads = [AppTokens.dawnStart, const Color(0xFF1A1035)];
+      else rawGrads = [AppTokens.dawnStart, AppTokens.dawnEnd];
     }
-
-    // ── Day branch — routed through the warm palette ──────────────
-    // Clear day: sunrise amber-gold
-    if (code == 0)                  return [AppTokens.dawnEnd, AppTokens.signal];
-    // Cloudy / overcast day: desaturated plum-grey (dawnStart family, muted)
-    if (code >= 1  && code <= 3)    return [const Color(0xFF4A3660), const Color(0xFF7B6680)];
-    // Foggy day: hazy lavender between dawnStart and daylightBg
-    if (code >= 45 && code <= 48)   return [const Color(0xFF5C4870), const Color(0xFF9E8DA8)];
-    // Rainy day: deep indigo with a cool undertone (nightBg territory, not navy)
-    if (code >= 51 && code <= 82)   return [const Color(0xFF1A1035), const Color(0xFF362860)];
-    // Snowy day: soft warm lavender — daylightBg tinted with dawnStart, not ice-blue
-    if (code >= 71 && code <= 77)   return [const Color(0xFFD4C0E4), const Color(0xFFEDE6F5)];
-    // Stormy day: full dawnStart drama
-    if (code >= 95)                 return [AppTokens.dawnStart, const Color(0xFF1A1035)];
-    return [AppTokens.dawnStart, AppTokens.dawnEnd];
+    
+    // Desaturate gradients by mixing 35% with a neutral dark grey to calm them down
+    return rawGrads.map((c) => Color.lerp(c, const Color(0xFF2A2A35), 0.35)!).toList();
   }
 
   ({IconData icon, Color color}) _icon(int code, bool isDay) {
@@ -352,7 +356,7 @@ class _WeatherWidgetState extends State<WeatherWidget>
         width: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: grads, begin: Alignment.topLeft, end: Alignment.bottomRight),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
         ),
         child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white30)),
       );
@@ -372,7 +376,7 @@ class _WeatherWidgetState extends State<WeatherWidget>
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             gradient: LinearGradient(colors: grads, begin: Alignment.topLeft, end: Alignment.bottomRight),
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(AppTokens.radiusLg),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,7 +385,7 @@ class _WeatherWidgetState extends State<WeatherWidget>
               const SizedBox(height: 8),
               Text("Use location for:\n✓ weather\n✓ sunrise\n✓ daily conditions", style: AppTokens.body.copyWith(color: Colors.white70)),
               const SizedBox(height: 12),
-              Text("Tap to allow →", style: AppTokens.body.copyWith(color: Colors.amberAccent, fontWeight: FontWeight.bold)),
+              Text("Tap to allow →", style: AppTokens.body.copyWith(color: AppTokens.signal, fontWeight: FontWeight.bold)),
             ],
           ),
         ),
@@ -409,18 +413,18 @@ class _WeatherWidgetState extends State<WeatherWidget>
         return Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(AppTokens.radiusLg),
             gradient: LinearGradient(
               colors: grads,
               begin: Alignment.topLeft,
               end: Alignment(1.0, _bgController.value * 2 - 1.0),
             ),
             boxShadow: [
-              BoxShadow(color: grads.last.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 6)),
+              BoxShadow(color: grads.last.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(AppTokens.radiusLg),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
               child: Stack(
@@ -438,7 +442,7 @@ class _WeatherWidgetState extends State<WeatherWidget>
 
                   // ── Text / content layer ───────────────────────
                   Padding(
-                    padding: const EdgeInsets.all(24.0),
+                    padding: const EdgeInsets.all(16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

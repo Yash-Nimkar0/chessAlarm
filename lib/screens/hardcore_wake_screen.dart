@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
+import '../theme/design_tokens.dart';
 
 class HardcoreWakeScreen extends StatefulWidget {
   final DateTime alarmTime;
@@ -94,7 +95,7 @@ class _HardcoreWakeScreenState extends State<HardcoreWakeScreen> {
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(AppTokens.radiusLg),
                   border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
                 ),
                 child: Column(

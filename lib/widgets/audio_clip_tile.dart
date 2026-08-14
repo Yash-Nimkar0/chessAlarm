@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart' hide AudioEvent;
 import 'package:intl/intl.dart';
 import '../services/sleep_service.dart';
+import '../theme/design_tokens.dart';
 
 class AudioClipTile extends StatefulWidget {
   final AudioEvent event;
@@ -91,7 +92,7 @@ class _AudioClipTileState extends State<AudioClipTile> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

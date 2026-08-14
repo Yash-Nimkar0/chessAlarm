@@ -3,6 +3,7 @@ import 'package:haptic_feedback/haptic_feedback.dart';
 import 'dart:math';
 
 import '../../models/mission_settings.dart';
+import '../../theme/design_tokens.dart';
 
 class ColorTilesMission extends StatefulWidget {
   final VoidCallback onSuccess;
@@ -158,7 +159,7 @@ class _ColorTilesMissionState extends State<ColorTilesMission> {
                   duration: const Duration(milliseconds: 200),
                   decoration: BoxDecoration(
                     color: isSelected ? _gridColors[index].withValues(alpha: 0.3) : _gridColors[index],
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                     border: isSelected ? Border.all(color: colorScheme.onSurface.withValues(alpha: 0.54), width: 2) : null,
                   ),
                   child: Center(

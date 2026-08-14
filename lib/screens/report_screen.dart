@@ -99,7 +99,7 @@ class _ReportScreenState extends State<ReportScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
         ),
         child: Text(
           text,
@@ -184,7 +184,7 @@ class _ReportScreenState extends State<ReportScreen> {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               gradient: LinearGradient(colors: [AppTokens.signal, AppTokens.signalDeep]),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppTokens.radiusLg),
               boxShadow: [
                 BoxShadow(color: AppTokens.signal.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
               ],
@@ -242,7 +242,7 @@ class _ReportScreenState extends State<ReportScreen> {
               margin: const EdgeInsets.only(bottom: 24),
               decoration: BoxDecoration(
                 color: Colors.greenAccent.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(AppTokens.radiusLg),
                 border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.3)),
               ),
               child: Column(
@@ -300,7 +300,7 @@ class _ReportScreenState extends State<ReportScreen> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
           border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
         ),
         child: Column(
@@ -324,7 +324,7 @@ class _ReportScreenState extends State<ReportScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.greenAccent.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
         border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.3)),
       ),
       child: Column(
@@ -353,7 +353,7 @@ class _ReportScreenState extends State<ReportScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

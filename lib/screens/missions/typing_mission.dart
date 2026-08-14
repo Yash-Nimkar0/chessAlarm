@@ -3,6 +3,7 @@ import 'package:haptic_feedback/haptic_feedback.dart';
 
 import '../../models/mission_settings.dart';
 import '../../models/default_quotes.dart';
+import '../../theme/design_tokens.dart';
 
 class TypingMission extends StatefulWidget {
   final VoidCallback onSuccess;
@@ -91,7 +92,7 @@ class _TypingMissionState extends State<TypingMission> {
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: colorScheme.onSurface.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppTokens.radiusSm),
             border: Border.all(color: Colors.indigoAccent.withValues(alpha: 0.3)),
           ),
           child: Text(
@@ -117,11 +118,11 @@ class _TypingMissionState extends State<TypingMission> {
             filled: true,
             fillColor: colorScheme.surfaceContainerHighest,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
               borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
               borderSide: const BorderSide(color: Colors.indigoAccent, width: 2),
             ),
           ),

@@ -341,7 +341,7 @@ class _MorningScreenState extends State<MorningScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
           boxShadow: [
             BoxShadow(color: Colors.purple.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4)),
           ],
@@ -357,7 +357,7 @@ class _MorningScreenState extends State<MorningScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                   ),
                   child: const Text('🌟 Early Riser', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
@@ -392,7 +392,7 @@ class _MorningScreenState extends State<MorningScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
           border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
         ),
         child: Column(
@@ -402,7 +402,7 @@ class _MorningScreenState extends State<MorningScreen> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppTokens.radiusSm),
               ),
               child: Icon(icon, color: color, size: 24),
             ),
@@ -428,7 +428,7 @@ class _MorningScreenState extends State<MorningScreen> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.indigo.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
           border: Border.all(color: Colors.indigoAccent.withValues(alpha: 0.3)),
         ),
         child: Column(
@@ -483,7 +483,7 @@ class _MorningScreenState extends State<MorningScreen> {
             width: double.infinity,
             decoration: BoxDecoration(
               color: Colors.greenAccent.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
             ),
             child: const Center(
               child: Text('↑ 22% faster today', style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 16)),
@@ -502,7 +502,7 @@ class _MorningScreenState extends State<MorningScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.purpleAccent.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
         border: Border.all(color: Colors.purpleAccent.withValues(alpha: 0.3)),
       ),
       child: Column(
@@ -591,7 +591,7 @@ class _MorningScreenState extends State<MorningScreen> {
               backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
               foregroundColor: Theme.of(context).colorScheme.onSurface,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm)),
             ),
             child: const Text('Apply Today'),
           ),
@@ -643,7 +643,7 @@ class _MorningScreenState extends State<MorningScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -668,7 +668,7 @@ class _MorningScreenState extends State<MorningScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
         border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
       ),
       child: Column(
@@ -732,7 +732,7 @@ class _MorningScreenState extends State<MorningScreen> {
                   backgroundColor: Theme.of(context).colorScheme.onSurface,
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm)),
                 ),
                 child: const Text('Start Next Week', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
@@ -810,7 +810,7 @@ class _MorningScreenState extends State<MorningScreen> {
           foregroundColor: Theme.of(context).colorScheme.onSurface,
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
           alignment: Alignment.centerLeft,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm)),
         ),
         child: Row(
           children: [

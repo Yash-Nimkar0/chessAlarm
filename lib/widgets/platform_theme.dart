@@ -69,14 +69,14 @@ class PlatformCard extends StatelessWidget {
       Widget cardContent = Container(
         margin: margin,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: Container(
               padding: padding,
               decoration: BoxDecoration(
                 color: Theme.of(context).cardTheme.color ?? Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(AppTokens.radiusLg),
                 border: Border.all(
                   color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                   width: 1,
@@ -113,7 +113,7 @@ class PlatformCard extends StatelessWidget {
         color: Theme.of(context).cardTheme.color ?? Colors.white.withValues(alpha: 0.05),
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
           side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1), width: 1),
         ),
         child: Padding(
@@ -125,7 +125,7 @@ class PlatformCard extends StatelessWidget {
       if (onTap != null) {
         return InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
           child: cardContent,
         );
       }
@@ -156,7 +156,7 @@ class PlatformButton extends StatelessWidget {
       return GestureDetector(
         onTap: onPressed,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
@@ -167,7 +167,7 @@ class PlatformButton extends StatelessWidget {
                     : (onPressed != null 
                         ? AppTokens.signal.withValues(alpha: 0.15) 
                         : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(AppTokens.radiusLg),
                 border: Border.all(color: backgroundColor ?? AppTokens.signal.withValues(alpha: 0.2)),
               ),
               child: Row(

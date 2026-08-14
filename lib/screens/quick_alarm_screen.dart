@@ -12,6 +12,7 @@ import 'missions/shake_config_screen.dart';
 import 'missions/default_config_screen.dart';
 import 'missions/qr_config_screen.dart';
 import 'missions/steps_config_screen.dart';
+import '../theme/design_tokens.dart';
 
 class QuickAlarmScreen extends StatefulWidget {
   const QuickAlarmScreen({Key? key}) : super(key: key);
@@ -316,7 +317,7 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
       style: ElevatedButton.styleFrom(
         backgroundColor: colorScheme.surfaceContainerHighest,
         foregroundColor: colorScheme.onSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm)),
         padding: const EdgeInsets.symmetric(vertical: 20),
       ),
       onPressed: () => _addTime(duration),
@@ -374,7 +375,7 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 32),
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(AppTokens.radiusLg),
                   ),
                   child: Column(
                     children: [
@@ -426,7 +427,7 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                 OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm)),
                   ),
                   icon: const Icon(Icons.access_time),
                   label: const Text("Set Exact Time"),
@@ -519,7 +520,7 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                     backgroundColor: colorScheme.primary,
                     foregroundColor: colorScheme.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusLg)),
                   ),
                   child: const Text('START QUICK ALARM', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                 ),

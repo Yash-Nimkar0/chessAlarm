@@ -8,6 +8,7 @@ import '../models/mission_settings.dart';
 import '../services/weather_service.dart';
 import '../services/preferences_service.dart';
 import '../utils/greeting_utils.dart';
+import '../theme/design_tokens.dart';
 
 class SlideToStopScreen extends StatefulWidget {
   final AlarmSettings alarmSettings;
@@ -108,7 +109,7 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm))
                     ),
                     child: const Text("Done", style: TextStyle(fontSize: 18)),
                   ),

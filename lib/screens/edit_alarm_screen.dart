@@ -14,6 +14,7 @@ import 'missions/shake_config_screen.dart';
 import 'missions/default_config_screen.dart';
 import 'missions/qr_config_screen.dart';
 import 'missions/steps_config_screen.dart';
+import '../theme/design_tokens.dart';
 
 class EditAlarmScreen extends StatefulWidget {
   final AlarmSettings? alarmSettings;
@@ -404,7 +405,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                       height: 220,
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(32),
+                        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
                       ),
                       child: CupertinoTheme(
                         data: CupertinoThemeData(

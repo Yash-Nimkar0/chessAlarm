@@ -170,7 +170,7 @@ class _WakelyAppState extends State<WakelyApp> {
             cardTheme: CardThemeData(
               margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(AppTokens.radiusLg),
               ),
               elevation: 0,
               color: Colors.black.withValues(alpha: 0.05),
@@ -178,7 +178,7 @@ class _WakelyAppState extends State<WakelyApp> {
             filledButtonTheme: FilledButtonThemeData(
               style: FilledButton.styleFrom(
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppTokens.radiusLg),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
               ),
@@ -198,7 +198,7 @@ class _WakelyAppState extends State<WakelyApp> {
             cardTheme: CardThemeData(
               margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(AppTokens.radiusLg),
               ),
               elevation: 0,
               color: Colors.white.withValues(alpha: 0.05),
@@ -206,7 +206,7 @@ class _WakelyAppState extends State<WakelyApp> {
             filledButtonTheme: FilledButtonThemeData(
               style: FilledButton.styleFrom(
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppTokens.radiusLg),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
               ),

@@ -142,7 +142,7 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary, 
                         foregroundColor: Theme.of(context).colorScheme.onPrimary, 
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm))
                       ),
                       child: const Text("Done", style: TextStyle(fontSize: 18)),
                     ),
@@ -233,7 +233,7 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm))
                       ),
                       child: const Text("Done", style: TextStyle(fontSize: 18)),
                     ),
@@ -302,7 +302,7 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.primary,
             padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusLg)),
           ),
           child: Text(
             'Stop Alarm',

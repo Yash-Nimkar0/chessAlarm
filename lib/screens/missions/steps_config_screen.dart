@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import '../../models/mission_settings.dart';
+import '../../theme/design_tokens.dart';
 
 class StepsConfigScreen extends StatefulWidget {
   final MissionSettings initialSettings;
@@ -108,7 +109,7 @@ class _StepsConfigScreenState extends State<StepsConfigScreen> {
                 onPressed: _save,
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm)),
                 ),
                 child: const Text('Save Mission', style: TextStyle(fontSize: 18)),
               ),

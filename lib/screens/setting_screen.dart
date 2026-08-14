@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../widgets/platform_theme.dart';
+import '../theme/design_tokens.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({Key? key}) : super(key: key);
@@ -341,7 +342,7 @@ class _SettingScreenState extends State<SettingScreen> {
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
       ),
       child: Material(
         type: MaterialType.transparency,
