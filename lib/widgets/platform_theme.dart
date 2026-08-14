@@ -23,7 +23,7 @@ class PlatformScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     if (Platform.isIOS) {
       return Scaffold(
-        backgroundColor: AppTokens.nightBg,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         extendBodyBehindAppBar: true,
         appBar: appBar,
         floatingActionButton: floatingActionButton,
@@ -42,7 +42,7 @@ class PlatformScaffold extends StatelessWidget {
         floatingActionButton: floatingActionButton,
         floatingActionButtonLocation: floatingActionButtonLocation,
         bottomNavigationBar: bottomNavigationBar,
-        backgroundColor: AppTokens.nightBg,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(child: body),
       );
     }
@@ -75,10 +75,10 @@ class PlatformCard extends StatelessWidget {
             child: Container(
               padding: padding,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
+                color: Theme.of(context).cardTheme.color ?? Colors.white.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                   width: 1,
                 ),
                 boxShadow: [
@@ -110,11 +110,11 @@ class PlatformCard extends StatelessWidget {
       // Android / Default
       Widget cardContent = Card(
         margin: margin,
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Theme.of(context).cardTheme.color ?? Colors.white.withValues(alpha: 0.05),
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 1),
+          side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1), width: 1),
         ),
         child: Padding(
           padding: padding,
@@ -166,7 +166,7 @@ class PlatformButton extends StatelessWidget {
                     ? backgroundColor!.withValues(alpha: 0.4)
                     : (onPressed != null 
                         ? AppTokens.signal.withValues(alpha: 0.15) 
-                        : Colors.white.withValues(alpha: 0.05)),
+                        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: backgroundColor ?? AppTokens.signal.withValues(alpha: 0.2)),
               ),
@@ -180,7 +180,7 @@ class PlatformButton extends StatelessWidget {
                   ],
                   DefaultTextStyle(
                     style: AppTokens.body.copyWith(
-                      color: onPressed != null ? Colors.white : Colors.white54,
+                      color: onPressed != null ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
@@ -206,7 +206,7 @@ class PlatformButton extends StatelessWidget {
         onPressed: onPressed,
         style: FilledButton.styleFrom(
           backgroundColor: backgroundColor ?? AppTokens.signal.withValues(alpha: 0.2),
-          foregroundColor: Colors.white,
+          foregroundColor: Theme.of(context).colorScheme.onSurface,
         ),
         child: DefaultTextStyle(
           style: AppTokens.body.copyWith(fontWeight: FontWeight.w600, fontSize: 16),
