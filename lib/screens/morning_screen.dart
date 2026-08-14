@@ -6,6 +6,7 @@ import '../widgets/weather_widget.dart';
 import '../widgets/platform_theme.dart';
 import '../services/elo_service.dart';
 import '../services/analytics_service.dart';
+import '../theme/design_tokens.dart';
 
 import 'package:haptic_feedback/haptic_feedback.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -241,7 +242,7 @@ class _MorningScreenState extends State<MorningScreen> {
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
-                Text('$_morningsWon', style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                Text('$_morningsWon', style: AppTokens.display.copyWith(fontSize: 48, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                 const SizedBox(width: 8),
                 const Text('Mornings won', style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 16)),
               ],
@@ -363,12 +364,7 @@ class _MorningScreenState extends State<MorningScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            const Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text('85', style: TextStyle(color: Colors.white, fontSize: 56, fontWeight: FontWeight.bold, height: 1.0)),
-              ],
-            ),
+            Text('85', style: AppTokens.display.copyWith(color: Colors.white, fontSize: 56, fontWeight: FontWeight.bold, height: 1.0)),
             const SizedBox(height: 16),
             Row(
               children: [

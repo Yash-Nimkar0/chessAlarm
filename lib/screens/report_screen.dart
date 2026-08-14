@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import '../widgets/platform_theme.dart';
 import '../widgets/audio_clip_tile.dart';
 import '../services/sleep_service.dart';
 import '../services/performance_insight_service.dart';
 import '../services/elo_service.dart';
+import '../theme/design_tokens.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({Key? key}) : super(key: key);
@@ -45,7 +46,8 @@ class _ReportScreenState extends State<ReportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PlatformScaffold(
+    return Scaffold(
+      backgroundColor: AppTokens.daylightBg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -53,16 +55,16 @@ class _ReportScreenState extends State<ReportScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              Text('Report', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+              Text('Report', style: AppTokens.display.copyWith(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87)),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.chevron_left, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  Icon(Icons.chevron_left, color: Colors.black54),
                   const SizedBox(width: 8),
-                  Text('This week', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
+                  Text('This week', style: AppTokens.body.copyWith(color: Colors.black87, fontSize: 16)),
                   const SizedBox(width: 8),
-                  Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  Icon(Icons.chevron_right, color: Colors.black54),
                 ],
               ),
               const SizedBox(height: 24),
@@ -96,13 +98,13 @@ class _ReportScreenState extends State<ReportScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          color: isSelected ? Colors.black87 : Colors.black12,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           text,
-          style: TextStyle(
-            color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface,
+          style: AppTokens.body.copyWith(
+            color: isSelected ? Colors.white : Colors.black87,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -131,10 +133,10 @@ class _ReportScreenState extends State<ReportScreen> {
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
-                      Text('$totalPuzzles', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 36, fontWeight: FontWeight.bold)),
+                      Text('$totalPuzzles', style: AppTokens.display.copyWith(color: Colors.black87, fontSize: 36, fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  Text('Missions Beaten', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
+                  Text('Missions Beaten', style: AppTokens.body.copyWith(color: Colors.black54)),
                 ],
               ),
             ],
@@ -157,14 +159,22 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Widget _buildSleepReport() {
-
     if (_sleepHistory.isEmpty) {
-      return Center(child: Text('No sleep history yet.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)));
+      return Center(child: Text('No sleep history yet.', style: AppTokens.body.copyWith(color: Colors.black54)));
     }
     
     final lastSession = _sleepHistory.last;
-    final durationHours = lastSession.duration.inMinutes / 60.0;
     
+    // Generate dummy fl_chart data based on sleep history if available
+    List<FlSpot> spots = [];
+    if (_sleepHistory.length >= 2) {
+      for (int i = 0; i < _sleepHistory.length; i++) {
+        spots.add(FlSpot(i.toDouble(), _sleepHistory[i].score.toDouble()));
+      }
+    } else {
+      spots = const [FlSpot(0, 60), FlSpot(1, 80), FlSpot(2, 75), FlSpot(3, 90), FlSpot(4, 85)];
+    }
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -173,13 +183,41 @@ class _ReportScreenState extends State<ReportScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Colors.indigo, Colors.deepPurple]),
+              gradient: LinearGradient(colors: [AppTokens.signal, AppTokens.signalDeep]),
               borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(color: AppTokens.signal.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Your Night 💤', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                Text('Sleep Consistency', style: AppTokens.body.copyWith(color: Colors.white70, fontSize: 16)),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 120,
+                  child: LineChart(
+                    LineChartData(
+                      gridData: FlGridData(show: false),
+                      titlesData: FlTitlesData(show: false),
+                      borderData: FlBorderData(show: false),
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: spots,
+                          isCurved: true,
+                          color: Colors.white,
+                          barWidth: 4,
+                          isStrokeCapRound: true,
+                          dotData: FlDotData(show: false),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            color: Colors.white.withValues(alpha: 0.2),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -187,15 +225,8 @@ class _ReportScreenState extends State<ReportScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('${durationHours.floor()}h ${(durationHours * 60 % 60).toInt()}m', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
-                        const Text('Sleep', style: TextStyle(color: Colors.white70)),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('${lastSession.score}', style: const TextStyle(color: Colors.greenAccent, fontSize: 32, fontWeight: FontWeight.bold)),
-                        const Text('Recovery', style: TextStyle(color: Colors.white70)),
+                        Text('${lastSession.score}', style: AppTokens.display.copyWith(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+                        Text('Last Night Score', style: AppTokens.body.copyWith(color: Colors.white70)),
                       ],
                     ),
                   ],

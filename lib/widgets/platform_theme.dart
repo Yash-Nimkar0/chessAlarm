@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../theme/design_tokens.dart';
 
 class PlatformScaffold extends StatelessWidget {
   final Widget body;
@@ -20,29 +21,15 @@ class PlatformScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    
     if (Platform.isIOS) {
       return Scaffold(
+        backgroundColor: AppTokens.nightBg,
         extendBodyBehindAppBar: true,
         appBar: appBar,
         floatingActionButton: floatingActionButton,
         floatingActionButtonLocation: floatingActionButtonLocation,
         body: Stack(
           children: [
-            // Use a dark mesh gradient image or safe soft gradient instead of extreme BackdropFilter blur
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isDark 
-                    ? [const Color(0xFF1E1E2C), const Color(0xFF121212), const Color(0xFF2B1B40)]
-                    : [const Color(0xFFE8EAF6), const Color(0xFFFFFFFF), const Color(0xFFD1C4E9)],
-                ),
-              ),
-            ),
-            // Actual Body
             SafeArea(child: body),
           ],
         ),
@@ -55,7 +42,7 @@ class PlatformScaffold extends StatelessWidget {
         floatingActionButton: floatingActionButton,
         floatingActionButtonLocation: floatingActionButtonLocation,
         bottomNavigationBar: bottomNavigationBar,
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: AppTokens.nightBg,
         body: SafeArea(child: body),
       );
     }
@@ -88,10 +75,10 @@ class PlatformCard extends StatelessWidget {
             child: Container(
               padding: padding,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                color: Colors.white.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
+                  color: Colors.white.withValues(alpha: 0.1),
                   width: 1,
                 ),
                 boxShadow: [
@@ -123,9 +110,12 @@ class PlatformCard extends StatelessWidget {
       // Android / Default
       Widget cardContent = Card(
         margin: margin,
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        color: Colors.white.withValues(alpha: 0.05),
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 1),
+        ),
         child: Padding(
           padding: padding,
           child: child,
@@ -175,10 +165,10 @@ class PlatformButton extends StatelessWidget {
                 color: backgroundColor != null 
                     ? backgroundColor!.withValues(alpha: 0.4)
                     : (onPressed != null 
-                        ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15) 
-                        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
+                        ? AppTokens.signal.withValues(alpha: 0.15) 
+                        : Colors.white.withValues(alpha: 0.05)),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
+                border: Border.all(color: backgroundColor ?? AppTokens.signal.withValues(alpha: 0.2)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -189,8 +179,8 @@ class PlatformButton extends StatelessWidget {
                     const SizedBox(width: 8),
                   ],
                   DefaultTextStyle(
-                    style: TextStyle(
-                      color: onPressed != null ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
+                    style: AppTokens.body.copyWith(
+                      color: onPressed != null ? Colors.white : Colors.white54,
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
@@ -214,8 +204,14 @@ class PlatformButton extends StatelessWidget {
       }
       return FilledButton(
         onPressed: onPressed,
-        style: backgroundColor != null ? FilledButton.styleFrom(backgroundColor: backgroundColor) : null,
-        child: child,
+        style: FilledButton.styleFrom(
+          backgroundColor: backgroundColor ?? AppTokens.signal.withValues(alpha: 0.2),
+          foregroundColor: Colors.white,
+        ),
+        child: DefaultTextStyle(
+          style: AppTokens.body.copyWith(fontWeight: FontWeight.w600, fontSize: 16),
+          child: child,
+        ),
       );
     }
   }

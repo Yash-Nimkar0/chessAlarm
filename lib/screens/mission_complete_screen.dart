@@ -54,8 +54,22 @@ class _MissionCompleteScreenState extends State<MissionCompleteScreen> with Sing
       Future.delayed(const Duration(seconds: 3), () {
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (context) => const MainScreen(initialIndex: 2), // 2 is the Morning Screen
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => const MainScreen(initialIndex: 3), // Report Screen
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.easeOutCubic;
+
+                var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                var offsetAnimation = animation.drive(tween);
+
+                return SlideTransition(
+                  position: offsetAnimation,
+                  child: child,
+                );
+              },
+              transitionDuration: const Duration(milliseconds: 800),
             ),
             (route) => false,
           );

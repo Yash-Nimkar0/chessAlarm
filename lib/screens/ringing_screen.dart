@@ -13,6 +13,7 @@ import 'missions/shake_mission.dart';
 import 'missions/qr_mission.dart';
 import 'missions/steps_mission.dart';
 import 'mission_complete_screen.dart';
+import '../theme/design_tokens.dart';
 import '../widgets/platform_theme.dart';
 import '../services/analytics_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,7 +28,7 @@ class RingingScreen extends StatefulWidget {
   State<RingingScreen> createState() => _RingingScreenState();
 }
 
-class _RingingScreenState extends State<RingingScreen> with SingleTickerProviderStateMixin {
+class _RingingScreenState extends State<RingingScreen> with TickerProviderStateMixin {
   bool _isLoading = true;
   bool _isProcessing = false;
   bool _isSuccess = false;
@@ -35,6 +36,9 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
   late AnimationController _pulseController;
   late Animation<Color?> _pulseAnimation;
   final bool _isFlashingRed = false;
+
+  late AnimationController _sunriseController;
+  late Animation<Color?> _skyAnimation;
 
   late MissionSettings _missionSettings;
   late DateTime _startTime;
@@ -54,6 +58,24 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
       begin: const Color(0xFF1A0000),
       end: const Color(0xFF4A0000),
     ).animate(_pulseController);
+
+    _sunriseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 30),
+    );
+    _skyAnimation = TweenSequence<Color?>([
+      TweenSequenceItem(weight: 1.0, tween: ColorTween(begin: AppTokens.nightBg, end: AppTokens.dawnStart)),
+      TweenSequenceItem(weight: 1.0, tween: ColorTween(begin: AppTokens.dawnStart, end: AppTokens.dawnEnd)),
+    ]).animate(_sunriseController);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (MediaQuery.disableAnimationsOf(context)) {
+        _sunriseController.value = 1.0;
+      } else {
+        _sunriseController.forward();
+      }
+    });
 
     _loadSkips();
 
@@ -239,6 +261,7 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
   @override
   void dispose() {
     _pulseController.dispose();
+    _sunriseController.dispose();
     super.dispose();
   }
 
@@ -246,9 +269,9 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: AppTokens.nightBg,
         body: Center(
-          child: CircularProgressIndicator(color: Colors.redAccent),
+          child: CircularProgressIndicator(color: AppTokens.signal),
         ),
       );
     }
@@ -293,8 +316,9 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
       canPop: _isSuccess,
       child: PlatformScaffold(
         body: AnimatedBuilder(
-          animation: _pulseAnimation,
+          animation: Listenable.merge([_pulseAnimation, _sunriseController]),
           builder: (context, child) {
+            final skyColor = _skyAnimation.value ?? AppTokens.nightBg;
             return Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -305,8 +329,8 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
                         ? Colors.green.withValues(alpha: 0.4) 
                         : _isFlashingRed 
                             ? Colors.red.withValues(alpha: 0.8) 
-                            : (_pulseAnimation.value ?? Colors.black).withValues(alpha: Platform.isIOS ? 0.3 : 1.0),
-                    Colors.black.withValues(alpha: Platform.isIOS ? 0.2 : 1.0),
+                            : skyColor,
+                    AppTokens.nightBg,
                   ],
                 )
               ),

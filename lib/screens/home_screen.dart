@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../models/mission_settings.dart';
 import 'edit_alarm_screen.dart';
 import 'quick_alarm_screen.dart';
+import '../theme/design_tokens.dart';
 
 import '../widgets/platform_theme.dart';
 
@@ -274,7 +275,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                   child: Text(
                     _timeUntilNextAlarm,
-                    style: TextStyle(
+                    style: AppTokens.display.copyWith(
                       color: colorScheme.onSurfaceVariant,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -327,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                     children: [
                                       Text(
                                         DateFormat('h:mm a').format(alarm.dateTime),
-                                        style: TextStyle(
+                                        style: AppTokens.display.copyWith(
                                           fontSize: 36,
                                           fontWeight: FontWeight.w900,
                                           color: locked ? colorScheme.onSurface.withValues(alpha: 0.5) : colorScheme.onSurface,

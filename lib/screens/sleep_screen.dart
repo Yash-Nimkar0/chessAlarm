@@ -9,6 +9,7 @@ import '../services/sleep_service.dart';
 import '../services/elo_service.dart';
 import '../services/weather_service.dart';
 import '../models/mission_settings.dart';
+import '../theme/design_tokens.dart';
 
 class SleepScreen extends StatefulWidget {
   const SleepScreen({Key? key}) : super(key: key);
@@ -97,6 +98,11 @@ class _SleepScreenState extends State<SleepScreen> {
     String ampm = time.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$min $ampm';
   }
+
+  String _formatTimeLeft(Duration duration) {
+    if (duration.isNegative) return "Past bedtime";
+    return '${duration.inHours}h ${duration.inMinutes % 60}m';
+  }
   
   Widget _buildTomorrowPreview() {
      if (_weatherData == null || _weatherData!.hourly.isEmpty) return const SizedBox.shrink();
@@ -184,9 +190,8 @@ class _SleepScreenState extends State<SleepScreen> {
                       textBaseline: TextBaseline.alphabetic,
                       children: [
                         Text(
-                          _nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now()).isNegative ? "Past bedtime" :
-                          '${_nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now()).inHours}h ${_nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now()).inMinutes % 60}m',
-                          style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: _nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now()).isNegative ? Colors.orangeAccent : Theme.of(context).colorScheme.onSurface),
+                          _formatTimeLeft(_nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now())),
+                          style: AppTokens.display.copyWith(fontSize: 48, fontWeight: FontWeight.bold, color: _nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now()).isNegative ? Colors.orangeAccent : Theme.of(context).colorScheme.onSurface),
                         ),
                         const SizedBox(width: 12),
                         const Text(
@@ -208,7 +213,7 @@ class _SleepScreenState extends State<SleepScreen> {
                       crossAxisAlignment: CrossAxisAlignment.baseline,
                       textBaseline: TextBaseline.alphabetic,
                       children: [
-                        Text(_formatTime(_nextAlarm!.dateTime), style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                        Text(_formatTime(_nextAlarm!.dateTime), style: AppTokens.display.copyWith(fontSize: 48, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                         const SizedBox(width: 12),
                         Text(
                           'Quick Alarm',
