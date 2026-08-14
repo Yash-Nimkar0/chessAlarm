@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/mission_settings.dart';
 import 'edit_alarm_screen.dart';
+import 'quick_alarm_screen.dart';
 
 import '../widgets/platform_theme.dart';
 
@@ -154,11 +155,28 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.alarm, color: Colors.blueAccent, size: 32),
-                title: Text('⏰ Quick Alarm', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
-                subtitle: Text('Simple alarms for reminders,\nnaps, and daily tasks.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                title: Text('⏰ Alarm', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
+                subtitle: Text('Standard alarm for daily wake ups.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 onTap: () {
                   Navigator.pop(context);
                   _openEditScreen(null, false);
+                },
+              ),
+              Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), height: 32),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.timer, color: Colors.tealAccent, size: 32),
+                title: Text('⏱️ Quick Alarm', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
+                subtitle: Text('Fast timer for naps or reminders.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final res = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const QuickAlarmScreen(),
+                    ),
+                  );
+                  if (res == true) loadAlarms();
                 },
               ),
               const SizedBox(height: 24),

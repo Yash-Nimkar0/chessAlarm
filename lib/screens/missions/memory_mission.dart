@@ -117,8 +117,9 @@ class _MemoryMissionState extends State<MemoryMission> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
           _isPlayingSequence ? 'WATCH CAREFULLY' : 'REPEAT SEQUENCE',
@@ -165,17 +166,17 @@ class _MemoryMissionState extends State<MemoryMission> {
                       width: isFlashing ? 4 : 2,
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
-        ),
-        const SizedBox(height: 60),
-        TextButton(
-          onPressed: widget.onSkip,
-          child: Text('Skip (-10 Points)', style: TextStyle(color: colorScheme.error, fontSize: 16)),
-        ),
-      ],
+          const SizedBox(height: 60),
+          TextButton(
+            onPressed: widget.onSkip,
+            child: Text('Skip (-10 Points)', style: TextStyle(color: colorScheme.error, fontSize: 16)),
+          ),
+        ],
+      ),
     );
   }
 }

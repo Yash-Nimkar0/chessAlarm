@@ -51,7 +51,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
       if (widget.alarmSettings!.payload != null) {
         _missionSettings = MissionSettings.fromJsonString(widget.alarmSettings!.payload!);
       } else {
-        _missionSettings = MissionSettings(type: widget.isWakeRoutine ? "wakeRoutine" : "quickAlarm");
+        _missionSettings = MissionSettings(type: widget.isWakeRoutine ? "wakeRoutine" : "alarm");
       }
     } else {
       selectedDateTime = DateTime.now().add(const Duration(minutes: 1));
@@ -60,7 +60,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
       vibrate = true;
       volume = 0.8;
       assetAudio = 'assets/marimba.mp3';
-      _missionSettings = MissionSettings(type: widget.isWakeRoutine ? "wakeRoutine" : "quickAlarm");
+      _missionSettings = MissionSettings(type: widget.isWakeRoutine ? "wakeRoutine" : "alarm");
     }
     
     _loadRecurringDays();

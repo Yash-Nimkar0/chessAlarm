@@ -100,7 +100,7 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     if (mounted) {
       int elapsed = DateTime.now().difference(_startTime).inSeconds;
       await SleepService.recordWakePerformance(elapsed, 0, true);
-      if (_missionSettings.type == 'quickAlarm') {
+      if (_missionSettings.type == 'quickAlarm' || _missionSettings.type == 'alarm') {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => Scaffold(
@@ -187,7 +187,7 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
         'solve_time': elapsed,
       });
       await SleepService.recordWakePerformance(elapsed, 0, false);
-      if (_missionSettings.type == 'quickAlarm') {
+      if (_missionSettings.type == 'quickAlarm' || _missionSettings.type == 'alarm') {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => Scaffold(
