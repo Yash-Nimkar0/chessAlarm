@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 
 import '../../models/mission_settings.dart';
+import '../../models/default_quotes.dart';
 
 class TypingMission extends StatefulWidget {
   final VoidCallback onSuccess;
@@ -36,13 +37,7 @@ class _TypingMissionState extends State<TypingMission> {
     if (data != null && data['enabled_quotes'] != null && (data['enabled_quotes'] as List).isNotEmpty) {
       _phrases = List<String>.from(data['enabled_quotes']);
     } else {
-      _phrases = [
-        "I will wake up and seize the day",
-        "Discipline equals freedom",
-        "The early bird catches the worm",
-        "Rise and shine, the world awaits",
-        "Success is the sum of small efforts repeated",
-      ];
+      _phrases = List<String>.from(DefaultQuotes.quotes);
     }
     
     _phrases.shuffle();

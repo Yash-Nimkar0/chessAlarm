@@ -33,7 +33,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
   late int _alarmId;
   
   // 0=Mon, 1=Tue, ..., 6=Sun
-  List<bool> _selectedDays = List.filled(7, false);
+  List<bool> _selectedDays = List.filled(7, true);
   final List<String> _dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
   @override

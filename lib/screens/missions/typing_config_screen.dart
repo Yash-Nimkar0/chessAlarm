@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import '../../models/mission_settings.dart';
 import '../../services/preferences_service.dart';
+import '../../models/default_quotes.dart';
 
 class TypingConfigScreen extends StatefulWidget {
   final MissionSettings initialSettings;
@@ -14,13 +15,7 @@ class TypingConfigScreen extends StatefulWidget {
 
 class _TypingConfigScreenState extends State<TypingConfigScreen> {
   late int _rounds;
-  final List<String> _defaultQuotes = [
-    "I will wake up and seize the day",
-    "Discipline equals freedom",
-    "The early bird catches the worm",
-    "Rise and shine, the world awaits",
-    "Success is the sum of small efforts repeated",
-  ];
+  final List<String> _defaultQuotes = DefaultQuotes.quotes;
   List<String> _customQuotes = [];
   Set<String> _enabledQuotes = {};
 
