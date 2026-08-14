@@ -46,8 +46,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTokens.daylightBg,
+    return PlatformScaffold(
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -55,16 +54,16 @@ class _ReportScreenState extends State<ReportScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              Text('Report', style: AppTokens.display.copyWith(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87)),
+              Text('Report', style: AppTokens.display.copyWith(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.chevron_left, color: Colors.black54),
+                  Icon(Icons.chevron_left, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   const SizedBox(width: 8),
-                  Text('This week', style: AppTokens.body.copyWith(color: Colors.black87, fontSize: 16)),
+                  Text('This week', style: AppTokens.body.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
                   const SizedBox(width: 8),
-                  Icon(Icons.chevron_right, color: Colors.black54),
+                  Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ],
               ),
               const SizedBox(height: 24),
@@ -98,13 +97,13 @@ class _ReportScreenState extends State<ReportScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.black87 : Colors.black12,
+          color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           text,
           style: AppTokens.body.copyWith(
-            color: isSelected ? Colors.white : Colors.black87,
+            color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -133,10 +132,10 @@ class _ReportScreenState extends State<ReportScreen> {
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
-                      Text('$totalPuzzles', style: AppTokens.display.copyWith(color: Colors.black87, fontSize: 36, fontWeight: FontWeight.bold)),
+                      Text('$totalPuzzles', style: AppTokens.display.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 36, fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  Text('Missions Beaten', style: AppTokens.body.copyWith(color: Colors.black54)),
+                  Text('Missions Beaten', style: AppTokens.body.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 ],
               ),
             ],
@@ -160,7 +159,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Widget _buildSleepReport() {
     if (_sleepHistory.isEmpty) {
-      return Center(child: Text('No sleep history yet.', style: AppTokens.body.copyWith(color: Colors.black54)));
+      return Center(child: Text('No sleep history yet.', style: AppTokens.body.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)));
     }
     
     final lastSession = _sleepHistory.last;

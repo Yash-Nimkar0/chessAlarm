@@ -135,10 +135,16 @@ class _WakelyAppState extends State<WakelyApp> {
     return ListenableBuilder(
       listenable: ThemeService(),
       builder: (context, _) {
-        final colorScheme = ColorScheme.fromSeed(
+        final darkColorScheme = ColorScheme.fromSeed(
           seedColor: AppTokens.signal,
           brightness: Brightness.dark,
           surface: AppTokens.nightBg,
+          primary: AppTokens.signal,
+        );
+        final lightColorScheme = ColorScheme.fromSeed(
+          seedColor: AppTokens.signal,
+          brightness: Brightness.light,
+          surface: AppTokens.daylightBg,
           primary: AppTokens.signal,
         );
 
@@ -146,10 +152,38 @@ class _WakelyAppState extends State<WakelyApp> {
           navigatorKey: navigatorKey,
           title: 'Wakely',
           debugShowCheckedModeBanner: false,
-          themeMode: ThemeMode.dark, // Force dark mode per design spec
+          themeMode: ThemeService().themeMode,
           theme: ThemeData(
             useMaterial3: true,
-            colorScheme: colorScheme,
+            colorScheme: lightColorScheme,
+            scaffoldBackgroundColor: AppTokens.daylightBg,
+            textTheme: AppTokens.textTheme(ThemeData.light().textTheme),
+            appBarTheme: const AppBarTheme(
+              centerTitle: true,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              foregroundColor: Colors.black,
+            ),
+            cardTheme: CardThemeData(
+              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+              ),
+              elevation: 0,
+              color: Colors.black.withValues(alpha: 0.05),
+            ),
+            filledButtonTheme: FilledButtonThemeData(
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+              ),
+            ),
+          ),
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            colorScheme: darkColorScheme,
             scaffoldBackgroundColor: AppTokens.nightBg,
             textTheme: AppTokens.textTheme(ThemeData.dark().textTheme),
             appBarTheme: const AppBarTheme(
