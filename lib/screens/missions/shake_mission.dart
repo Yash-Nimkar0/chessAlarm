@@ -102,7 +102,7 @@ class _ShakeMissionState extends State<ShakeMission> {
               Text(
                 "Shake to Wake!",
                 style: TextStyle(
-                  color: progress > 0.5 ? colorScheme.onSurface : colorScheme.surface,
+                  color: progress > 0.5 ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.surface,
                   fontSize: 32, 
                   fontWeight: FontWeight.bold
                 ),
@@ -111,7 +111,7 @@ class _ShakeMissionState extends State<ShakeMission> {
               Text(
                 "$_shakes / $_targetShakes shakes",
                 style: TextStyle(
-                  color: progress > 0.5 ? colorScheme.onSurface.withValues(alpha: 0.7) : colorScheme.surface.withValues(alpha: 0.7),
+                  color: progress > 0.5 ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7) : Theme.of(context).colorScheme.surface.withValues(alpha: 0.7),
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
                 ),
@@ -120,7 +120,7 @@ class _ShakeMissionState extends State<ShakeMission> {
               Text(
                 "${(progress * 100).toInt()}%",
                 style: TextStyle(
-                  color: progress > 0.5 ? colorScheme.onSurface : colorScheme.surface,
+                  color: progress > 0.5 ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.surface,
                   fontSize: 60, 
                   fontWeight: FontWeight.w900
                 ),
