@@ -9,6 +9,10 @@ import 'dart:convert';
 import '../models/mission_settings.dart';
 import '../widgets/platform_theme.dart';
 
+import 'missions/typing_config_screen.dart';
+import 'missions/shake_config_screen.dart';
+import 'missions/default_config_screen.dart';
+
 class EditAlarmScreen extends StatefulWidget {
   final AlarmSettings? alarmSettings;
   final bool isWakeRoutine;
@@ -183,9 +187,19 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                 title: const Text('Math Problem'),
                 subtitle: const Text('Solve a math equation to wake up.'),
                 trailing: _missionSettings.mission == 'math' ? const Icon(Icons.check, color: Colors.blue) : null,
-                onTap: () {
-                  setState(() => _missionSettings = _missionSettings.copyWith(mission: 'math'));
+                onTap: () async {
                   Navigator.pop(context);
+                  final result = await Navigator.push<MissionSettings>(
+                    context,
+                    MaterialPageRoute(builder: (context) => DefaultMissionConfigScreen(
+                      initialSettings: _missionSettings,
+                      missionId: 'math',
+                      title: 'Math Problem',
+                      icon: Icons.calculate,
+                      color: Colors.blue,
+                    )),
+                  );
+                  if (result != null) setState(() => _missionSettings = result);
                 },
               ),
               ListTile(
@@ -193,9 +207,19 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                 title: const Text('Memory Match'),
                 subtitle: const Text('Memorize and recall a sequence.'),
                 trailing: _missionSettings.mission == 'memory' ? const Icon(Icons.check, color: Colors.purple) : null,
-                onTap: () {
-                  setState(() => _missionSettings = _missionSettings.copyWith(mission: 'memory'));
+                onTap: () async {
                   Navigator.pop(context);
+                  final result = await Navigator.push<MissionSettings>(
+                    context,
+                    MaterialPageRoute(builder: (context) => DefaultMissionConfigScreen(
+                      initialSettings: _missionSettings,
+                      missionId: 'memory',
+                      title: 'Memory Match',
+                      icon: Icons.psychology,
+                      color: Colors.purple,
+                    )),
+                  );
+                  if (result != null) setState(() => _missionSettings = result);
                 },
               ),
               ListTile(
@@ -203,9 +227,15 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                 title: const Text('Typing'),
                 subtitle: const Text('Type a motivational phrase.'),
                 trailing: _missionSettings.mission == 'typing' ? const Icon(Icons.check, color: Colors.indigo) : null,
-                onTap: () {
-                  setState(() => _missionSettings = _missionSettings.copyWith(mission: 'typing'));
+                onTap: () async {
                   Navigator.pop(context);
+                  final result = await Navigator.push<MissionSettings>(
+                    context,
+                    MaterialPageRoute(builder: (context) => TypingConfigScreen(
+                      initialSettings: _missionSettings,
+                    )),
+                  );
+                  if (result != null) setState(() => _missionSettings = result);
                 },
               ),
               ListTile(
@@ -213,9 +243,19 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                 title: const Text('Color Tiles'),
                 subtitle: const Text('Find all tiles of a target color.'),
                 trailing: _missionSettings.mission == 'color_tiles' ? const Icon(Icons.check, color: Colors.teal) : null,
-                onTap: () {
-                  setState(() => _missionSettings = _missionSettings.copyWith(mission: 'color_tiles'));
+                onTap: () async {
                   Navigator.pop(context);
+                  final result = await Navigator.push<MissionSettings>(
+                    context,
+                    MaterialPageRoute(builder: (context) => DefaultMissionConfigScreen(
+                      initialSettings: _missionSettings,
+                      missionId: 'color_tiles',
+                      title: 'Color Tiles',
+                      icon: Icons.grid_view,
+                      color: Colors.teal,
+                    )),
+                  );
+                  if (result != null) setState(() => _missionSettings = result);
                 },
               ),
               ListTile(
@@ -223,9 +263,19 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                 title: const Text('Missing Symbol'),
                 subtitle: const Text('Find the missing math operator.'),
                 trailing: _missionSettings.mission == 'missing_symbol' ? const Icon(Icons.check, color: Colors.orange) : null,
-                onTap: () {
-                  setState(() => _missionSettings = _missionSettings.copyWith(mission: 'missing_symbol'));
+                onTap: () async {
                   Navigator.pop(context);
+                  final result = await Navigator.push<MissionSettings>(
+                    context,
+                    MaterialPageRoute(builder: (context) => DefaultMissionConfigScreen(
+                      initialSettings: _missionSettings,
+                      missionId: 'missing_symbol',
+                      title: 'Missing Symbol',
+                      icon: Icons.question_mark,
+                      color: Colors.orange,
+                    )),
+                  );
+                  if (result != null) setState(() => _missionSettings = result);
                 },
               ),
               ListTile(
@@ -233,9 +283,15 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                 title: const Text('Shake'),
                 subtitle: const Text('Shake your phone vigorously.'),
                 trailing: _missionSettings.mission == 'shake' ? const Icon(Icons.check, color: Colors.redAccent) : null,
-                onTap: () {
-                  setState(() => _missionSettings = _missionSettings.copyWith(mission: 'shake'));
+                onTap: () async {
                   Navigator.pop(context);
+                  final result = await Navigator.push<MissionSettings>(
+                    context,
+                    MaterialPageRoute(builder: (context) => ShakeConfigScreen(
+                      initialSettings: _missionSettings,
+                    )),
+                  );
+                  if (result != null) setState(() => _missionSettings = result);
                 },
               ),
               ListTile(

@@ -195,17 +195,17 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
     int difficulty = _missionSettings.difficultyOverride ?? 400;
     
     if (_missionSettings.mission == 'math') {
-      content = MathMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, difficulty: difficulty);
+      content = MathMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, settings: _missionSettings);
     } else if (_missionSettings.mission == 'memory') {
-      content = MemoryMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, difficulty: difficulty);
+      content = MemoryMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, settings: _missionSettings);
     } else if (_missionSettings.mission == 'typing') {
-      content = TypingMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, difficulty: difficulty);
+      content = TypingMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, settings: _missionSettings);
     } else if (_missionSettings.mission == 'color_tiles') {
-      content = ColorTilesMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, difficulty: difficulty);
+      content = ColorTilesMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, settings: _missionSettings);
     } else if (_missionSettings.mission == 'missing_symbol') {
-      content = MissingSymbolMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, difficulty: difficulty);
+      content = MissingSymbolMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, settings: _missionSettings);
     } else if (_missionSettings.mission == 'shake') {
-      content = ShakeMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, difficulty: difficulty);
+      content = ShakeMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, settings: _missionSettings);
     } else {
       content = Center(
         child: ElevatedButton(

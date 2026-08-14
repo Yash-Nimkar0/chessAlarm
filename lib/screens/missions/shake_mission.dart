@@ -4,16 +4,18 @@ import 'package:sensors_plus/sensors_plus.dart';
 import 'dart:async';
 import 'dart:math';
 
+import '../../models/mission_settings.dart';
+
 class ShakeMission extends StatefulWidget {
   final VoidCallback onSuccess;
   final VoidCallback onSkip;
-  final int difficulty;
+  final MissionSettings settings;
 
   const ShakeMission({
     Key? key,
     required this.onSuccess,
     required this.onSkip,
-    required this.difficulty,
+    required this.settings,
   }) : super(key: key);
 
   @override
@@ -31,8 +33,12 @@ class _ShakeMissionState extends State<ShakeMission> {
   @override
   void initState() {
     super.initState();
-    // Default 30 shakes, difficulty scales it
-    _targetShakes = 15 + (widget.difficulty / 20).toInt();
+    final data = widget.settings.missionData;
+    if (data != null && data['shake_count'] != null) {
+      _targetShakes = data['shake_count'];
+    } else {
+      _targetShakes = 30;
+    }
     
     _accelSub = userAccelerometerEventStream(samplingPeriod: SensorInterval.gameInterval).listen((event) {
       double magnitude = sqrt(event.x * event.x + event.y * event.y + event.z * event.z);
@@ -62,41 +68,65 @@ class _ShakeMissionState extends State<ShakeMission> {
 
   @override
   Widget build(BuildContext context) {
-    double progress = _shakes / _targetShakes;
+    double progress = (_shakes / _targetShakes).clamp(0.0, 1.0);
     
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Stack(
       children: [
-        const Icon(Icons.vibration, size: 80, color: Colors.orangeAccent),
-        const SizedBox(height: 24),
-        const Text(
-          "Shake to Wake!",
-          style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          "$_shakes / $_targetShakes shakes",
-          style: const TextStyle(color: Colors.white70, fontSize: 20),
-        ),
-        const SizedBox(height: 60),
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            SizedBox(
-              width: 200,
-              height: 200,
-              child: CircularProgressIndicator(
-                value: progress,
-                strokeWidth: 20,
-                backgroundColor: Colors.white.withOpacity(0.1),
-                color: Colors.orangeAccent,
+        // Background Powerup Bar
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: double.infinity,
+            height: MediaQuery.of(context).size.height * progress,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [
+                  Colors.orangeAccent.shade700,
+                  Colors.yellowAccent,
+                ],
               ),
             ),
-            Text(
-              "${(progress * 100).toInt()}%",
-              style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold),
-            ),
-          ],
+          ),
+        ),
+        
+        // Content
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.vibration, size: 80, color: progress > 0.5 ? Colors.black87 : Colors.orangeAccent),
+              const SizedBox(height: 24),
+              Text(
+                "Shake to Wake!",
+                style: TextStyle(
+                  color: progress > 0.5 ? Colors.black87 : Colors.white, 
+                  fontSize: 32, 
+                  fontWeight: FontWeight.bold
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "$_shakes / $_targetShakes shakes",
+                style: TextStyle(
+                  color: progress > 0.5 ? Colors.black54 : Colors.white70, 
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 40),
+              Text(
+                "${(progress * 100).toInt()}%",
+                style: TextStyle(
+                  color: progress > 0.5 ? Colors.black87 : Colors.white, 
+                  fontSize: 60, 
+                  fontWeight: FontWeight.w900
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );

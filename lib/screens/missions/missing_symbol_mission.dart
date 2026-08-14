@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import 'dart:math';
 
+import '../../models/mission_settings.dart';
+
 class MissingSymbolMission extends StatefulWidget {
   final VoidCallback onSuccess;
   final VoidCallback onSkip;
-  final int difficulty;
+  final MissionSettings settings;
 
   const MissingSymbolMission({
     Key? key,
     required this.onSuccess,
     required this.onSkip,
-    required this.difficulty,
+    required this.settings,
   }) : super(key: key);
 
   @override
@@ -25,11 +27,15 @@ class _MissingSymbolMissionState extends State<MissingSymbolMission> {
   late int _result;
   late String _correctSymbol;
   
+  int _currentRound = 0;
+  late int _totalRounds;
+  
   final List<String> _symbols = ['+', '-', '*', '/'];
 
   @override
   void initState() {
     super.initState();
+    _totalRounds = widget.settings.missionRounds;
     _generateEquation();
   }
 
@@ -64,10 +70,19 @@ class _MissingSymbolMissionState extends State<MissingSymbolMission> {
   void _onSymbolTap(String symbol) {
     if (symbol == _correctSymbol) {
       Haptics.vibrate(HapticsType.success);
-      widget.onSuccess();
+      _currentRound++;
+      if (_currentRound >= _totalRounds) {
+        widget.onSuccess();
+      } else {
+        setState(() {
+          _generateEquation();
+        });
+      }
     } else {
-      Haptics.vibrate(HapticsType.heavy);
-      _generateEquation(); // Regenerate on mistake to prevent brute force
+      Haptics.vibrate(HapticsType.error);
+      setState(() {
+        _generateEquation(); // Regenerate on mistake to prevent brute force
+      });
     }
   }
 
@@ -76,6 +91,11 @@ class _MissingSymbolMissionState extends State<MissingSymbolMission> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        Text(
+          "Round ${_currentRound + 1} of $_totalRounds",
+          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
         const Text(
           "Find the missing symbol",
           style: TextStyle(color: Colors.white70, fontSize: 18),

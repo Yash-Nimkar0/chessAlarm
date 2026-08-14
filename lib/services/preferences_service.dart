@@ -4,6 +4,7 @@ class PreferencesService {
   static const String _keyUserName = 'user_name';
   static const String _keyAppTheme = 'app_theme';
   static const String _keyBoardTheme = 'board_theme';
+  static const String _keyCustomQuotes = 'custom_quotes';
 
   static Future<String> getUserName() async {
     final prefs = await SharedPreferences.getInstance();
@@ -36,5 +37,15 @@ class PreferencesService {
   static Future<void> setBoardTheme(String themeStr) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyBoardTheme, themeStr);
+  }
+
+  static Future<List<String>> getCustomQuotes() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList(_keyCustomQuotes) ?? [];
+  }
+
+  static Future<void> setCustomQuotes(List<String> quotes) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_keyCustomQuotes, quotes);
   }
 }

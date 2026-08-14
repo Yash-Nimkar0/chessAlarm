@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import 'dart:math';
 
+import '../../models/mission_settings.dart';
+
 class ColorTilesMission extends StatefulWidget {
   final VoidCallback onSuccess;
   final VoidCallback onSkip;
-  final int difficulty;
+  final MissionSettings settings;
 
   const ColorTilesMission({
     Key? key,
     required this.onSuccess,
     required this.onSkip,
-    required this.difficulty,
+    required this.settings,
   }) : super(key: key);
 
   @override
@@ -25,6 +27,9 @@ class _ColorTilesMissionState extends State<ColorTilesMission> {
   late Color _targetColor;
   late int _targetCount;
   
+  int _currentRound = 0;
+  late int _totalRounds;
+  
   final List<Color> _availableColors = [
     Colors.redAccent,
     Colors.greenAccent,
@@ -36,6 +41,7 @@ class _ColorTilesMissionState extends State<ColorTilesMission> {
   @override
   void initState() {
     super.initState();
+    _totalRounds = widget.settings.missionRounds;
     _initLevel();
   }
 
@@ -86,7 +92,15 @@ class _ColorTilesMissionState extends State<ColorTilesMission> {
       if (_gridColors[i] == _targetColor && _selectedTiles[i]) found++;
     }
     if (found == _targetCount) {
-      widget.onSuccess();
+      _currentRound++;
+      if (_currentRound >= _totalRounds) {
+        widget.onSuccess();
+      } else {
+        Haptics.vibrate(HapticsType.success);
+        setState(() {
+          _initLevel();
+        });
+      }
     }
   }
 
@@ -104,6 +118,11 @@ class _ColorTilesMissionState extends State<ColorTilesMission> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        Text(
+          "Round ${_currentRound + 1} of $_totalRounds",
+          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
         Text(
           "Find all ${_getColorName(_targetColor)} tiles",
           style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),

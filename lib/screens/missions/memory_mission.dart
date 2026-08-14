@@ -1,16 +1,17 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
+import '../../models/mission_settings.dart';
 import 'mission_interface.dart';
 
 class MemoryMission extends MissionWidget {
-  final int difficulty;
+  final MissionSettings settings;
 
   const MemoryMission({
     Key? key, 
     required VoidCallback onSuccess, 
     required VoidCallback onSkip,
-    this.difficulty = 1000,
+    required this.settings,
   }) : super(key: key, onSuccess: onSuccess, onSkip: onSkip);
 
   @override
@@ -30,9 +31,15 @@ class _MemoryMissionState extends State<MemoryMission> {
   int _activeFlash = -1;
   bool _isPlayingSequence = false;
   
+  int _currentRound = 0;
+  late int _totalRounds;
+  late int _difficulty;
+
   @override
   void initState() {
     super.initState();
+    _difficulty = widget.settings.difficultyOverride ?? 400;
+    _totalRounds = widget.settings.missionRounds;
     _startNewSequence();
   }
 
@@ -89,11 +96,18 @@ class _MemoryMissionState extends State<MemoryMission> {
     
     // Check if sequence complete
     if (_userSequence.length == _sequence.length) {
-      int targetLength = widget.difficulty <= 400 ? 4 : widget.difficulty <= 1000 ? 6 : 8;
+      int targetLength = _difficulty <= 400 ? 4 : _difficulty <= 1000 ? 6 : 8;
       
       if (_sequence.length >= targetLength) {
         Haptics.vibrate(HapticsType.success);
-        widget.onSuccess();
+        _currentRound++;
+        if (_currentRound >= _totalRounds) {
+          widget.onSuccess();
+        } else {
+          // Reset sequence for next round
+          _sequence.clear();
+          _startNewSequence();
+        }
       } else {
         _startNewSequence(); // Next level
       }
@@ -117,8 +131,13 @@ class _MemoryMissionState extends State<MemoryMission> {
         ),
         const SizedBox(height: 10),
         Text(
-          'Level ${_sequence.length} of ${widget.difficulty <= 400 ? 4 : widget.difficulty <= 1000 ? 6 : 8}',
-          style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16),
+          "Round ${_currentRound + 1} of $_totalRounds",
+          style: TextStyle(color: colorScheme.primary.withValues(alpha: 0.8), fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Sequence Length: ${_sequence.length} / ${_difficulty <= 400 ? 4 : _difficulty <= 1000 ? 6 : 8}',
+          style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
         ),
         const SizedBox(height: 60),
         SizedBox(

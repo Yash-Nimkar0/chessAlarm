@@ -18,6 +18,8 @@ class MissionSettings {
   
   final bool smartLock;
   final int? difficultyOverride;
+  final int missionRounds;
+  final Map<String, dynamic>? missionData;
 
   MissionSettings({
     this.type = "quickAlarm",
@@ -30,6 +32,8 @@ class MissionSettings {
     this.difficultyMode = "adaptive",
     this.smartLock = true,
     this.difficultyOverride,
+    this.missionRounds = 1,
+    this.missionData,
   }) : createdAt = createdAt ?? DateTime.now().toIso8601String();
 
   Map<String, dynamic> toJson() {
@@ -44,6 +48,8 @@ class MissionSettings {
       'difficultyMode': difficultyMode,
       'smartLock': smartLock,
       'difficultyOverride': difficultyOverride,
+      'missionRounds': missionRounds,
+      'missionData': missionData,
     };
   }
 
@@ -58,6 +64,8 @@ class MissionSettings {
     String? difficultyMode,
     bool? smartLock,
     int? difficultyOverride,
+    int? missionRounds,
+    Map<String, dynamic>? missionData,
   }) {
     return MissionSettings(
       type: type ?? this.type,
@@ -70,6 +78,8 @@ class MissionSettings {
       difficultyMode: difficultyMode ?? this.difficultyMode,
       smartLock: smartLock ?? this.smartLock,
       difficultyOverride: difficultyOverride ?? this.difficultyOverride,
+      missionRounds: missionRounds ?? this.missionRounds,
+      missionData: missionData ?? this.missionData,
     );
   }
 
@@ -91,6 +101,8 @@ class MissionSettings {
       difficultyMode: json['difficultyMode'] ?? 'adaptive',
       smartLock: json['smartLock'] ?? true,
       difficultyOverride: json['difficultyOverride'],
+      missionRounds: json['missionRounds'] ?? 1,
+      missionData: json['missionData'] != null ? Map<String, dynamic>.from(json['missionData']) : null,
     );
   }
 

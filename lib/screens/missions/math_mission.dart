@@ -1,17 +1,18 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
+import '../../models/mission_settings.dart';
 import 'mission_interface.dart';
 import '../../widgets/platform_theme.dart';
 
 class MathMission extends MissionWidget {
-  final int difficulty;
+  final MissionSettings settings;
 
   const MathMission({
-    Key? key, 
-    required VoidCallback onSuccess, 
+    Key? key,
+    required VoidCallback onSuccess,
     required VoidCallback onSkip,
-    this.difficulty = 1000,
+    required this.settings,
   }) : super(key: key, onSuccess: onSuccess, onSkip: onSkip);
 
   @override
@@ -27,22 +28,28 @@ class _MathMissionState extends State<MathMission> {
 
   late String _equationDisplay;
 
+  int _currentRound = 0;
+  late int _totalRounds;
+  late int _difficulty;
+
   @override
   void initState() {
     super.initState();
+    _difficulty = widget.settings.difficultyOverride ?? 400;
+    _totalRounds = widget.settings.missionRounds;
     _generateEquation();
   }
 
   void _generateEquation() {
     final random = Random();
     
-    if (widget.difficulty <= 400) {
+    if (_difficulty <= 400) {
       // Easy: Addition
       num1 = random.nextInt(40) + 10;
       num2 = random.nextInt(40) + 10;
       correctAnswer = num1 + num2;
       _equationDisplay = '$num1 + $num2';
-    } else if (widget.difficulty <= 1000) {
+    } else if (_difficulty <= 1000) {
       // Medium: Multiplication
       num1 = random.nextInt(10) + 2;
       num2 = random.nextInt(10) + 2;
@@ -70,7 +77,14 @@ class _MathMissionState extends State<MathMission> {
   void _checkAnswer(int answer) {
     if (answer == correctAnswer) {
       Haptics.vibrate(HapticsType.success);
-      widget.onSuccess();
+      _currentRound++;
+      if (_currentRound >= _totalRounds) {
+        widget.onSuccess();
+      } else {
+        setState(() {
+          _generateEquation();
+        });
+      }
     } else {
       Haptics.vibrate(HapticsType.error);
       setState(() {
@@ -85,6 +99,11 @@ class _MathMissionState extends State<MathMission> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        Text(
+          "Round ${_currentRound + 1} of $_totalRounds",
+          style: TextStyle(color: colorScheme.primary.withOpacity(0.8), fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
         Text(
           'SOLVE TO DISMISS',
           style: TextStyle(
