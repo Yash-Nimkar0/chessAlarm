@@ -93,8 +93,8 @@ class _WeatherPainter extends CustomPainter {
     final glowPaint = Paint()
       ..shader = RadialGradient(
         colors: [
-          Colors.amberAccent.withValues(alpha: pulse),
-          Colors.orange.withValues(alpha: pulse * 0.45),
+          AppTokens.signal.withValues(alpha: pulse),
+          AppTokens.dawnEnd.withValues(alpha: pulse * 0.45),
           Colors.transparent,
         ],
         stops: const [0.0, 0.4, 1.0],
@@ -291,31 +291,45 @@ class _WeatherWidgetState extends State<WeatherWidget>
     final code = _weatherData?.weatherCode ?? 0;
     final day = _isDay;
 
+    // ── Night branch — anchored to nightBg/dawnStart family ───────
     if (!day) {
-      if (code >= 51 && code <= 82) return [const Color(0xFF0D1B2A), const Color(0xFF1B2B44)];
-      if (code >= 95)               return [const Color(0xFF080E17), const Color(0xFF0F1C2E)];
+      // Cloudy night: slightly lifted indigo
+      if (code >= 1  && code <= 3)  return [AppTokens.nightBg, const Color(0xFF1A1640)];
+      // Rainy night: deep indigo, hint of violet-blue
+      if (code >= 51 && code <= 82) return [const Color(0xFF080D20), const Color(0xFF130E30)];
+      // Stormy night: near-black indigo
+      if (code >= 95)               return [const Color(0xFF05060F), const Color(0xFF0D0A1E)];
+      // Clear / foggy night: stock nightBg with a violet whisper
       return [AppTokens.nightBg, const Color(0xFF1E1340)];
     }
+
+    // ── Day branch — routed through the warm palette ──────────────
+    // Clear day: sunrise amber-gold
     if (code == 0)                  return [AppTokens.dawnEnd, AppTokens.signal];
-    if (code >= 1  && code <= 3)    return [const Color(0xFF6E7F8D), const Color(0xFF9EAAB5)];
-    if (code >= 45 && code <= 48)   return [const Color(0xFF8D9199), const Color(0xFFB0B7BF)];
-    if (code >= 51 && code <= 82)   return [const Color(0xFF2E4A6B), const Color(0xFF4A6E94)];
-    if (code >= 71 && code <= 77)   return [const Color(0xFFB8D0E8), const Color(0xFFD9E8F5)];
-    if (code >= 95)                 return [const Color(0xFF1C2B3A), const Color(0xFF2E3E50)];
+    // Cloudy / overcast day: desaturated plum-grey (dawnStart family, muted)
+    if (code >= 1  && code <= 3)    return [const Color(0xFF4A3660), const Color(0xFF7B6680)];
+    // Foggy day: hazy lavender between dawnStart and daylightBg
+    if (code >= 45 && code <= 48)   return [const Color(0xFF5C4870), const Color(0xFF9E8DA8)];
+    // Rainy day: deep indigo with a cool undertone (nightBg territory, not navy)
+    if (code >= 51 && code <= 82)   return [const Color(0xFF1A1035), const Color(0xFF362860)];
+    // Snowy day: soft warm lavender — daylightBg tinted with dawnStart, not ice-blue
+    if (code >= 71 && code <= 77)   return [const Color(0xFFD4C0E4), const Color(0xFFEDE6F5)];
+    // Stormy day: full dawnStart drama
+    if (code >= 95)                 return [AppTokens.dawnStart, const Color(0xFF1A1035)];
     return [AppTokens.dawnStart, AppTokens.dawnEnd];
   }
 
   ({IconData icon, Color color}) _icon(int code, bool isDay) {
     if (code == 0)                return isDay
-        ? (icon: Icons.wb_sunny_rounded,    color: Colors.amberAccent)
-        : (icon: Icons.nightlight_round,    color: Colors.white70);
+        ? (icon: Icons.wb_sunny_rounded,      color: AppTokens.signal)     // amber from palette
+        : (icon: Icons.nightlight_round,      color: Colors.white70);
     if (code >= 1  && code <= 3)  return isDay
-        ? (icon: Icons.cloud_queue_rounded, color: Colors.white70)
-        : (icon: Icons.cloud_rounded,       color: Colors.white54);
-    if (code >= 45 && code <= 48) return (icon: Icons.foggy,              color: Colors.white54);
-    if (code >= 51 && code <= 82) return (icon: Icons.grain_rounded,      color: Colors.lightBlueAccent);
-    if (code >= 71 && code <= 77) return (icon: Icons.ac_unit_rounded,    color: Colors.lightBlue.shade100);
-    if (code >= 95)               return (icon: Icons.thunderstorm_rounded, color: Colors.amberAccent);
+        ? (icon: Icons.cloud_queue_rounded,   color: Colors.white70)
+        : (icon: Icons.cloud_rounded,         color: Colors.white54);
+    if (code >= 45 && code <= 48) return (icon: Icons.foggy,               color: Colors.white54);
+    if (code >= 51 && code <= 82) return (icon: Icons.grain_rounded,       color: AppTokens.dawnEnd);  // warm, not lightBlueAccent
+    if (code >= 71 && code <= 77) return (icon: Icons.ac_unit_rounded,     color: Colors.white70);
+    if (code >= 95)               return (icon: Icons.thunderstorm_rounded, color: AppTokens.signal);  // amber from palette
     return (icon: Icons.wb_cloudy_rounded, color: Colors.white70);
   }
 
