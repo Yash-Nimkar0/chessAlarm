@@ -99,20 +99,20 @@ class _AudioClipTileState extends State<AudioClipTile> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${widget.event.type} • $timeStr', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              Text('${widget.event.type} • $timeStr', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
-              Text('${widget.event.durationSeconds} seconds', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+              Text('${widget.event.durationSeconds} seconds', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
             ],
           ),
           Row(
             children: [
               TextButton.icon(
-                icon: Icon(_isSaved ? Icons.star : Icons.star_border, color: _isSaved ? Colors.amber : Colors.white54, size: 20),
-                label: Text('Keep', style: TextStyle(color: _isSaved ? Colors.amber : Colors.white54)),
+                icon: Icon(_isSaved ? Icons.star : Icons.star_border, color: _isSaved ? Colors.amber : Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
+                label: Text('Keep', style: TextStyle(color: _isSaved ? Colors.amber : Theme.of(context).colorScheme.onSurfaceVariant)),
                 onPressed: _toggleSave,
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.white54),
+                icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 onPressed: _deleteClip,
               ),
               IconButton(
