@@ -47,7 +47,7 @@ class _TypingMissionState extends State<TypingMission> {
   }
 
   void _checkCompletion() {
-    if (_controller.text == _targetPhrase) {
+    if (_controller.text.trim().toLowerCase() == _targetPhrase.trim().toLowerCase()) {
       Haptics.vibrate(HapticsType.success);
       _currentRound++;
       if (_currentRound >= _totalRounds) {
