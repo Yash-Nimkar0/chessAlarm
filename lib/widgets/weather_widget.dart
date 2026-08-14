@@ -25,24 +25,27 @@ List<_P> _genParticles(int n, {required int seed, double yRange = 1.0}) {
   ));
 }
 
-final _rainParts = _genParticles(30, seed: 42);
-final _snowParts = _genParticles(22, seed: 17, yRange: 0.95);
-final _starParts = _genParticles(18, seed: 99, yRange: 0.65);
+final _rainParts  = _genParticles(30, seed: 42);
+final _snowParts  = _genParticles(22, seed: 17, yRange: 0.95);
+final _starParts  = _genParticles(18, seed: 99, yRange: 0.65);
+final _cloudParts = _genParticles( 5, seed: 55, yRange: 0.7);
 
 // ─────────────────────────────────────────────────────────────────
 // Effect enum + selector
 // ─────────────────────────────────────────────────────────────────
 
-enum _Effect { none, sun, rain, snow, storm, stars }
+enum _Effect { none, sun, rain, snow, storm, stars, clouds }
 
 _Effect _effectFor(int code, bool isDay) {
   if (!isDay) {
     if (code >= 51 && code <= 82) return _Effect.rain;
     if (code >= 71 && code <= 77) return _Effect.snow;
     if (code >= 95) return _Effect.storm;
-    return _Effect.stars; // clear / cloudy night → twinkling stars
+    if (code >= 1 && code <= 3)  return _Effect.clouds;
+    return _Effect.stars;
   }
   if (code == 0) return _Effect.sun;
+  if (code >= 1  && code <= 3)  return _Effect.clouds;
   if (code >= 71 && code <= 77) return _Effect.snow;
   if (code >= 95) return _Effect.storm;
   if (code >= 51 && code <= 82) return _Effect.rain;
@@ -69,10 +72,13 @@ class _WeatherPainter extends CustomPainter {
     switch (effect) {
       case _Effect.sun:    _paintSun(canvas, size);
       case _Effect.rain:   _paintRain(canvas, size, diagonal: false);
-      case _Effect.storm:  _paintRain(canvas, size, diagonal: true);
-                           _paintLightning(canvas, size);
+      case _Effect.storm:  {
+        _paintRain(canvas, size, diagonal: true);
+        _paintLightning(canvas, size);
+      }
       case _Effect.snow:   _paintSnow(canvas, size);
       case _Effect.stars:  _paintStars(canvas, size);
+      case _Effect.clouds: _paintClouds(canvas, size);
       case _Effect.none:   break;
     }
   }
@@ -170,6 +176,31 @@ class _WeatherPainter extends CustomPainter {
       final alpha = 0.20 + 0.50 * ((math.sin(t * math.pi * 2 + p.ph) + 1) / 2);
       paint.color = Colors.white.withValues(alpha: alpha);
       canvas.drawCircle(Offset(p.x * size.width, p.y0 * size.height), 1.5, paint);
+    }
+  }
+
+  void _paintClouds(Canvas canvas, Size size) {
+    // Soft ellipses drifting slowly left-to-right at different y-levels.
+    // Uses bgT (10s loop) for very slow movement.
+    final paint = Paint()
+      ..style = PaintingStyle.fill;
+
+    for (int i = 0; i < _cloudParts.length; i++) {
+      final p = _cloudParts[i];
+      // Each cloud drifts across the width over ~1 full bgT cycle at its own speed.
+      final xNorm = (p.x + bgT * (0.08 + p.spd * 0.04)) % 1.2 - 0.1;
+      final y = p.y0 * size.height;
+      final w = size.width * (0.25 + p.sz * 0.06);
+      final h = w * 0.45;
+      final alpha = 0.07 + 0.05 * math.sin(bgT * math.pi * 2 + p.ph);
+      paint.color = Colors.white.withValues(alpha: alpha);
+
+      // Draw a simple cloud: one large ellipse + two smaller overlapping ones.
+      final cx = xNorm * size.width;
+      final rect = Rect.fromCenter(center: Offset(cx, y), width: w, height: h);
+      canvas.drawOval(rect, paint);
+      canvas.drawOval(Rect.fromCenter(center: Offset(cx - w * 0.28, y - h * 0.3), width: w * 0.55, height: h * 0.7), paint);
+      canvas.drawOval(Rect.fromCenter(center: Offset(cx + w * 0.22, y - h * 0.2), width: w * 0.48, height: h * 0.6), paint);
     }
   }
 
