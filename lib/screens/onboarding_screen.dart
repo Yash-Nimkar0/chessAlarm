@@ -42,12 +42,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       await [
         Permission.notification,
         Permission.criticalAlerts,
+        Permission.activityRecognition,
       ].request();
     } else if (Platform.isAndroid) {
       await [
         Permission.notification,
         Permission.systemAlertWindow,
         Permission.ignoreBatteryOptimizations,
+        Permission.activityRecognition,
       ].request();
     }
   }

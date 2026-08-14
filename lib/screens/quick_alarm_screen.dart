@@ -11,6 +11,7 @@ import 'missions/typing_config_screen.dart';
 import 'missions/shake_config_screen.dart';
 import 'missions/default_config_screen.dart';
 import 'missions/qr_config_screen.dart';
+import 'missions/steps_config_screen.dart';
 
 class QuickAlarmScreen extends StatefulWidget {
   const QuickAlarmScreen({Key? key}) : super(key: key);
@@ -126,6 +127,7 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
       case 'missing_symbol': return 'Missing Symbol';
       case 'shake': return 'Shake';
       case 'qr': return 'QR / Barcode';
+      case 'steps': return 'Steps';
       case 'none': return 'None';
       default: return 'Memory';
     }
@@ -268,6 +270,22 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                   final result = await Navigator.push<MissionSettings>(
                     context,
                     MaterialPageRoute(builder: (context) => QRConfigScreen(
+                      initialSettings: _missionSettings,
+                    )),
+                  );
+                  if (result != null) setState(() => _missionSettings = result);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.directions_walk, color: Colors.blueAccent),
+                title: const Text('Steps'),
+                subtitle: const Text('Walk a target number of steps.'),
+                trailing: _missionSettings.mission == 'steps' ? const Icon(Icons.check, color: Colors.blueAccent) : null,
+                onTap: () async {
+                  Navigator.pop(context);
+                  final result = await Navigator.push<MissionSettings>(
+                    context,
+                    MaterialPageRoute(builder: (context) => StepsConfigScreen(
                       initialSettings: _missionSettings,
                     )),
                   );

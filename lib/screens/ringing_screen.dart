@@ -11,6 +11,7 @@ import 'missions/color_tiles_mission.dart';
 import 'missions/missing_symbol_mission.dart';
 import 'missions/shake_mission.dart';
 import 'missions/qr_mission.dart';
+import 'missions/steps_mission.dart';
 import 'mission_complete_screen.dart';
 import '../widgets/platform_theme.dart';
 import '../services/analytics_service.dart';
@@ -269,6 +270,8 @@ class _RingingScreenState extends State<RingingScreen> with SingleTickerProvider
       content = ShakeMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, settings: _missionSettings);
     } else if (_missionSettings.mission == 'qr') {
       content = QRMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, missionData: _missionSettings.missionData ?? {});
+    } else if (_missionSettings.mission == 'steps') {
+      content = StepsMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, missionData: _missionSettings.missionData ?? {});
     } else {
       content = Center(
         child: ElevatedButton(
