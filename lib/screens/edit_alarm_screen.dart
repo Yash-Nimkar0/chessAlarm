@@ -36,6 +36,13 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
   // 0=Mon, 1=Tue, ..., 6=Sun
   List<bool> _selectedDays = List.filled(7, true);
   final List<String> _dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  final TextEditingController _labelController = TextEditingController();
+
+  @override
+  void dispose() {
+    _labelController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -54,6 +61,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
       } else {
         _missionSettings = MissionSettings(type: widget.isWakeRoutine ? "wakeRoutine" : "alarm");
       }
+      _labelController.text = _missionSettings.label ?? '';
     } else {
       selectedDateTime = DateTime.now().add(const Duration(minutes: 1));
       selectedDateTime = selectedDateTime.copyWith(second: 0, millisecond: 0);
@@ -62,6 +70,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
       volume = 0.8;
       assetAudio = 'assets/marimba.mp3';
       _missionSettings = MissionSettings(type: widget.isWakeRoutine ? "wakeRoutine" : "alarm");
+      _labelController.text = '';
     }
     
     _loadRecurringDays();
@@ -118,6 +127,10 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
     
     DateTime nextTime = _calculateNextOccurrence(selectedDateTime, _selectedDays);
 
+    _missionSettings = _missionSettings.copyWith(
+      label: _labelController.text.trim().isNotEmpty ? _labelController.text.trim() : null,
+    );
+
     final alarmSettings = AlarmSettings(
       id: _alarmId,
       dateTime: nextTime,
@@ -126,10 +139,10 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
       vibrate: vibrate,
       volumeSettings: VolumeSettings.fade(
         volume: volume,
-        fadeDuration: const Duration(milliseconds: 2000),
+        fadeDuration: const Duration(seconds: 30),
       ),
       notificationSettings: NotificationSettings(
-        title: widget.isWakeRoutine ? 'Wake Routine' : 'Alarm',
+        title: _missionSettings.label ?? (widget.isWakeRoutine ? 'Wake Routine' : 'Alarm'),
         body: widget.isWakeRoutine ? 'Time to wake up and solve your challenge.' : 'Your alarm is ringing.',
       ),
       payload: _missionSettings.toJsonString(),
@@ -403,7 +416,23 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 20),
+
+                    // Label Field
+                    PlatformCard(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                      child: TextField(
+                        controller: _labelController,
+                        decoration: InputDecoration(
+                          hintText: 'Label (e.g. Work, Gym)',
+                          border: InputBorder.none,
+                          icon: Icon(Icons.label_outline, color: colorScheme.onSurfaceVariant),
+                        ),
+                        style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
+                        cursorColor: colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
 
                     // Repeat Days (Compact bubbles)
                     PlatformCard(

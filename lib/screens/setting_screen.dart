@@ -130,13 +130,13 @@ class _SettingScreenState extends State<SettingScreen> {
               ),
               
               const SizedBox(height: 32),
-              Text('Account & Premium', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
+              Text('Profile', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 16),
               _buildSection(colorScheme, [
                 ListTile(
                   leading: Icon(Icons.person, color: Theme.of(context).colorScheme.onSurface),
-                  title: Text('Sign In / Sign Up', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                  trailing: Icon(Icons.login, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
+                  title: Text('Display Name', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                  trailing: Icon(Icons.edit, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
                   onTap: () async {
                     String currentName = await PreferencesService.getUserName();
                     final controller = TextEditingController(text: currentName);

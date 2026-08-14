@@ -101,7 +101,7 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
       vibrate: _vibrate,
       volumeSettings: VolumeSettings.fade(
         volume: _volume,
-        fadeDuration: const Duration(seconds: 3),
+        fadeDuration: const Duration(seconds: 30),
       ),
       notificationSettings: const NotificationSettings(
         title: 'Quick Alarm',

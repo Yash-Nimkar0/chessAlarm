@@ -20,6 +20,7 @@ class MissionSettings {
   final int? difficultyOverride;
   final int missionRounds;
   final Map<String, dynamic>? missionData;
+  final String? label;
 
   MissionSettings({
     this.type = "quickAlarm",
@@ -34,6 +35,7 @@ class MissionSettings {
     this.difficultyOverride,
     this.missionRounds = 1,
     this.missionData,
+    this.label,
   }) : createdAt = createdAt ?? DateTime.now().toIso8601String();
 
   Map<String, dynamic> toJson() {
@@ -50,6 +52,7 @@ class MissionSettings {
       'difficultyOverride': difficultyOverride,
       'missionRounds': missionRounds,
       'missionData': missionData,
+      'label': label,
     };
   }
 
@@ -66,6 +69,7 @@ class MissionSettings {
     int? difficultyOverride,
     int? missionRounds,
     Map<String, dynamic>? missionData,
+    String? label,
   }) {
     return MissionSettings(
       type: type ?? this.type,
@@ -80,6 +84,7 @@ class MissionSettings {
       difficultyOverride: difficultyOverride ?? this.difficultyOverride,
       missionRounds: missionRounds ?? this.missionRounds,
       missionData: missionData ?? this.missionData,
+      label: label ?? this.label,
     );
   }
 
@@ -100,9 +105,10 @@ class MissionSettings {
       createdAt: json['createdAt'] ?? DateTime.now().toIso8601String(),
       difficultyMode: json['difficultyMode'] ?? 'adaptive',
       smartLock: json['smartLock'] ?? true,
-      difficultyOverride: json['difficultyOverride'],
-      missionRounds: json['missionRounds'] ?? 1,
-      missionData: json['missionData'] != null ? Map<String, dynamic>.from(json['missionData']) : null,
+      difficultyOverride: json['difficultyOverride'] as int?,
+      missionRounds: json['missionRounds'] as int? ?? 1,
+      missionData: json['missionData'] as Map<String, dynamic>?,
+      label: json['label'] as String?,
     );
   }
 
