@@ -166,8 +166,9 @@ class _MemoryMissionState extends State<MemoryMission> {
                       width: isFlashing ? 4 : 2,
                     ),
                   ),
-                );
-              },
+                ),
+              );
+            },
             ),
           ),
           const SizedBox(height: 60),
