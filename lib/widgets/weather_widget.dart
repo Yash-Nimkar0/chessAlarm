@@ -3,8 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/weather_service.dart';
 import '../services/preferences_service.dart';
+import '../theme/design_tokens.dart';
 import 'dart:ui';
-
 
 class WeatherWidget extends StatefulWidget {
   const WeatherWidget({Key? key}) : super(key: key);
@@ -13,7 +13,8 @@ class WeatherWidget extends StatefulWidget {
   State<WeatherWidget> createState() => _WeatherWidgetState();
 }
 
-class _WeatherWidgetState extends State<WeatherWidget> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+class _WeatherWidgetState extends State<WeatherWidget>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   WeatherData? _weatherData;
   bool _isLoading = true;
   String _userName = "";
@@ -23,7 +24,9 @@ class _WeatherWidgetState extends State<WeatherWidget> with SingleTickerProvider
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _bgAnimController = AnimationController(vsync: this, duration: const Duration(seconds: 10))..repeat(reverse: true);
+    _bgAnimController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 10))
+          ..repeat(reverse: true);
     if (WeatherService.cachedWeather != null) {
       _weatherData = WeatherService.cachedWeather;
       _isLoading = false;
@@ -31,7 +34,7 @@ class _WeatherWidgetState extends State<WeatherWidget> with SingleTickerProvider
     _fetchWeather();
     _loadName();
   }
-  
+
   Future<void> _loadName() async {
     final name = await PreferencesService.getUserName();
     if (mounted) setState(() => _userName = name);
@@ -39,7 +42,8 @@ class _WeatherWidgetState extends State<WeatherWidget> with SingleTickerProvider
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       _bgAnimController.stop();
     } else if (state == AppLifecycleState.resumed) {
       _bgAnimController.repeat(reverse: true);
@@ -62,185 +66,336 @@ class _WeatherWidgetState extends State<WeatherWidget> with SingleTickerProvider
     _bgAnimController.dispose();
     super.dispose();
   }
-  
+
+  /// Gradient driven by BOTH isDay AND weatherCode.
+  /// This fixes the previous bug where clear night == sunny blue gradient.
   List<Color> _getWeatherGradients() {
-     if (_weatherData == null) return [Colors.indigo.shade900, Colors.purple.shade900];
-     
-     final code = _weatherData!.weatherCode;
-     if (code == 0) return [Colors.blue.shade400, Colors.orange.shade300]; // Sunny
-     if (code >= 1 && code <= 3) return [Colors.blueGrey.shade400, Colors.grey.shade600]; // Cloud
-     if (code >= 51 && code <= 67) return [Colors.blueGrey.shade800, Colors.blue.shade900]; // Rain
-     if (code >= 71 && code <= 77) return [Colors.lightBlue.shade200, Colors.grey.shade300]; // Snow
-     
-     return [Colors.indigo.shade900, Colors.purple.shade900];
+    if (_weatherData == null) {
+      return [AppTokens.nightBg, const Color(0xFF1E1340)];
+    }
+
+    final code = _weatherData!.weatherCode;
+    final isDay = _weatherData!.isDay;
+
+    if (!isDay) {
+      if (code >= 51 && code <= 82) {
+        return [const Color(0xFF0D1B2A), const Color(0xFF1B2B44)]; // rainy night
+      }
+      if (code >= 95) {
+        return [const Color(0xFF080E17), const Color(0xFF0F1C2E)]; // stormy night
+      }
+      return [AppTokens.nightBg, const Color(0xFF1E1340)]; // clear / cloudy night
+    }
+
+    // Day branch
+    if (code == 0) return [AppTokens.dawnEnd, AppTokens.signal]; // clear day
+    if (code >= 1 && code <= 3) {
+      return [const Color(0xFF6E7F8D), const Color(0xFF9EAAB5)]; // cloudy day
+    }
+    if (code >= 45 && code <= 48) {
+      return [const Color(0xFF8D9199), const Color(0xFFB0B7BF)]; // foggy day
+    }
+    if (code >= 51 && code <= 82) {
+      return [const Color(0xFF2E4A6B), const Color(0xFF4A6E94)]; // rainy day
+    }
+    if (code >= 71 && code <= 77) {
+      return [const Color(0xFFB8D0E8), const Color(0xFFD9E8F5)]; // snowy day
+    }
+    if (code >= 95) {
+      return [const Color(0xFF1C2B3A), const Color(0xFF2E3E50)]; // stormy day
+    }
+
+    return [AppTokens.dawnStart, AppTokens.dawnEnd];
+  }
+
+  /// Single Material icon for each WMO weather code + isDay.
+  /// No emoji — keeps the icon language consistent with the rest of the app.
+  ({IconData icon, Color color}) _getWeatherIcon(int code, bool isDay) {
+    if (code == 0) {
+      return isDay
+          ? (icon: Icons.wb_sunny_rounded, color: Colors.amberAccent)
+          : (icon: Icons.nightlight_round, color: Colors.white70);
+    }
+    if (code >= 1 && code <= 3) {
+      return isDay
+          ? (icon: Icons.cloud_queue_rounded, color: Colors.white70)
+          : (icon: Icons.cloud_rounded, color: Colors.white54);
+    }
+    if (code >= 45 && code <= 48) return (icon: Icons.foggy, color: Colors.white54);
+    if (code >= 51 && code <= 82) {
+      return (icon: Icons.grain_rounded, color: Colors.lightBlueAccent);
+    }
+    if (code >= 71 && code <= 77) {
+      return (icon: Icons.ac_unit_rounded, color: Colors.lightBlue.shade100);
+    }
+    if (code >= 95) {
+      return (icon: Icons.thunderstorm_rounded, color: Colors.amberAccent);
+    }
+    return (icon: Icons.wb_cloudy_rounded, color: Colors.white70);
+  }
+
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
   }
 
   @override
   Widget build(BuildContext context) {
+    // Loading skeleton
     if (_isLoading && _weatherData == null) {
       return Container(
         height: 200,
         width: double.infinity,
-        decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(24)),
-        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        decoration: BoxDecoration(
+          color: AppTokens.nightBg,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white30),
+        ),
       );
     }
 
+    // Permission / no-data prompt
     if (_weatherData == null) {
-      // Permission prompt
       return GestureDetector(
         onTap: () async {
-
-           final permission = await Geolocator.requestPermission();
-           if (permission != LocationPermission.denied && permission != LocationPermission.deniedForever) {
-              setState(() => _isLoading = true);
-              _fetchWeather();
-           }
+          final permission = await Geolocator.requestPermission();
+          if (permission != LocationPermission.denied &&
+              permission != LocationPermission.deniedForever) {
+            setState(() => _isLoading = true);
+            _fetchWeather();
+          }
         },
         child: Container(
-           padding: const EdgeInsets.all(20),
-           decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(24)),
-           child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                 Text("Personalize your mornings", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                 SizedBox(height: 8),
-                 Text("Use location for:\n✓ weather\n✓ sunrise\n✓ daily conditions", style: TextStyle(color: Colors.white70)),
-                 SizedBox(height: 12),
-                 Text("Tap to allow →", style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold)),
-              ]
-           )
-        )
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppTokens.nightBg,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Personalize your mornings",
+                style: AppTokens.display.copyWith(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Use location for:\n✓ weather\n✓ sunrise\n✓ daily conditions",
+                style: AppTokens.body.copyWith(color: Colors.white70),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "Tap to allow →",
+                style: AppTokens.body.copyWith(
+                  color: AppTokens.signal,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
       );
     }
-    
-    // Build hourly forecast
-    List<HourlyForecast> upcoming = _weatherData!.hourly.where((h) => h.time.isAfter(DateTime.now().subtract(const Duration(hours: 1)))).take(6).toList();
-    
-    String sunriseStr = "6:00";
-    String sunsetStr = "18:00";
+
+    // Hourly forecast — next 6 slots
+    final List<HourlyForecast> upcoming = _weatherData!.hourly
+        .where((h) => h.time.isAfter(DateTime.now().subtract(const Duration(hours: 1))))
+        .take(6)
+        .toList();
+
+    String sunriseStr = "–";
+    String sunsetStr = "–";
     if (_weatherData!.daily.isNotEmpty) {
-       sunriseStr = DateFormat('H:mm').format(_weatherData!.daily.first.sunrise);
-       sunsetStr = DateFormat('H:mm').format(_weatherData!.daily.first.sunset);
+      sunriseStr = DateFormat('h:mm a').format(_weatherData!.daily.first.sunrise);
+      sunsetStr = DateFormat('h:mm a').format(_weatherData!.daily.first.sunset);
     }
+
+    final gradients = _getWeatherGradients();
+    final mainIcon = _getWeatherIcon(_weatherData!.weatherCode, _weatherData!.isDay);
 
     return AnimatedBuilder(
       animation: _bgAnimController,
-      builder: (context, child) {
+      builder: (context, _) {
         return Container(
           width: double.infinity,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
             gradient: LinearGradient(
-              colors: _getWeatherGradients(),
+              colors: gradients,
               begin: Alignment.topLeft,
-              end: Alignment(1.0, _bgAnimController.value * 2 - 1.0), // subtle movement
+              end: Alignment(1.0, _bgAnimController.value * 2 - 1.0),
             ),
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 5)),
+              BoxShadow(
+                color: gradients.last.withValues(alpha: 0.4),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
             ],
           ),
           child: ClipRRect(
-             borderRadius: BorderRadius.circular(24),
-             child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                child: Padding(
-                   padding: const EdgeInsets.all(24.0),
-                   child: Column(
-                     crossAxisAlignment: CrossAxisAlignment.start,
-                     children: [
-                        Row(
-                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                           crossAxisAlignment: CrossAxisAlignment.start,
-                           children: [
-                              Expanded(
-                                child: Text(_userName.isEmpty ? 'Good morning!' : 'Good morning, $_userName', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-                              ),
-                              const SizedBox(width: 12),
-                              Text('${_weatherData!.temperature.floor()}°C', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
-                           ]
-                        ),
-                        const SizedBox(height: 4),
-                        Text(_weatherData!.conditionTitle, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
-                        const SizedBox(height: 8),
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Header: greeting / condition label / temp + icon ──
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Expanded(
-                             flex: 0,
-                             child: Text(_weatherData!.contextSentence, style: const TextStyle(color: Colors.white70, fontSize: 14), maxLines: 2, overflow: TextOverflow.ellipsis),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _userName.isEmpty
+                                    ? '${_greeting()}!'
+                                    : '${_greeting()}, $_userName',
+                                style: AppTokens.display.copyWith(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _weatherData!.conditionTitle,
+                                style: AppTokens.body
+                                    .copyWith(color: Colors.white70, fontSize: 14),
+                              ),
+                            ],
                           ),
-                        
-                        const Padding(
-                           padding: EdgeInsets.symmetric(vertical: 16.0),
-                           child: Divider(color: Colors.white24, height: 1),
                         ),
-                        
-                        SizedBox(
-                           height: 60,
-                           child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: upcoming.length,
-                              itemBuilder: (context, i) {
-                                 final h = upcoming[i];
-                                 String timeStr = DateFormat('h a').format(h.time);
-                                 if (i == 0) timeStr = "Now";
-                                 
-                                 // Basic icon mapping for hourly
-                                 String emoji = '☀️';
-                                 if (h.weatherCode >= 51 && h.weatherCode <= 67) {
-                                   emoji = '🌧️';
-                                 } else if (h.weatherCode >= 1 && h.weatherCode <= 3) emoji = '☁️';
-                                 else if (h.weatherCode >= 71) emoji = '❄️';
-                                 
-                                 return Padding(
-                                    padding: const EdgeInsets.only(right: 24.0),
-                                    child: Column(
-                                       children: [
-                                          Text(timeStr, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                                          const SizedBox(height: 4),
-                                          Text('$emoji ${h.temperature.floor()}°', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                                          if (h.precipitationProbability > 0)
-                                             Text('${h.precipitationProbability}%', style: const TextStyle(color: Colors.lightBlueAccent, fontSize: 10, fontWeight: FontWeight.bold)),
-                                       ]
-                                    )
-                                 );
-                              }
-                           )
+                        const SizedBox(width: 12),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(mainIcon.icon, color: mainIcon.color, size: 22),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${_weatherData!.temperature.floor()}°',
+                              style: AppTokens.display.copyWith(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
                         ),
-                        
-                        const Padding(
-                           padding: EdgeInsets.symmetric(vertical: 16.0),
-                           child: Divider(color: Colors.white24, height: 1),
-                        ),
-                        
-                        FittedBox(
-                           fit: BoxFit.scaleDown,
-                           child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _weatherData!.contextSentence,
+                      style: AppTokens.body.copyWith(color: Colors.white60, fontSize: 13),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                      child: Divider(color: Colors.white24, height: 1),
+                    ),
+
+                    // ── Hourly strip — Material icons, no emoji ──
+                    SizedBox(
+                      height: 66,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: upcoming.length,
+                        itemBuilder: (context, i) {
+                          final h = upcoming[i];
+                          final timeStr =
+                              i == 0 ? "Now" : DateFormat('h a').format(h.time);
+                          final hIcon =
+                              _getWeatherIcon(h.weatherCode, _weatherData!.isDay);
+
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 20.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                 Row(
-                                    children: [
-                                       const Icon(Icons.wb_twighlight, color: Colors.amberAccent, size: 20),
-                                       const SizedBox(width: 8),
-                                       Text('Sunrise $sunriseStr', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                                    ]
-                                 ),
-                                 const SizedBox(width: 16),
-                                 Row(
-                                    children: [
-                                       const Icon(Icons.nights_stay, color: Colors.indigoAccent, size: 20),
-                                       const SizedBox(width: 8),
-                                       Text('Sunset $sunsetStr', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                                    ]
-                                 )
-                              ]
-                           ),
-                        )
-                     ],
-                   )
-                )
-             )
-          )
+                                Text(
+                                  timeStr,
+                                  style: AppTokens.body.copyWith(
+                                    color: Colors.white54,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Icon(hIcon.icon, color: hIcon.color, size: 16),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${h.temperature.floor()}°',
+                                  style: AppTokens.body.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                if (h.precipitationProbability > 0)
+                                  Text(
+                                    '${h.precipitationProbability}%',
+                                    style: AppTokens.body.copyWith(
+                                      color: Colors.lightBlueAccent,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                      child: Divider(color: Colors.white24, height: 1),
+                    ),
+
+                    // ── Sunrise / Sunset — single icon language ──
+                    Row(
+                      children: [
+                        Icon(Icons.wb_twilight_rounded,
+                            color: AppTokens.dawnEnd, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Rise $sunriseStr',
+                          style:
+                              AppTokens.body.copyWith(color: Colors.white60, fontSize: 12),
+                        ),
+                        const SizedBox(width: 20),
+                        Icon(Icons.nights_stay_rounded,
+                            color: Colors.white54, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Set $sunsetStr',
+                          style:
+                              AppTokens.body.copyWith(color: Colors.white60, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         );
-      }
+      },
     );
   }
 }
