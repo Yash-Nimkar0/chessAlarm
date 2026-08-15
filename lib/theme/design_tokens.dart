@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTokens {
-  // Colors
   static const Color nightBg = Color(0xFF0F1229);
+  static const Color nightSurface = Color(0xFF16151C);
   static const Color dawnStart = Color(0xFF2D1B4E);
   static const Color dawnEnd = Color(0xFFFF8F5E);
   static const Color daylightBg = Color(0xFFFFF8EE);

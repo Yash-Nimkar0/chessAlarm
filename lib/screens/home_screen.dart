@@ -256,8 +256,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 children: [
                   Flexible(
                     child: Text(
-                      'MY ALARMS', 
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: 2.0, color: colorScheme.onSurface),
+                      'Alarms', 
+                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

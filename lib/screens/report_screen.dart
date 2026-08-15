@@ -144,15 +144,22 @@ class _ReportScreenState extends State<ReportScreen> {
           const SizedBox(height: 24),
           _buildStatRow('Current Streak', '$_currentStreak Days', Icons.local_fire_department),
           const SizedBox(height: 24),
-          _buildInsightCard(),
-          const SizedBox(height: 40),
-          Center(
-            child: Text(
-              'Keep waking up with Wakely to build your chart.',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-          ),
+          if (totalPuzzles == 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 48.0, horizontal: 24.0),
+              child: Column(
+                children: [
+                  Icon(Icons.query_stats, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                  const SizedBox(height: 16),
+                  Text('Your first morning starts here', style: AppTokens.display.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                  const SizedBox(height: 8),
+                  Text('Complete your first wake mission to start tracking your consistency.', style: AppTokens.body.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.4), textAlign: TextAlign.center),
+                ],
+              ),
+            )
+          else ...[
+            _buildInsightCard(),
+          ],
         ],
       ),
     );
@@ -160,7 +167,18 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Widget _buildSleepReport() {
     if (_sleepHistory.isEmpty) {
-      return Center(child: Text('No sleep history yet.', style: AppTokens.body.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)));
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 48.0, horizontal: 24.0),
+        child: Column(
+          children: [
+            Icon(Icons.bedtime_off, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+            const SizedBox(height: 16),
+            Text('Your first night starts here', style: AppTokens.display.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+            const SizedBox(height: 8),
+            Text('Track your sleep to unlock insights and build your consistency score.', style: AppTokens.body.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.4), textAlign: TextAlign.center),
+          ],
+        ),
+      );
     }
     
     final lastSession = _sleepHistory.last;

@@ -517,10 +517,14 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                 ElevatedButton(
                   onPressed: _saveQuickAlarm,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
+                    backgroundColor: colorScheme.brightness == Brightness.light ? AppTokens.signal.withValues(alpha: 0.15) : AppTokens.signal,
+                    foregroundColor: colorScheme.brightness == Brightness.light ? AppTokens.signalDeep : AppTokens.nightBg,
+                    elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusLg)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                      side: colorScheme.brightness == Brightness.light ? BorderSide(color: AppTokens.signal.withValues(alpha: 0.3), width: 1) : BorderSide.none,
+                    ),
                   ),
                   child: const Text('START QUICK ALARM', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                 ),

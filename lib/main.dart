@@ -138,8 +138,15 @@ class _WakelyAppState extends State<WakelyApp> {
         final darkColorScheme = ColorScheme.fromSeed(
           seedColor: AppTokens.signal,
           brightness: Brightness.dark,
-          surface: AppTokens.nightBg,
+          surface: AppTokens.nightSurface,
           primary: AppTokens.signal,
+        ).copyWith(
+          secondary: AppTokens.signal.withValues(alpha: 0.8), // Slightly muted amber
+          tertiary: const Color(0xFF9E9E9E), // True neutral gray (grey.shade500)
+          surfaceContainerHighest: const Color(0xFF2B2A33), // Neutral dark gray derived from nightSurface
+          surfaceContainerHigh: const Color(0xFF222129),
+          secondaryContainer: const Color(0xFF332B1A), // Dark surface with amber tint
+          tertiaryContainer: const Color(0xFF26252C), // Slightly lighter neutral surface
         );
         final lightColorScheme = ColorScheme.fromSeed(
           // Deep pre-dawn indigo as primary in light mode — contrasts well against
@@ -175,10 +182,26 @@ class _WakelyAppState extends State<WakelyApp> {
               elevation: 0,
               color: Colors.black.withValues(alpha: 0.05),
             ),
-            filledButtonTheme: FilledButtonThemeData(
-              style: FilledButton.styleFrom(
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTokens.signal.withValues(alpha: 0.15),
+                foregroundColor: AppTokens.signalDeep,
+                elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                  side: BorderSide(color: AppTokens.signal.withValues(alpha: 0.3), width: 1),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+              ),
+            ),
+            filledButtonTheme: FilledButtonThemeData(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTokens.signal.withValues(alpha: 0.15),
+                foregroundColor: AppTokens.signalDeep,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                  side: BorderSide(color: AppTokens.signal.withValues(alpha: 0.3), width: 1),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
               ),
@@ -187,7 +210,7 @@ class _WakelyAppState extends State<WakelyApp> {
           darkTheme: ThemeData(
             useMaterial3: true,
             colorScheme: darkColorScheme,
-            scaffoldBackgroundColor: AppTokens.nightBg,
+            scaffoldBackgroundColor: AppTokens.nightSurface,
             textTheme: AppTokens.textTheme(ThemeData.dark().textTheme),
             appBarTheme: const AppBarTheme(
               centerTitle: true,
@@ -203,8 +226,22 @@ class _WakelyAppState extends State<WakelyApp> {
               elevation: 0,
               color: Colors.white.withValues(alpha: 0.05),
             ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTokens.signal,
+                foregroundColor: AppTokens.nightSurface,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+              ),
+            ),
             filledButtonTheme: FilledButtonThemeData(
               style: FilledButton.styleFrom(
+                backgroundColor: AppTokens.signal,
+                foregroundColor: AppTokens.nightSurface,
+                elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppTokens.radiusLg),
                 ),

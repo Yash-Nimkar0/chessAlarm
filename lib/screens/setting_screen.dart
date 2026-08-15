@@ -164,7 +164,7 @@ class _SettingScreenState extends State<SettingScreen> {
                   },
                 ),
                 Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), height: 1),
-                _buildListTile(Icons.workspace_premium, 'Wakely Pro 👑', 'Upgrade', color: Colors.amberAccent),
+                _buildListTile(Icons.workspace_premium, 'Wakely Pro', 'Upgrade', color: AppTokens.signal),
               ]),
               const SizedBox(height: 32),
               Text('Sleep Settings', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
@@ -323,8 +323,8 @@ class _SettingScreenState extends State<SettingScreen> {
               _buildSection(colorScheme, [
 
                 ListTile(
-                  leading: const Icon(Icons.favorite, color: Colors.pinkAccent),
-                  title: Text('Help improve the app 🧠', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                  leading: Icon(Icons.chat_bubble_outline, color: Theme.of(context).colorScheme.onSurface),
+                  title: Text('Help improve the app', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                   trailing: Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   onTap: _openFeedback,
                 ),

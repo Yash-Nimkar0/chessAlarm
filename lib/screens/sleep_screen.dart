@@ -289,19 +289,33 @@ class _SleepScreenState extends State<SleepScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 24),
                     decoration: BoxDecoration(
-                      color: _isTracking ? Colors.green.shade800 : colorScheme.primary,
+                      color: _isTracking 
+                          ? Colors.green.shade800 
+                          : (Theme.of(context).brightness == Brightness.light
+                              ? AppTokens.signal.withValues(alpha: 0.15)
+                              : AppTokens.signal),
                       borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                      border: _isTracking ? null : (Theme.of(context).brightness == Brightness.light ? Border.all(color: AppTokens.signal.withValues(alpha: 0.3), width: 1) : null),
                       boxShadow: [
-                        if (!_isTracking) BoxShadow(color: colorScheme.primary.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8)),
+                        if (!_isTracking && Theme.of(context).brightness == Brightness.dark) 
+                          BoxShadow(color: AppTokens.signal.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8)),
                       ],
                     ),
                     child: Column(
                       children: [
-                        Icon(_isTracking ? Icons.nights_stay : Icons.bedtime, color: Colors.white, size: 32),
+                        Icon(
+                          _isTracking ? Icons.nights_stay : Icons.bedtime, 
+                          color: _isTracking ? Colors.white : (Theme.of(context).brightness == Brightness.light ? AppTokens.signalDeep : AppTokens.nightBg), 
+                          size: 32
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           _isTracking ? 'Hardcore Wake Active' : 'Start Sleep Mode',
-                          style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: _isTracking ? Colors.white : (Theme.of(context).brightness == Brightness.light ? AppTokens.signalDeep : AppTokens.nightBg), 
+                            fontSize: 20, 
+                            fontWeight: FontWeight.bold
+                          ),
                         ),
                         if (_isTracking)
                            const Padding(
