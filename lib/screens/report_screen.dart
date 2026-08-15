@@ -142,7 +142,7 @@ class _ReportScreenState extends State<ReportScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          _buildStatRow('Current Streak', '$_currentStreak Days', '🔥'),
+          _buildStatRow('Current Streak', '$_currentStreak Days', Icons.local_fire_department),
           const SizedBox(height: 24),
           if (totalPuzzles == 0)
             Padding(
@@ -341,18 +341,18 @@ class _ReportScreenState extends State<ReportScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.greenAccent.withValues(alpha: 0.1),
+        color: AppTokens.signal.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-        border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.3)),
+        border: Border.all(color: AppTokens.signal.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
             children: [
-              Text('🔥', style: TextStyle(fontSize: 24)),
+              const Icon(Icons.local_fire_department, color: AppTokens.signal, size: 28),
               SizedBox(width: 8),
-              Text('Consistency Focus', style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
+              Text('Consistency Focus', style: TextStyle(color: AppTokens.signal, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 12),
@@ -366,7 +366,7 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  Widget _buildStatRow(String label, String value, String emoji) {
+  Widget _buildStatRow(String label, String value, IconData icon) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
@@ -378,7 +378,7 @@ class _ReportScreenState extends State<ReportScreen> {
         children: [
           Row(
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 20)),
+              Icon(icon, color: AppTokens.signal, size: 20),
               const SizedBox(width: 12),
               Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
             ],

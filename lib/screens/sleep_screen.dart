@@ -258,7 +258,13 @@ class _SleepScreenState extends State<SleepScreen> {
                         const SizedBox(height: 16),
                         Text("Goal: Beat 42 seconds", style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
                         const SizedBox(height: 4),
-                        Text("🔥 Streak: $_currentStreak days", style: const TextStyle(color: AppTokens.signal, fontSize: 14, fontWeight: FontWeight.bold)),
+                        Row(
+                          children: [
+                            const Icon(Icons.local_fire_department, color: AppTokens.signal, size: 16),
+                            const SizedBox(width: 4),
+                            Text("Streak: $_currentStreak days", style: const TextStyle(color: AppTokens.signal, fontSize: 14, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
                       ],
                     ),
                   ),

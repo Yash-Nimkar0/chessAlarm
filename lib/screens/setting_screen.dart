@@ -124,7 +124,13 @@ class _SettingScreenState extends State<SettingScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(_userName, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
-                      Text('🔥 $currentStreak day streak', style: const TextStyle(color: Colors.orangeAccent)),
+                      Row(
+                        children: [
+                          const Icon(Icons.local_fire_department, color: AppTokens.signal, size: 16),
+                          const SizedBox(width: 4),
+                          Text('$currentStreak day streak', style: const TextStyle(color: AppTokens.signal)),
+                        ],
+                      ),
                     ],
                   ),
                 ],

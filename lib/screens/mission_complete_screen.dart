@@ -127,9 +127,16 @@ class _MissionCompleteScreenState extends State<MissionCompleteScreen> with Sing
                 ),
                 const SizedBox(height: 16),
               ],
-              Text(
-                '🔥 $_currentStreak Day Streak',
-                style: const TextStyle(fontSize: 24, color: AppTokens.signal, fontWeight: FontWeight.bold),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.local_fire_department, color: AppTokens.signal, size: 28),
+                  const SizedBox(width: 8),
+                  Text(
+                    '$_currentStreak Day Streak',
+                    style: const TextStyle(fontSize: 24, color: AppTokens.signal, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
               const SizedBox(height: 64),
               Text(
