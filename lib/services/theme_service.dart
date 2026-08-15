@@ -14,14 +14,15 @@ class ThemeService extends ChangeNotifier {
 
   Future<void> init() async {
     int themeIndex = await PreferencesService.getAppTheme();
-    _themeMode = themeIndex == 1 ? ThemeMode.light : ThemeMode.dark;
+    _themeMode = themeIndex == 2 ? ThemeMode.system : (themeIndex == 1 ? ThemeMode.light : ThemeMode.dark);
     _boardTheme = await PreferencesService.getBoardTheme();
     notifyListeners();
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
-    await PreferencesService.setAppTheme(mode == ThemeMode.light ? 1 : 0);
+    int index = mode == ThemeMode.system ? 2 : (mode == ThemeMode.light ? 1 : 0);
+    await PreferencesService.setAppTheme(index);
     notifyListeners();
   }
 

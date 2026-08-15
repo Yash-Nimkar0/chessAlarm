@@ -289,7 +289,7 @@ class _SettingScreenState extends State<SettingScreen> {
                 ListTile(
                   leading: Icon(Icons.dark_mode, color: Theme.of(context).colorScheme.onSurface),
                   title: Text('Theme', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                  trailing: Text(ThemeService().themeMode == ThemeMode.light ? 'Light' : 'Dark', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                  trailing: Text(ThemeService().themeMode == ThemeMode.light ? 'Light' : (ThemeService().themeMode == ThemeMode.dark ? 'Dark' : 'System'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                   onTap: () {
                      showModalBottomSheet(
                       context: context,
@@ -298,8 +298,17 @@ class _SettingScreenState extends State<SettingScreen> {
                         children: [
                           const ListTile(title: Text("App Theme")),
                           ListTile(
+                            title: const Text("System"),
+                            trailing: ThemeService().themeMode == ThemeMode.system ? const Icon(Icons.check, color: AppTokens.signal) : null,
+                            onTap: () {
+                              ThemeService().setThemeMode(ThemeMode.system);
+                              setState((){});
+                              Navigator.pop(context);
+                            },
+                          ),
+                          ListTile(
                             title: const Text("Dark"),
-                            trailing: ThemeService().themeMode == ThemeMode.dark ? const Icon(Icons.check, color: Colors.greenAccent) : null,
+                            trailing: ThemeService().themeMode == ThemeMode.dark ? const Icon(Icons.check, color: AppTokens.signal) : null,
                             onTap: () {
                               ThemeService().setThemeMode(ThemeMode.dark);
                               setState((){});
@@ -308,7 +317,7 @@ class _SettingScreenState extends State<SettingScreen> {
                           ),
                           ListTile(
                             title: const Text("Light"),
-                            trailing: ThemeService().themeMode == ThemeMode.light ? const Icon(Icons.check, color: Colors.greenAccent) : null,
+                            trailing: ThemeService().themeMode == ThemeMode.light ? const Icon(Icons.check, color: AppTokens.signal) : null,
                             onTap: () {
                               ThemeService().setThemeMode(ThemeMode.light);
                               setState((){});
