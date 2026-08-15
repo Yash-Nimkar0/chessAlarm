@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:alarm/alarm.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
@@ -8,7 +7,8 @@ import '../widgets/platform_theme.dart';
 import '../services/sleep_service.dart';
 import '../services/elo_service.dart';
 import '../services/weather_service.dart';
-import '../models/mission_settings.dart';
+import '../features/alarms/application/alarm_controller.dart';
+import '../features/alarms/domain/alarm_model.dart';
 import '../theme/design_tokens.dart';
 
 class SleepScreen extends StatefulWidget {
@@ -20,8 +20,7 @@ class SleepScreen extends StatefulWidget {
 
 class _SleepScreenState extends State<SleepScreen> {
   bool _isTracking = false;
-  AlarmSettings? _nextAlarm;
-  MissionSettings? _missionSettings;
+  ScheduledAlarm? _nextAlarm;
   int _userElo = 1000;
   int _currentStreak = 0;
   int _fastestSolve = 0;
@@ -39,14 +38,8 @@ class _SleepScreenState extends State<SleepScreen> {
   }
 
   Future<void> _loadData() async {
-    final alarms = await Alarm.getAlarms();
-    if (alarms.isNotEmpty) {
-      alarms.sort((a, b) => a.dateTime.compareTo(b.dateTime));
-      _nextAlarm = alarms.firstWhere((a) => a.dateTime.isAfter(DateTime.now()), orElse: () => alarms.first);
-      if (_nextAlarm?.payload != null) {
-          _missionSettings = MissionSettings.fromJsonString(_nextAlarm!.payload!);
-      }
-    }
+    final scheduled = await AlarmController.instance.getNextEnabledWakeRoutine();
+    _nextAlarm = scheduled;
     
     _userElo = await EloService.getElo();
     final stats = await EloService.getStats();
@@ -110,7 +103,7 @@ class _SleepScreenState extends State<SleepScreen> {
      if (_weatherData == null || _weatherData!.hourly.isEmpty) return const SizedBox.shrink();
      
      // Find weather at wake time
-     DateTime target = _nextAlarm?.dateTime ?? DateTime.now().add(const Duration(hours: 8));
+     DateTime target = _nextAlarm?.nextOccurrence ?? DateTime.now().add(const Duration(hours: 8));
      
      HourlyForecast? morningForecast;
      for (var h in _weatherData!.hourly) {
@@ -158,7 +151,7 @@ class _SleepScreenState extends State<SleepScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     
-    final bool isWakeRoutine = _missionSettings != null && _missionSettings!.type == 'wakeRoutine';
+    final bool isWakeRoutine = _nextAlarm != null;
     
     return PlatformScaffold(
       body: SafeArea(
@@ -178,7 +171,7 @@ class _SleepScreenState extends State<SleepScreen> {
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.all(32.0),
-                    child: Text('No alarms set for tonight.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                    child: Text('No wake routines set for tonight.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                   ),
                 )
               else ...[
@@ -192,8 +185,8 @@ class _SleepScreenState extends State<SleepScreen> {
                       textBaseline: TextBaseline.alphabetic,
                       children: [
                         Text(
-                          _formatTimeLeft(_nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now())),
-                          style: AppTokens.display.copyWith(fontSize: 48, fontWeight: FontWeight.bold, color: _nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now()).isNegative ? AppTokens.signal : Theme.of(context).colorScheme.onSurface),
+                          _formatTimeLeft(_nextAlarm!.nextOccurrence.subtract(Duration(minutes: (_nextAlarm!.alarm.sleepGoal * 60).toInt())).difference(DateTime.now())),
+                          style: AppTokens.display.copyWith(fontSize: 48, fontWeight: FontWeight.bold, color: _nextAlarm!.nextOccurrence.subtract(Duration(minutes: (_nextAlarm!.alarm.sleepGoal * 60).toInt())).difference(DateTime.now()).isNegative ? AppTokens.signal : Theme.of(context).colorScheme.onSurface),
                         ),
                         const SizedBox(width: 12),
                         const Text(
@@ -204,7 +197,7 @@ class _SleepScreenState extends State<SleepScreen> {
                     ),
                   ),
                   Text(
-                    'Wake up at ${_formatTime(_nextAlarm!.dateTime)}',
+                    'Wake up at ${_formatTime(_nextAlarm!.nextOccurrence)}',
                     style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16),
                   ),
                 ] else ...[
@@ -215,7 +208,7 @@ class _SleepScreenState extends State<SleepScreen> {
                       crossAxisAlignment: CrossAxisAlignment.baseline,
                       textBaseline: TextBaseline.alphabetic,
                       children: [
-                        Text(_formatTime(_nextAlarm!.dateTime), style: AppTokens.display.copyWith(fontSize: 48, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                        Text(_formatTime(_nextAlarm!.nextOccurrence), style: AppTokens.display.copyWith(fontSize: 48, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                         const SizedBox(width: 12),
                         Text(
                           'Quick Alarm',
@@ -225,7 +218,7 @@ class _SleepScreenState extends State<SleepScreen> {
                     ),
                   ),
                   Text(
-                    'Time until wake: ${_nextAlarm!.dateTime.difference(DateTime.now()).inHours}h ${_nextAlarm!.dateTime.difference(DateTime.now()).inMinutes % 60}m',
+                    'Time until wake: ${_nextAlarm!.nextOccurrence.difference(DateTime.now()).inHours}h ${_nextAlarm!.nextOccurrence.difference(DateTime.now()).inMinutes % 60}m',
                     style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16),
                   ),
                 ],
@@ -276,8 +269,8 @@ class _SleepScreenState extends State<SleepScreen> {
                   // Sleep Readiness Checklist
                   Text('Sleep Readiness', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
-                  _buildChecklistItem(Icons.alarm_on, 'Alarm armed for ${_formatTime(_nextAlarm!.dateTime)}'),
-                  _buildChecklistItem(Icons.bedtime, 'Sleep goal: ${_missionSettings!.sleepGoal}h'),
+                  _buildChecklistItem(Icons.alarm_on, 'Alarm armed for ${_formatTime(_nextAlarm!.nextOccurrence)}'),
+                  _buildChecklistItem(Icons.bedtime, 'Sleep goal: ${_nextAlarm!.alarm.sleepGoal}h'),
                   _buildChecklistItem(Icons.psychology, 'Challenge loaded'),
                   
                   const SizedBox(height: 32),

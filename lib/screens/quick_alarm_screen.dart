@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:alarm/alarm.dart';
+import '../features/alarms/domain/alarm_model.dart';
+import '../features/alarms/domain/mission_config.dart';
+import '../features/alarms/domain/recurrence.dart';
+import '../features/alarms/application/alarm_controller.dart';
 import 'package:intl/intl.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import 'dart:math';
+import 'dart:async';
 
-import '../models/mission_settings.dart';
+import '../models/mission_settings.dart' hide MissionType;
 import '../widgets/platform_theme.dart';
 import 'edit_alarm_screen.dart';
 import 'missions/typing_config_screen.dart';
@@ -12,6 +17,8 @@ import 'missions/shake_config_screen.dart';
 import 'missions/default_config_screen.dart';
 import 'missions/qr_config_screen.dart';
 import 'missions/steps_config_screen.dart';
+import 'sound_picker_screen.dart';
+import '../features/sounds/data/sound_repository.dart';
 import '../theme/design_tokens.dart';
 
 class QuickAlarmScreen extends StatefulWidget {
@@ -27,12 +34,26 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
   late MissionSettings _missionSettings;
   double _volume = 0.8;
   bool _vibrate = true;
-  String _assetAudio = 'assets/marimba.mp3';
+  String _soundId = 'wakely_soft_morning';
+  bool _fadeIn = false;
+  int _fadeDuration = 30;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _missionSettings = MissionSettings(type: 'quickAlarm', mission: 'none');
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_targetTime != null) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   void _addTime(Duration duration) {
@@ -95,25 +116,35 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
 
     Haptics.vibrate(HapticsType.success);
     
-    final alarmSettings = AlarmSettings(
-      id: Random().nextInt(10000) + 1,
-      dateTime: _targetTime!,
-      assetAudioPath: _assetAudio,
+    final newAlarm = WakelyAlarm(
+      id: 0,
+      time: _targetTime!,
+      enabled: true,
+      type: AlarmType.standard,
+      recurrence: Recurrence.none(),
+      label: 'Quick Alarm',
+      soundId: _soundId,
+      fadeIn: _fadeIn,
+      fadeDuration: _fadeDuration,
       loopAudio: true,
       vibrate: _vibrate,
-      volumeSettings: VolumeSettings.fade(
-        volume: _volume,
-        fadeDuration: const Duration(seconds: 30),
+      volume: _volume,
+      smartLock: _missionSettings.smartLock,
+      mission: MissionConfig(
+        type: MissionType.fromString(_missionSettings.mission),
+        difficultyMode: _missionSettings.difficultyMode,
+        difficultyOverride: _missionSettings.difficultyOverride,
+        rounds: _missionSettings.missionRounds,
+        data: _missionSettings.missionData,
       ),
-      notificationSettings: const NotificationSettings(
-        title: 'Quick Alarm',
-        body: 'Time is up!',
-        stopButton: 'Stop',
-      ),
-      payload: _missionSettings.toJsonString(),
+      sleepGoal: _missionSettings.sleepGoal,
+      sleepTracking: false,
+      sleepSounds: false,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     );
 
-    await Alarm.set(alarmSettings: alarmSettings);
+    await AlarmController.instance.createAlarm(newAlarm);
     if (mounted) {
       Navigator.pop(context, true);
     }
@@ -334,8 +365,9 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
     
     if (_targetTime != null && _targetTime!.isAfter(DateTime.now())) {
       final diff = _targetTime!.difference(DateTime.now());
-      int h = diff.inHours;
-      int m = diff.inMinutes.remainder(60);
+      int totalMins = (diff.inSeconds / 60).ceil();
+      int h = totalMins ~/ 60;
+      int m = totalMins % 60;
       
       if (h > 0) {
         displayTime = "${h}h ${m}m";
@@ -474,10 +506,36 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                       ListTile(
                         leading: Icon(Icons.music_note, color: colorScheme.primary),
                         title: const Text('Sound'),
-                        trailing: Text(
-                          _assetAudio.split('/').last.split('.').first,
-                          style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              SoundRepository.instance.getSoundById(_soundId)?.name ?? 'Unknown',
+                              style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant, size: 20),
+                          ],
                         ),
+                        onTap: () async {
+                          final result = await Navigator.push<SoundPickerResult>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SoundPickerScreen(
+                                initialSoundId: _soundId,
+                                initialFadeIn: _fadeIn,
+                                initialFadeDuration: _fadeDuration,
+                              ),
+                            ),
+                          );
+                          if (result != null) {
+                            setState(() {
+                              _soundId = result.soundId;
+                              _fadeIn = result.fadeIn;
+                              _fadeDuration = result.fadeDuration;
+                            });
+                          }
+                        },
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),

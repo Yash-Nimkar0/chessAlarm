@@ -1,25 +1,31 @@
 import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:alarm/alarm.dart';
 import 'package:intl/intl.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import '../models/mission_settings.dart';
+import 'package:audioplayers/audioplayers.dart';
+import '../models/mission_settings.dart' hide MissionType;
 import '../widgets/platform_theme.dart';
+
+import '../features/alarms/domain/alarm_model.dart';
+import '../features/alarms/domain/mission_config.dart';
+import '../features/alarms/domain/recurrence.dart';
+import '../features/alarms/application/alarm_controller.dart';
 
 import 'missions/typing_config_screen.dart';
 import 'missions/shake_config_screen.dart';
 import 'missions/default_config_screen.dart';
 import 'missions/qr_config_screen.dart';
 import 'missions/steps_config_screen.dart';
+import 'sound_picker_screen.dart';
+import '../features/sounds/data/sound_repository.dart';
 import '../theme/design_tokens.dart';
 
 class EditAlarmScreen extends StatefulWidget {
-  final AlarmSettings? alarmSettings;
+  final WakelyAlarm? alarm;
   final bool isWakeRoutine;
-  const EditAlarmScreen({Key? key, this.alarmSettings, this.isWakeRoutine = true}) : super(key: key);
+  
+  const EditAlarmScreen({Key? key, this.alarm, this.isWakeRoutine = true}) : super(key: key);
 
   @override
   State<EditAlarmScreen> createState() => _EditAlarmScreenState();
@@ -30,144 +36,196 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
   late bool loopAudio;
   late bool vibrate;
   late double volume;
-  late String assetAudio;
-  late MissionSettings _missionSettings;
-  
-  late int _alarmId;
+  late String soundId;
+  late bool fadeIn;
+  late int fadeDuration;
+  late MissionSettings _missionSettings; // Kept for config screens compatibility
   
   // 0=Mon, 1=Tue, ..., 6=Sun
   List<bool> _selectedDays = List.filled(7, true);
   final List<String> _dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   final TextEditingController _labelController = TextEditingController();
+  AudioPlayer? _audioPlayer;
+  bool _isPreviewing = false;
 
   @override
   void dispose() {
     _labelController.dispose();
+    _audioPlayer?.dispose();
     super.dispose();
   }
 
   @override
   void initState() {
     super.initState();
-    _alarmId = widget.alarmSettings?.id ?? Random().nextInt(10000) + 1;
     
-    if (widget.alarmSettings != null) {
-      selectedDateTime = widget.alarmSettings!.dateTime;
-      loopAudio = widget.alarmSettings!.loopAudio;
-      vibrate = widget.alarmSettings!.vibrate;
-      volume = widget.alarmSettings!.volumeSettings.volume ?? 0.8;
-      assetAudio = widget.alarmSettings!.assetAudioPath ?? 'assets/marimba.mp3';
+    if (widget.alarm != null) {
+      selectedDateTime = widget.alarm!.time;
+      loopAudio = widget.alarm!.loopAudio;
+      vibrate = widget.alarm!.vibrate;
+      volume = widget.alarm!.volume;
+      soundId = widget.alarm!.soundId;
+      fadeIn = widget.alarm!.fadeIn;
+      fadeDuration = widget.alarm!.fadeDuration;
       
-      if (widget.alarmSettings!.payload != null) {
-        _missionSettings = MissionSettings.fromJsonString(widget.alarmSettings!.payload!);
-      } else {
-        _missionSettings = MissionSettings(type: widget.isWakeRoutine ? "wakeRoutine" : "alarm");
-      }
-      _labelController.text = _missionSettings.label ?? '';
+      _selectedDays = List.from(widget.alarm!.recurrence.days);
+      _labelController.text = widget.alarm!.label ?? '';
+      
+      // Map domain model back to UI state
+      _missionSettings = MissionSettings(
+        type: widget.alarm!.type.toStringValue(),
+        sleepGoal: widget.alarm!.sleepGoal,
+        sleepTracking: widget.alarm!.sleepTracking,
+        sleepSounds: widget.alarm!.sleepSounds,
+        mission: widget.alarm!.mission.type.toStringValue(),
+        difficultyMode: widget.alarm!.mission.difficultyMode,
+        difficultyOverride: widget.alarm!.mission.difficultyOverride,
+        missionRounds: widget.alarm!.mission.rounds,
+        missionData: widget.alarm!.mission.data,
+        label: widget.alarm!.label,
+        smartLock: widget.alarm!.smartLock,
+      );
     } else {
       selectedDateTime = DateTime.now().add(const Duration(minutes: 1));
       selectedDateTime = selectedDateTime.copyWith(second: 0, millisecond: 0);
       loopAudio = true;
       vibrate = true;
       volume = 0.8;
-      assetAudio = 'assets/marimba.mp3';
+      soundId = 'wakely_soft_morning';
+      fadeIn = false;
+      fadeDuration = 30;
       _missionSettings = MissionSettings(type: widget.isWakeRoutine ? "wakeRoutine" : "alarm");
       _labelController.text = '';
-    }
-    
-    _loadRecurringDays();
-  }
-  
-  Future<void> _loadRecurringDays() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? daysJson = prefs.getString('alarm_days_$_alarmId');
-    if (daysJson != null) {
-      try {
-        final List<dynamic> decoded = jsonDecode(daysJson);
-        setState(() {
-          _selectedDays = decoded.map((e) => e as bool).toList();
-        });
-      } catch (e) {
-        // Ignore
-      }
+      _selectedDays = List.filled(7, false); // default to one-shot
     }
   }
   
-  Future<void> _saveRecurringDays() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('alarm_days_$_alarmId', jsonEncode(_selectedDays));
-  }
-
-  DateTime _calculateNextOccurrence(DateTime time, List<bool> days) {
-    if (!days.contains(true)) {
-      // One-off alarm
-      if (time.isBefore(DateTime.now())) {
-        return time.add(const Duration(days: 1));
-      }
-      return time;
-    }
-    
-    // Find the next active day
-    DateTime candidate = time;
-    if (candidate.isBefore(DateTime.now())) {
-      candidate = candidate.add(const Duration(days: 1));
-    }
-    
-    while (!days[candidate.weekday - 1]) {
-      candidate = candidate.add(const Duration(days: 1));
-    }
-    
-    return candidate;
-  }
-
-  String getDayAbbreviation(DateTime date) {
-    return DateFormat('EEE').format(date);
-  }
-
   void saveAlarm() async {
     Haptics.vibrate(HapticsType.medium);
     
-    DateTime nextTime = _calculateNextOccurrence(selectedDateTime, _selectedDays);
-
-    _missionSettings = _missionSettings.copyWith(
-      label: _labelController.text.trim().isNotEmpty ? _labelController.text.trim() : null,
-    );
-
-    final alarmSettings = AlarmSettings(
-      id: _alarmId,
-      dateTime: nextTime,
-      assetAudioPath: assetAudio,
-      loopAudio: loopAudio,
-      vibrate: vibrate,
-      volumeSettings: VolumeSettings.fade(
-        volume: volume,
-        fadeDuration: const Duration(seconds: 30),
-      ),
-      notificationSettings: NotificationSettings(
-        title: _missionSettings.label ?? (widget.isWakeRoutine ? 'Wake Routine' : 'Alarm'),
-        body: widget.isWakeRoutine ? 'Time to wake up and solve your challenge.' : 'Your alarm is ringing.',
-      ),
-      payload: _missionSettings.toJsonString(),
-    );
-
-    await _saveRecurringDays();
-    await Alarm.set(alarmSettings: alarmSettings);
+    // Safety validation for sound
+    final sound = SoundRepository.instance.getSoundById(soundId);
+    if (sound == null) {
+      soundId = 'wakely_soft_morning'; // fallback cleanly
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selected sound was unavailable. Falling back to default.')),
+      );
+    }
     
-    if (mounted) {
-      Navigator.pop(context, alarmSettings);
+    final label = _labelController.text.trim().isNotEmpty ? _labelController.text.trim() : null;
+    final recurrence = Recurrence(_selectedDays);
+
+    final missionConfig = MissionConfig(
+      type: MissionType.fromString(_missionSettings.mission),
+      difficultyMode: _missionSettings.difficultyMode,
+      difficultyOverride: _missionSettings.difficultyOverride,
+      rounds: _missionSettings.missionRounds,
+      data: _missionSettings.missionData,
+    );
+
+    final alarmType = widget.isWakeRoutine ? AlarmType.wakeRoutine : AlarmType.standard;
+
+    if (widget.alarm == null) {
+      // Create new
+      final newAlarm = WakelyAlarm(
+        id: 0, // Assigned by controller
+        time: selectedDateTime,
+        enabled: true,
+        type: alarmType,
+        recurrence: recurrence,
+        label: label,
+        soundId: soundId,
+        fadeIn: fadeIn,
+        fadeDuration: fadeDuration,
+        loopAudio: loopAudio,
+        vibrate: vibrate,
+        volume: volume,
+        smartLock: _missionSettings.smartLock,
+        mission: missionConfig,
+        sleepGoal: _missionSettings.sleepGoal,
+        sleepTracking: _missionSettings.sleepTracking,
+        sleepSounds: _missionSettings.sleepSounds,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      
+      final created = await AlarmController.instance.createAlarm(newAlarm);
+      if (mounted) Navigator.pop(context, created);
+    } else {
+      // Update existing
+      final updatedAlarm = widget.alarm!.copyWith(
+        time: selectedDateTime,
+        enabled: true,
+        type: alarmType,
+        recurrence: recurrence,
+        label: label,
+        soundId: soundId,
+        fadeIn: fadeIn,
+        fadeDuration: fadeDuration,
+        loopAudio: loopAudio,
+        vibrate: vibrate,
+        volume: volume,
+        smartLock: _missionSettings.smartLock,
+        mission: missionConfig,
+        sleepGoal: _missionSettings.sleepGoal,
+        sleepTracking: _missionSettings.sleepTracking,
+        sleepSounds: _missionSettings.sleepSounds,
+        updatedAt: DateTime.now(),
+      );
+      
+      final saved = await AlarmController.instance.updateAlarm(updatedAlarm);
+      if (mounted) Navigator.pop(context, saved);
     }
   }
 
   void deleteAlarm() async {
-    if (widget.alarmSettings != null) {
+    if (widget.alarm != null) {
       Haptics.vibrate(HapticsType.heavy);
-      await Alarm.stop(widget.alarmSettings!.id);
-      
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('alarm_days_${widget.alarmSettings!.id}');
-      
+      await AlarmController.instance.deleteAlarm(widget.alarm!.id);
       if (mounted) Navigator.pop(context, true);
     }
+  }
+
+  Future<void> _previewAlarm() async {
+    if (_isPreviewing) {
+      _audioPlayer?.stop();
+      setState(() => _isPreviewing = false);
+      return;
+    }
+
+    final sound = SoundRepository.instance.getSoundById(soundId);
+    if (sound == null) return;
+
+    _audioPlayer ??= AudioPlayer();
+    await _audioPlayer!.setReleaseMode(ReleaseMode.loop);
+    
+    // Simplistic handling: set volume
+    await _audioPlayer!.setVolume(volume);
+
+    // Fade-in simulation
+    if (fadeIn && fadeDuration > 0) {
+      _audioPlayer!.setVolume(0.0);
+      _audioPlayer!.play(AssetSource(sound.path.replaceAll('assets/', '')));
+      
+      final steps = 10;
+      final stepDuration = fadeDuration * 1000 ~/ steps;
+      final volumeStep = volume / steps;
+      
+      for (int i = 1; i <= steps; i++) {
+        if (!mounted || !_isPreviewing) break;
+        await Future.delayed(Duration(milliseconds: stepDuration));
+        if (!mounted || !_isPreviewing) break;
+        await _audioPlayer!.setVolume(volumeStep * i);
+      }
+    } else {
+      await _audioPlayer!.play(AssetSource(sound.path.replaceAll('assets/', '')));
+    }
+
+    if (vibrate) {
+      Haptics.vibrate(HapticsType.heavy);
+    }
+
+    setState(() => _isPreviewing = true);
   }
 
   String _getMissionDisplayName(String missionStr) {
@@ -382,7 +440,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                     child: Text('Cancel', style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16)),
                   ),
                   Text(
-                    widget.alarmSettings == null ? 'New Alarm' : 'Edit Alarm',
+                    widget.alarm == null ? 'New Alarm' : 'Edit Alarm',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
                   ),
                   TextButton(
@@ -520,6 +578,57 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
 
                     const SizedBox(height: 16),
                     
+                    // Sound settings (Primary)
+                    PlatformCard(
+                      child: ListTile(
+                        leading: Icon(Icons.music_note, color: colorScheme.primary),
+                        title: const Text('Sound'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              SoundRepository.instance.getSoundById(soundId)?.name ?? 'Unknown',
+                              style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant, size: 20),
+                          ],
+                        ),
+                        onTap: () async {
+                          final result = await Navigator.push<SoundPickerResult>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SoundPickerScreen(
+                                initialSoundId: soundId,
+                                initialFadeIn: fadeIn,
+                                initialFadeDuration: fadeDuration,
+                              ),
+                            ),
+                          );
+                          if (result != null) {
+                            setState(() {
+                              soundId = result.soundId;
+                              fadeIn = result.fadeIn;
+                              fadeDuration = result.fadeDuration;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
+                    Row(
+                      children: [
+                        Expanded(child: Divider(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.2))),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                          child: Text('Additional Settings', style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.bold)),
+                        ),
+                        Expanded(child: Divider(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.2))),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
                     if (widget.isWakeRoutine)
                       PlatformCard(
                         padding: const EdgeInsets.all(16.0),
@@ -579,14 +688,6 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                     PlatformCard(
                       child: Column(
                         children: [
-                          ListTile(
-                            leading: Icon(Icons.music_note, color: colorScheme.primary),
-                            title: const Text('Sound'),
-                            trailing: Text(
-                              assetAudio.split('/').last.split('.').first,
-                              style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16),
-                            ),
-                          ),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                             child: Row(
@@ -621,12 +722,28 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
 
                     const SizedBox(height: 32),
 
-                    if (widget.alarmSettings != null)
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: _isPreviewing ? colorScheme.error : colorScheme.primary),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusLg)),
+                        ),
+                        icon: Icon(_isPreviewing ? Icons.stop_circle : Icons.play_circle_fill, color: _isPreviewing ? colorScheme.error : colorScheme.primary),
+                        label: Text(_isPreviewing ? 'Stop Preview' : 'Preview Alarm', style: TextStyle(color: _isPreviewing ? colorScheme.error : colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold)),
+                        onPressed: _previewAlarm,
+                      ),
+                    ),
+
+                    if (widget.alarm != null) ...[
+                      const SizedBox(height: 16),
                       TextButton.icon(
                         icon: Icon(Icons.delete_outline, color: colorScheme.error),
                         label: Text('Delete Alarm', style: TextStyle(color: colorScheme.error, fontSize: 16)),
                         onPressed: deleteAlarm,
                       ),
+                    ],
                       
                     const SizedBox(height: 40),
                   ],

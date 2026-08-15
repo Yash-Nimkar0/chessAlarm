@@ -446,7 +446,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
                         moves: _renderState.moves,
                         onMove: _onMove,
                         onPremove: _onMove,
-                        promotionBehaviour: PromotionBehaviour.autoPremove,
                       ),
                     ),
                   ),

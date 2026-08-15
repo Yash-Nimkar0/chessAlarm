@@ -121,21 +121,32 @@ class WeatherService {
       }
     }
 
-    await _handleLocationPermission();
+    // Do NOT request permissions here, only check if already granted
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return cachedWeather;
+
+    final permission = await Geolocator.checkPermission();
+    if (permission != LocationPermission.always && permission != LocationPermission.whileInUse) {
+      return cachedWeather;
+    }
 
     try {
-      double lat = 37.7749; // Default to San Francisco
-      double lon = -122.4194;
+      double lat;
+      double lon;
       
       try {
         Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.low,
-          timeLimit: const Duration(seconds: 4),
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.low,
+            timeLimit: Duration(seconds: 4),
+          )
         );
         lat = position.latitude;
         lon = position.longitude;
       } catch (e) {
-        print('Using fallback location due to error: $e');
+        // If we fail to get location, don't use a hardcoded fallback.
+        // Return existing cache or null.
+        return cachedWeather;
       }
 
       final url = Uri.parse(

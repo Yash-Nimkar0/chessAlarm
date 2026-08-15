@@ -15,6 +15,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'services/theme_service.dart';
 import 'theme/design_tokens.dart';
 
+import 'features/alarms/data/alarm_migration.dart';
+import 'features/alarms/data/alarm_repository.dart';
+import 'features/alarms/data/alarm_scheduler.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -60,8 +64,8 @@ class _WakelyAppLoaderState extends State<WakelyAppLoader> {
       debugPrint("Alarm init failed or timed out: $e");
     }
 
-    // Pre-fetch weather in the background
-    WeatherService.getCurrentWeather();
+    // Run alarm migration if necessary
+    await AlarmMigration.migrateIfNeeded(AlarmRepository(), AlarmScheduler());
 
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('has_seen_onboarding') ?? false;

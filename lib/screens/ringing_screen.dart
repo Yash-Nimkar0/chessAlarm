@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:alarm/alarm.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
+import '../features/alarms/application/alarm_controller.dart';
 
 import 'dart:io';
 import '../models/mission_settings.dart';
@@ -119,8 +120,7 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
       setState(() => _isProcessing = true);
     }
     
-    await Alarm.stop(widget.alarmSettings.id);
-    await _rescheduleIfRecurring();
+    await AlarmController.instance.completeAlarm(widget.alarmSettings.id);
     
     if (mounted) {
       int elapsed = DateTime.now().difference(_startTime).inSeconds;
@@ -168,33 +168,7 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
     }
   }
 
-  Future<void> _rescheduleIfRecurring() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? daysJson = prefs.getString('alarm_days_${widget.alarmSettings.id}');
-    if (daysJson != null) {
-      try {
-        final List<dynamic> decoded = jsonDecode(daysJson);
-        final List<bool> days = decoded.map((e) => e as bool).toList();
-        
-        if (days.contains(true)) {
-          // Find next occurrence
-          DateTime candidate = widget.alarmSettings.dateTime.add(const Duration(days: 1));
-          for (int i = 0; i < 7; i++) {
-            int dayIndex = candidate.weekday - 1;
-            if (days[dayIndex]) {
-              final newSettings = widget.alarmSettings.copyWith(
-                id: widget.alarmSettings.id,
-                dateTime: candidate,
-              );
-              await Alarm.set(alarmSettings: newSettings);
-              return;
-            }
-            candidate = candidate.add(const Duration(days: 1));
-          }
-        }
-      } catch (e) {}
-    }
-  }
+
 
   void _handleSuccess() async {
     if (mounted) {
@@ -207,8 +181,7 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
 
     await Future.delayed(const Duration(seconds: 2));
     
-    await Alarm.stop(widget.alarmSettings.id);
-    await _rescheduleIfRecurring();
+    await AlarmController.instance.completeAlarm(widget.alarmSettings.id);
     
     if (mounted) {
       int elapsed = DateTime.now().difference(_startTime).inSeconds;
@@ -354,6 +327,23 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
                           ),
                         ),
                       Expanded(child: content),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Snooze deferred to future phase.')),
+                            );
+                          },
+                          icon: Icon(Icons.snooze, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          label: Text('Snooze', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),

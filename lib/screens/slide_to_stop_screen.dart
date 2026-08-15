@@ -3,6 +3,7 @@ import 'package:alarm/alarm.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'package:haptic_feedback/haptic_feedback.dart';
+import '../features/alarms/application/alarm_controller.dart';
 import 'ringing_screen.dart';
 import '../models/mission_settings.dart';
 import '../services/weather_service.dart';
@@ -23,12 +24,22 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
   String _userName = "";
   late AnimationController _bgAnimController;
   WeatherData? _weatherData;
+  MissionSettings? _missionSettings;
   
   @override
   void initState() {
     super.initState();
     _weatherData = WeatherService.cachedWeather;
     _bgAnimController = AnimationController(vsync: this, duration: const Duration(seconds: 15))..repeat(reverse: true);
+    
+    if (widget.alarmSettings.payload != null) {
+      try {
+        _missionSettings = MissionSettings.fromJsonString(widget.alarmSettings.payload!);
+      } catch (e) {
+        // Ignore
+      }
+    }
+
     _loadName();
     _updateTime();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -91,7 +102,7 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
         ),
       );
     } else {
-      await Alarm.stop(widget.alarmSettings.id);
+      await AlarmController.instance.completeAlarm(widget.alarmSettings.id);
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => Scaffold(
@@ -124,46 +135,54 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: AnimatedBuilder(
-        animation: _bgAnimController,
-        builder: (context, child) {
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: _getWeatherGradients(),
-                begin: Alignment.topLeft,
-                end: Alignment(1.0, _bgAnimController.value * 2 - 1.0),
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        body: AnimatedBuilder(
+          animation: _bgAnimController,
+          builder: (context, child) {
+            return Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: _getWeatherGradients(),
+                  begin: Alignment.topLeft,
+                  end: Alignment(1.0, _bgAnimController.value * 2 - 1.0),
+                ),
               ),
-            ),
-            child: SafeArea(
-              child: Column(
-                children: [
-                  const SizedBox(height: 60),
-                  Text('${GreetingUtils.getGreeting()}, $_userName', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 60),
+                    Text('${GreetingUtils.getGreeting()}, $_userName', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
                   if (_weatherData != null)
                      Text('${_weatherData!.iconEmoji} ${_weatherData!.conditionTitle} · ${_weatherData!.temperature.floor()}°C', style: const TextStyle(color: Colors.white54, fontSize: 18)),
                   const SizedBox(height: 40),
                   const Spacer(),
 
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.lock, color: Colors.white.withValues(alpha: 0.5), size: 16),
-                const SizedBox(width: 8),
-                Text(
-                  "Wake up early",
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    _missionSettings?.mission != 'none' ? Icons.psychology : Icons.alarm, 
+                    color: Colors.white.withValues(alpha: 0.5), 
+                    size: 16
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 40),
+                  const SizedBox(width: 8),
+                  Text(
+                    _missionSettings?.label?.isNotEmpty == true 
+                        ? _missionSettings!.label! 
+                        : "Alarm Ringing",
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 40),
             Text(
               _currentTime,
               style: const TextStyle(
@@ -183,6 +202,27 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
               ),
             ),
             const Spacer(),
+            // UI space for Snooze
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Snooze deferred to future phase.')),
+                    );
+                  },
+                  icon: const Icon(Icons.snooze, color: Colors.white),
+                  label: const Text('Snooze', style: TextStyle(color: Colors.white)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.white54),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
               child: SlideAction(
@@ -195,8 +235,9 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
           );
         },
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class SlideAction extends StatefulWidget {

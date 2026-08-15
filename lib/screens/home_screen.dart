@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:alarm/alarm.dart';
 import 'dart:async';
-import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
-import '../models/mission_settings.dart';
+
+import '../features/alarms/application/alarm_controller.dart';
+import '../features/alarms/domain/alarm_capability_service.dart';
+import '../features/alarms/domain/alarm_model.dart';
 import 'edit_alarm_screen.dart';
 import 'quick_alarm_screen.dart';
+import '../features/sounds/data/sound_repository.dart';
 import '../theme/design_tokens.dart';
-
 import '../widgets/platform_theme.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -20,7 +21,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
-  late List<AlarmSettings> alarms = [];
+  late List<WakelyAlarm> alarms = [];
   StreamSubscription? subscription;
   Timer? _countdownTimer;
   String _timeUntilNextAlarm = "";
@@ -49,33 +50,32 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _checkPermissions() async {
-    bool granted = true;
-    if (Platform.isIOS) {
-      granted = await Permission.notification.isGranted;
-    } else if (Platform.isAndroid) {
-      granted = await Permission.notification.isGranted && 
-                await Permission.systemAlertWindow.isGranted;
-    }
-    if (mounted && granted != _permissionsGranted) {
+    final status = await AlarmCapabilityService.check();
+    if (mounted && status.isReady != _permissionsGranted) {
       setState(() {
-        _permissionsGranted = granted;
+        _permissionsGranted = status.isReady;
       });
     }
   }
 
+  ScheduledAlarm? _nextScheduled;
+
   void loadAlarms() async {
-    final fetchedAlarms = await Alarm.getAlarms();
-    fetchedAlarms.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+    final fetchedAlarms = await AlarmController.instance.getAlarms();
+    fetchedAlarms.sort((a, b) => a.time.compareTo(b.time));
+    final next = await AlarmController.instance.getNextEnabledAlarm();
+
     if (mounted) {
       setState(() {
         alarms = fetchedAlarms;
+        _nextScheduled = next;
         _updateNextAlarmText();
       });
     }
   }
 
   void _updateNextAlarmText() {
-    if (alarms.isEmpty) {
+    if (_nextScheduled == null) {
       if (_timeUntilNextAlarm != "") {
         setState(() => _timeUntilNextAlarm = "");
       }
@@ -83,17 +83,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
     
     final now = DateTime.now();
-    AlarmSettings? nextAlarm;
-    for (var a in alarms) {
-      if (a.dateTime.isAfter(now)) {
-        nextAlarm = a;
-        break;
-      }
-    }
-    
-    nextAlarm ??= alarms.first;
-
-    final diff = nextAlarm.dateTime.difference(now);
+    final diff = _nextScheduled!.nextOccurrence.difference(now);
     final days = diff.inDays;
     final hours = diff.inHours.remainder(24);
     final minutes = diff.inMinutes.remainder(60);
@@ -105,6 +95,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       text = "Next alarm in ${hours}h ${minutes}m";
     } else if (minutes > 0) {
       text = "Next alarm in ${minutes}m";
+    } else if (diff.isNegative) {
+      text = "Alarm ringing...";
     } else {
       text = "Alarm ringing soon...";
     }
@@ -122,8 +114,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  void navigateToAlarmScreen(AlarmSettings? settings) async {
-    if (settings == null) {
+  void navigateToAlarmScreen(WakelyAlarm? alarm) async {
+    if (alarm == null) {
       // Show type selector
       showModalBottomSheet(
         context: context,
@@ -187,36 +179,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
       );
     } else {
-      bool isWake = false;
-      if (settings.payload != null) {
-         try {
-            final Map<String, dynamic> data = jsonDecode(settings.payload!);
-            isWake = data['type'] == 'wakeRoutine';
-         } catch(e) {}
-      }
-      _openEditScreen(settings, isWake);
+      _openEditScreen(alarm, alarm.type == AlarmType.wakeRoutine);
     }
   }
 
-  void _openEditScreen(AlarmSettings? settings, bool isWakeRoutine) async {
+  void _openEditScreen(WakelyAlarm? alarm, bool isWakeRoutine) async {
     final res = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EditAlarmScreen(alarmSettings: settings, isWakeRoutine: isWakeRoutine),
+        builder: (context) => EditAlarmScreen(alarm: alarm, isWakeRoutine: isWakeRoutine),
       ),
     );
 
     if (res != null) {
       loadAlarms();
     }
-  }
-  bool _isLocked(AlarmSettings alarm) {
-    if (alarm.payload != null) {
-      final missionSettings = MissionSettings.fromJsonString(alarm.payload!);
-      if (!missionSettings.smartLock) return false;
-    }
-    final diff = alarm.dateTime.difference(DateTime.now());
-    return diff.inMinutes < 2 && alarm.dateTime.isAfter(DateTime.now());
   }
 
   @override
@@ -231,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             // Header
             if (!_permissionsGranted)
               GestureDetector(
-                onTap: () => openAppSettings(),
+                onTap: () => AlarmCapabilityService.requestAlarmPermissions().then((_) => _checkPermissions()),
                 child: Container(
                   width: double.infinity,
                   color: colorScheme.errorContainer,
@@ -283,6 +260,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     ),
                   ),
                 ),
+              )
+            else if (alarms.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10, left: 16, right: 16),
+                child: PlatformCard(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                  child: Text(
+                    "All alarms are currently turned off.",
+                    style: AppTokens.display.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                ),
               ),
             
             // Expanded List View
@@ -306,7 +299,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       itemCount: alarms.length,
                       itemBuilder: (context, index) {
                         final alarm = alarms[index];
-                        final locked = _isLocked(alarm);
+                        final locked = alarm.isLocked;
+                        
                         return PlatformCard(
                           margin: const EdgeInsets.symmetric(vertical: 8),
                           onTap: locked ? () {
@@ -318,46 +312,113 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               ),
                             );
                           } : () => navigateToAlarmScreen(alarm),
-                          child: Padding(
-                              padding: const EdgeInsets.all(24.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        DateFormat('h:mm a').format(alarm.dateTime),
-                                        style: AppTokens.display.copyWith(
-                                          fontSize: 36,
-                                          fontWeight: FontWeight.w900,
-                                          color: locked ? colorScheme.onSurface.withValues(alpha: 0.5) : colorScheme.onSurface,
-                                          letterSpacing: 1.5,
+                          child: Opacity(
+                            opacity: (!alarm.enabled && !locked) ? 0.5 : 1.0,
+                            child: Padding(
+                                padding: const EdgeInsets.all(24.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          DateFormat('h:mm a').format(alarm.time),
+                                          style: AppTokens.display.copyWith(
+                                            fontSize: 36,
+                                            fontWeight: FontWeight.w900,
+                                            color: locked ? colorScheme.onSurface.withValues(alpha: 0.5) : colorScheme.onSurface,
+                                            letterSpacing: 1.5,
+                                            decoration: alarm.enabled ? TextDecoration.none : TextDecoration.lineThrough,
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        DateFormat('EEEE, MMM d').format(alarm.dateTime),
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                          color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : colorScheme.primary,
-                                          letterSpacing: 1.1,
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          alarm.recurrence.isOneShot 
+                                            ? DateFormat('EEEE, MMM d').format(alarm.time)
+                                            : alarm.recurrence.displayText,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : colorScheme.primary,
+                                            letterSpacing: 1.1,
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
+                                        if (alarm.label != null && alarm.label!.isNotEmpty) ...[
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            alarm.label!,
+                                            style: TextStyle(fontSize: 14, color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : colorScheme.onSurfaceVariant),
+                                          ),
+                                        ],
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.music_note, size: 14, color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.3) : colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              SoundRepository.instance.getSoundById(alarm.soundId)?.name ?? 'Unknown',
+                                              style: TextStyle(fontSize: 12, color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : colorScheme.onSurfaceVariant.withValues(alpha: 0.8)),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Icon(Icons.psychology, size: 14, color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.3) : colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              alarm.mission.type.toString().split('.').last, // Simplistic mission name
+                                              style: TextStyle(fontSize: 12, color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : colorScheme.onSurfaceVariant.withValues(alpha: 0.8)),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   if (locked)
                                     Icon(Icons.lock_rounded, color: colorScheme.error, size: 28)
                                   else
-                                    IconButton(
-                                      icon: Icon(Icons.delete_outline_rounded, color: colorScheme.onSurfaceVariant, size: 28),
-                                      onPressed: () async {
-                                        await Alarm.stop(alarm.id);
-                                        loadAlarms();
-                                      },
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Switch(
+                                          value: alarm.enabled,
+                                          onChanged: (val) async {
+                                            if (val) {
+                                              await AlarmController.instance.enableAlarm(alarm.id);
+                                            } else {
+                                              await AlarmController.instance.disableAlarm(alarm.id);
+                                            }
+                                            loadAlarms();
+                                          },
+                                        ),
+                                        IconButton(
+                                          icon: Icon(Icons.delete_outline_rounded, color: colorScheme.onSurfaceVariant, size: 28),
+                                          onPressed: () async {
+                                            final bool? confirm = await showDialog<bool>(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                title: const Text('Delete Alarm?'),
+                                                content: const Text('Are you sure you want to delete this alarm?'),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(context, false),
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(context, true),
+                                                    style: TextButton.styleFrom(foregroundColor: colorScheme.error),
+                                                    child: const Text('Delete'),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                            if (confirm == true) {
+                                              await AlarmController.instance.deleteAlarm(alarm.id);
+                                              loadAlarms();
+                                            }
+                                          },
+                                        ),
+                                      ],
                                     ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                         );

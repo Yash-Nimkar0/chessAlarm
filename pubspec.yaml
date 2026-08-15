@@ -49,8 +49,8 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/marimba.mp3
     - assets/silent.mp3
     - assets/icon.png
 
     - assets/audio/
+    - assets/audio/alarms/
