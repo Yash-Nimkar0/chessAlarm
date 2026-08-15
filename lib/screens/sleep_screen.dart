@@ -24,6 +24,7 @@ class _SleepScreenState extends State<SleepScreen> {
   MissionSettings? _missionSettings;
   int _userElo = 1000;
   int _currentStreak = 0;
+  int _fastestSolve = 0;
   
   WeatherData? _weatherData;
 
@@ -50,6 +51,7 @@ class _SleepScreenState extends State<SleepScreen> {
     _userElo = await EloService.getElo();
     final stats = await EloService.getStats();
     _currentStreak = stats['currentStreak'] ?? 0;
+    _fastestSolve = stats['fastestSolve'] ?? 0;
     
     _weatherData = await WeatherService.getCurrentWeather();
     
@@ -256,7 +258,7 @@ class _SleepScreenState extends State<SleepScreen> {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        Text("Goal: Beat 42 seconds", style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
+                        Text(_fastestSolve > 0 ? "Goal: Beat $_fastestSolve seconds" : "Goal: Complete your first mission!", style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
                         const SizedBox(height: 4),
                         Row(
                           children: [

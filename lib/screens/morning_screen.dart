@@ -671,9 +671,9 @@ class _MorningScreenState extends State<MorningScreen> {
           Text("Your First 7 Mornings", style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
           const SizedBox(height: 16),
           _buildJourneyStep(1, 'Awaken', _morningsWon >= 1),
-          _buildJourneyStep(3, 'Consistent Waker', _morningsWon >= 3),
+          _buildJourneyStep(3, 'Consistent Waker', _currentStreak >= 3),
           _buildJourneyStep(5, 'Advanced Stats', _morningsWon >= 5),
-          _buildJourneyStep(7, 'First Insight Report', _morningsWon >= 7),
+          _buildJourneyStep(7, 'First Insight Report', _currentStreak >= 7),
         ],
       ),
     );

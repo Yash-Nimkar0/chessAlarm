@@ -228,7 +228,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
     }
     Haptics.vibrate(HapticsType.error);
     
-    await EloService.updateElo(-10);
+    // Penalty removed to encourage practice.
     final newElo = await EloService.getElo();
 
     await Future.delayed(const Duration(milliseconds: 150));
@@ -260,11 +260,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
     }
     Haptics.vibrate(HapticsType.heavy);
     
-    await EloService.updateElo(5);
-    await EloService.recordPracticeSuccess();
-    
     int elapsed = DateTime.now().difference(_startTime).inSeconds;
-    await EloService.recordPuzzleSolved(solveTimeSeconds: elapsed, themes: _currentPuzzle.themes);
+    await EloService.recordPracticeSuccess(solveTimeSeconds: elapsed);
     
     final newElo = await EloService.getElo();
     if (mounted) {

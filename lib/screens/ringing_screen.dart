@@ -16,6 +16,7 @@ import 'mission_complete_screen.dart';
 import '../theme/design_tokens.dart';
 import '../widgets/platform_theme.dart';
 import '../services/analytics_service.dart';
+import '../services/elo_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../services/sleep_service.dart';
@@ -215,6 +216,7 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
         'solve_time': elapsed,
       });
       await SleepService.recordWakePerformance(elapsed, 0, false);
+      await EloService.recordMorningSuccess(solveTimeSeconds: elapsed);
       if (_missionSettings.type == 'quickAlarm' || _missionSettings.type == 'alarm') {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
