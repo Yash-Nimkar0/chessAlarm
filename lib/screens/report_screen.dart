@@ -142,7 +142,7 @@ class _ReportScreenState extends State<ReportScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          _buildStatRow('Current Streak', '$_currentStreak Days', Icons.local_fire_department),
+          _buildStatRow('Current Streak', '$_currentStreak Days', '🔥'),
           const SizedBox(height: 24),
           if (totalPuzzles == 0)
             Padding(
@@ -366,7 +366,7 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  Widget _buildStatRow(String label, String value, IconData icon) {
+  Widget _buildStatRow(String label, String value, String emoji) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
@@ -378,7 +378,7 @@ class _ReportScreenState extends State<ReportScreen> {
         children: [
           Row(
             children: [
-              Icon(icon, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
+              Text(emoji, style: const TextStyle(fontSize: 20)),
               const SizedBox(width: 12),
               Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
             ],
