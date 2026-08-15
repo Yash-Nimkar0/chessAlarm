@@ -84,7 +84,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTokens.nightSurface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Column(
           children: [
@@ -98,7 +98,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                       child: LinearProgressIndicator(
                         value: (_currentPage + 1) / 3,
-                        backgroundColor: Colors.white.withValues(alpha: 0.24),
+                        backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                         valueColor: const AlwaysStoppedAnimation<Color>(AppTokens.signal),
                         minHeight: 8,
                       ),
@@ -144,7 +144,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTokens.signal,
-                    foregroundColor: AppTokens.nightSurface,
+                    foregroundColor: Theme.of(context).colorScheme.surface,
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm)),
                   ),
@@ -168,19 +168,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             "What do you want to improve?",
             style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.w900,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
               height: 1.2,
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             "Train your mind every morning.",
-            style: TextStyle(fontSize: 16, color: Colors.white70),
+            style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 40),
           _buildSelectionButton(Icons.track_changes, "Consistency", _selectedImprovement, (val) => setState(() => _selectedImprovement = val)),
@@ -204,20 +204,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
         decoration: BoxDecoration(
-          color: isSelected ? AppTokens.signal.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.05),
+          color: isSelected ? AppTokens.signal.withValues(alpha: 0.15) : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           border: Border.all(color: isSelected ? AppTokens.signal : Colors.transparent, width: 2),
           borderRadius: BorderRadius.circular(AppTokens.radiusSm),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 24, color: isSelected ? AppTokens.signal : Colors.white),
+            Icon(icon, size: 24, color: isSelected ? AppTokens.signal : Theme.of(context).colorScheme.onSurface),
             const SizedBox(width: 16),
             Text(
               label,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: isSelected ? AppTokens.signal : Colors.white,
+                color: isSelected ? AppTokens.signal : Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ],
@@ -236,13 +236,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           const Icon(Icons.alarm_on_rounded, size: 100, color: AppTokens.signal),
           const SizedBox(height: 40),
-          const Text(
+          Text(
             "Start your first\nmorning challenge",
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.w900,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
               height: 1.2,
             ),
           ),
@@ -250,7 +250,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             "You are committing to building a stronger mind.\nSet your wake up time.",
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Colors.white.withValues(alpha: 0.7), height: 1.5),
+            style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.5),
           ),
         ],
       ),

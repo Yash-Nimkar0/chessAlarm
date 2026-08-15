@@ -350,7 +350,7 @@ class _ReportScreenState extends State<ReportScreen> {
         children: [
           const Row(
             children: [
-              const Icon(Icons.local_fire_department, color: AppTokens.signal, size: 28),
+              Icon(Icons.local_fire_department, color: AppTokens.signal, size: 28),
               SizedBox(width: 8),
               Text('Consistency Focus', style: TextStyle(color: AppTokens.signal, fontWeight: FontWeight.bold)),
             ],
