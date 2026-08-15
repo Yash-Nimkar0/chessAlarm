@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../theme/design_tokens.dart';
 import '../services/elo_service.dart';
 import 'main_screen.dart';
 
@@ -99,11 +100,11 @@ class _MissionCompleteScreenState extends State<MissionCompleteScreen> with Sing
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
-                '🌟 Morning Won',
+                'Morning Won',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.w900,
-                  color: Colors.greenAccent,
+                  color: AppTokens.signal,
                   letterSpacing: 1.5,
                 ),
               ),
@@ -116,19 +117,19 @@ class _MissionCompleteScreenState extends State<MissionCompleteScreen> with Sing
                 const SizedBox(height: 16),
                 Text(
                   '+${widget.eloChange} Points',
-                  style: const TextStyle(fontSize: 24, color: Colors.greenAccent, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 24, color: AppTokens.signal, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
               ] else ...[
                 const Text(
                   'Backup Unlock Used',
-                  style: TextStyle(fontSize: 24, color: Colors.orangeAccent, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 24, color: AppTokens.signal, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
               ],
               Text(
                 '🔥 $_currentStreak Day Streak',
-                style: const TextStyle(fontSize: 24, color: Colors.orange, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 24, color: AppTokens.signal, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 64),
               Text(

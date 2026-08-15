@@ -51,7 +51,7 @@ class _HardcoreWakeScreenState extends State<HardcoreWakeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(32.0),
@@ -60,7 +60,7 @@ class _HardcoreWakeScreenState extends State<HardcoreWakeScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const Spacer(),
-              const Icon(Icons.shield_moon, color: Colors.blueAccent, size: 64),
+              const Icon(Icons.shield_moon, color: AppTokens.signal, size: 64),
               const SizedBox(height: 24),
               Text(
                 _currentTimeString,
@@ -75,7 +75,7 @@ class _HardcoreWakeScreenState extends State<HardcoreWakeScreen> {
               const Text(
                 'Hardcore Wake Mode',
                 style: TextStyle(
-                  color: Colors.blueAccent,
+                  color: AppTokens.signal,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.2,
@@ -102,14 +102,14 @@ class _HardcoreWakeScreenState extends State<HardcoreWakeScreen> {
                   children: [
                     Text('Tomorrow\'s Challenge', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
                     const SizedBox(height: 8),
-                    Text('🌟 Daily Mission', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold)),
+                    Text('Daily Mission', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 20),
+                        const Icon(Icons.local_fire_department, color: AppTokens.signal, size: 20),
                         const SizedBox(width: 8),
-                        Text('Current streak: $_currentStreak days', style: const TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
+                        Text('Current streak: $_currentStreak days', style: const TextStyle(color: AppTokens.signal, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ],

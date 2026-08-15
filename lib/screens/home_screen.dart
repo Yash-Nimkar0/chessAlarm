@@ -144,8 +144,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               const SizedBox(height: 24),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.wb_sunny, color: Colors.orangeAccent, size: 32),
-                title: Text('🌅 Wake Routine', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
+                leading: const Icon(Icons.wb_sunny, color: AppTokens.signal, size: 32),
+                title: Text('Wake Routine', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
                 subtitle: Text('Sleep better.\nWake with a challenge.\nTrack your progress.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 onTap: () {
                   Navigator.pop(context);
@@ -155,8 +155,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), height: 32),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.alarm, color: Colors.blueAccent, size: 32),
-                title: Text('⏰ Alarm', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
+                leading: const Icon(Icons.alarm, color: AppTokens.signal, size: 32),
+                title: Text('Alarm', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
                 subtitle: Text('Standard alarm for daily wake ups.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 onTap: () {
                   Navigator.pop(context);
@@ -166,8 +166,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), height: 32),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.timer, color: Colors.tealAccent, size: 32),
-                title: Text('⏱️ Quick Alarm', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
+                leading: const Icon(Icons.timer, color: AppTokens.signal, size: 32),
+                title: Text('Quick Alarm', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
                 subtitle: Text('Fast timer for naps or reminders.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 onTap: () async {
                   Navigator.pop(context);
@@ -242,7 +242,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       Icon(Icons.warning_amber_rounded, color: colorScheme.onErrorContainer, size: 16),
                       const SizedBox(width: 8),
                       Text(
-                        "⚠️ Permissions disabled. Alarms may not ring. Tap to fix.",
+                        "Permissions disabled. Alarms may not ring. Tap to fix.",
                         style: TextStyle(color: colorScheme.onErrorContainer, fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                     ],

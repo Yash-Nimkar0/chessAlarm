@@ -118,10 +118,10 @@ class _MorningScreenState extends State<MorningScreen> {
           children: [
             Text('How sharp are you today?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 24),
-            _buildMoodOption(context, '😴', 'Tired', 'Need more coffee'),
-            _buildMoodOption(context, '🙂', 'Normal', 'Ready to go'),
-            _buildMoodOption(context, '⚡', 'Sharp', 'Feeling focused'),
-            _buildMoodOption(context, '🔥', 'Peak', 'God mode enabled'),
+            _buildMoodOption(context, Icons.bedtime, 'Tired', 'Need more coffee'),
+            _buildMoodOption(context, Icons.sentiment_satisfied, 'Normal', 'Ready to go'),
+            _buildMoodOption(context, Icons.bolt, 'Sharp', 'Feeling focused'),
+            _buildMoodOption(context, Icons.local_fire_department, 'Peak', 'God mode enabled'),
             const SizedBox(height: 24),
           ],
         ),
@@ -167,7 +167,7 @@ class _MorningScreenState extends State<MorningScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text('+ $label', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16)),
-          Text(value, style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(value, style: const TextStyle(color: AppTokens.signal, fontWeight: FontWeight.bold, fontSize: 16)),
         ],
       ),
     );
@@ -187,7 +187,7 @@ class _MorningScreenState extends State<MorningScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.pets, size: 64, color: Colors.orangeAccent),
+            const Icon(Icons.pets, size: 64, color: AppTokens.signal),
             const SizedBox(height: 16),
             Text(_companionLevel, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 8),
@@ -197,18 +197,18 @@ class _MorningScreenState extends State<MorningScreen> {
             const SizedBox(height: 24),
             Text('XP to Next Level', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            LinearProgressIndicator(value: 0.7, backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), color: Colors.orangeAccent, minHeight: 8),
+            LinearProgressIndicator(value: 0.7, backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), color: AppTokens.signal, minHeight: 8),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Column(children: [
-                  const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
+                  const Icon(Icons.check_circle, color: AppTokens.signal, size: 20),
                   const SizedBox(height: 4),
                   Text('3 mornings left', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                 ]),
                 Column(children: [
-                  const Icon(Icons.extension, color: Colors.blueAccent, size: 20),
+                  const Icon(Icons.extension, color: AppTokens.signal, size: 20),
                   const SizedBox(height: 4),
                   Text('20 missions left', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                 ]),
@@ -244,7 +244,7 @@ class _MorningScreenState extends State<MorningScreen> {
               children: [
                 Text('$_morningsWon', style: AppTokens.display.copyWith(fontSize: 48, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                 const SizedBox(width: 8),
-                const Text('Mornings won', style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 16)),
+                const Text('Mornings won', style: TextStyle(color: AppTokens.signal, fontWeight: FontWeight.bold, fontSize: 16)),
               ],
             ),
             const SizedBox(height: 32),
@@ -272,9 +272,9 @@ class _MorningScreenState extends State<MorningScreen> {
     );
   }
 
-  Widget _buildMoodOption(BuildContext context, String emoji, String title, String subtitle) {
+  Widget _buildMoodOption(BuildContext context, IconData icon, String title, String subtitle) {
     return ListTile(
-      leading: Text(emoji, style: const TextStyle(fontSize: 24)),
+      leading: Icon(icon, size: 24, color: AppTokens.signal),
       title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
       subtitle: Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
       onTap: () {
@@ -336,15 +336,9 @@ class _MorningScreenState extends State<MorningScreen> {
         width: double.infinity,
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.indigo.shade900, Colors.purple.shade900],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-          boxShadow: [
-            BoxShadow(color: Colors.purple.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4)),
-          ],
+          
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,7 +353,7 @@ class _MorningScreenState extends State<MorningScreen> {
                     color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                   ),
-                  child: const Text('🌟 Early Riser', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                  child: const Text('Early Riser', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -368,10 +362,10 @@ class _MorningScreenState extends State<MorningScreen> {
             const SizedBox(height: 16),
             Row(
               children: [
-                const Icon(Icons.arrow_upward, color: Colors.greenAccent, size: 16),
-                const Text(' +5 from yesterday', style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.w500)),
+                const Icon(Icons.arrow_upward, color: AppTokens.signal, size: 16),
+                const Text(' +5 from yesterday', style: TextStyle(color: AppTokens.signal, fontWeight: FontWeight.w500)),
                 const Spacer(),
-                Icon(Icons.local_fire_department, color: Colors.orange.shade400, size: 20),
+                Icon(Icons.local_fire_department, color: AppTokens.signal, size: 20),
                 const SizedBox(width: 4),
                 Text('$_currentStreak day streak', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
               ],
@@ -427,21 +421,21 @@ class _MorningScreenState extends State<MorningScreen> {
         width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.indigo.withValues(alpha: 0.2),
+          color: AppTokens.signal.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-          border: Border.all(color: Colors.indigoAccent.withValues(alpha: 0.3)),
+          border: Border.all(color: AppTokens.signal.withValues(alpha: 0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('🌙 While You Were Sleeping...', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('While You Were Sleeping...', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text('$_sleepMomentsCaptured moments captured', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16)),
             const SizedBox(height: 12),
             const Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text('Listen →', style: TextStyle(color: Colors.indigoAccent, fontWeight: FontWeight.bold)),
+                Text('Listen →', style: TextStyle(color: AppTokens.signal, fontWeight: FontWeight.bold)),
               ],
             ),
           ],
@@ -482,11 +476,11 @@ class _MorningScreenState extends State<MorningScreen> {
             padding: const EdgeInsets.symmetric(vertical: 12),
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.greenAccent.withValues(alpha: 0.1),
+              color: AppTokens.signal.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppTokens.radiusSm),
             ),
             child: const Center(
-              child: Text('↑ 22% faster today', style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 16)),
+              child: Text('↑ 22% faster today', style: TextStyle(color: AppTokens.signal, fontWeight: FontWeight.bold, fontSize: 16)),
             ),
           )
         ],
@@ -501,18 +495,18 @@ class _MorningScreenState extends State<MorningScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.purpleAccent.withValues(alpha: 0.1),
+        color: AppTokens.signal.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-        border: Border.all(color: Colors.purpleAccent.withValues(alpha: 0.3)),
+        border: Border.all(color: AppTokens.signal.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
             children: [
-              Icon(Icons.explore, color: Colors.purpleAccent),
+              Icon(Icons.explore, color: AppTokens.signal),
               SizedBox(width: 8),
-              Text("Today's Discovery", style: TextStyle(color: Colors.purpleAccent, fontWeight: FontWeight.bold)),
+              Text("Today's Discovery", style: TextStyle(color: AppTokens.signal, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 12),
@@ -536,9 +530,9 @@ class _MorningScreenState extends State<MorningScreen> {
               },
               child: const Row(
                 children: [
-                  Text('Reveal today\'s discovery', style: TextStyle(color: Colors.purpleAccent, fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text('Reveal today\'s discovery', style: TextStyle(color: AppTokens.signal, fontWeight: FontWeight.bold, fontSize: 14)),
                   SizedBox(width: 4),
-                  Icon(Icons.arrow_forward, color: Colors.purpleAccent, size: 16),
+                  Icon(Icons.arrow_forward, color: AppTokens.signal, size: 16),
                 ],
               ),
             ),
@@ -582,7 +576,7 @@ class _MorningScreenState extends State<MorningScreen> {
                     style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   ),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('Save', style: TextStyle(color: Colors.blueAccent))),
+                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('Save', style: TextStyle(color: AppTokens.signal))),
                   ],
                 ),
               );
@@ -690,7 +684,7 @@ class _MorningScreenState extends State<MorningScreen> {
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
         children: [
-          Icon(unlocked ? Icons.check_circle : Icons.lock, color: unlocked ? Colors.greenAccent : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), size: 20),
+          Icon(unlocked ? Icons.check_circle : Icons.lock, color: unlocked ? AppTokens.signal : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), size: 20),
           const SizedBox(width: 12),
           Text('Day $day', style: TextStyle(color: unlocked ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
           const SizedBox(width: 16),
@@ -716,13 +710,13 @@ class _MorningScreenState extends State<MorningScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text('Your Brain Week 🧠', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
+            Text('Your Brain Week', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 32),
-            _buildRecapStat('🌟 Missions completed', '$_puzzlesSolvedThisWeek', Colors.blueAccent),
-            _buildRecapStat('🏅 Streak extended', '$_currentStreak days', Colors.amberAccent),
-            _buildRecapStat('📈 Total missions', '$_puzzlesSolved', Colors.greenAccent),
+            _buildRecapStat('Missions completed', '$_puzzlesSolvedThisWeek', AppTokens.signal),
+            _buildRecapStat('Streak extended', '$_currentStreak days', Colors.amberAccent),
+            _buildRecapStat('Total missions', '$_puzzlesSolved', AppTokens.signal),
             if (_fastestSolve > 0 && _fastestSolve < 999)
-                _buildRecapStat('⏱ Fastest solve', '$_fastestSolve seconds', Colors.purpleAccent),
+                _buildRecapStat('Fastest solve', '$_fastestSolve seconds', AppTokens.signal),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
@@ -782,11 +776,11 @@ class _MorningScreenState extends State<MorningScreen> {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface, height: 1.3),
             ),
             const SizedBox(height: 32),
-            _buildPmfOption(context, '😢', 'Yes, very disappointed', 'yes'),
+            _buildPmfOption(context, Icons.sentiment_dissatisfied, 'Yes, very disappointed', 'yes'),
             const SizedBox(height: 12),
-            _buildPmfOption(context, '😐', 'Somewhat disappointed', 'somewhat'),
+            _buildPmfOption(context, Icons.sentiment_neutral, 'Somewhat disappointed', 'somewhat'),
             const SizedBox(height: 12),
-            _buildPmfOption(context, '🙂', 'Not really', 'no'),
+            _buildPmfOption(context, Icons.sentiment_satisfied, 'Not really', 'no'),
             const SizedBox(height: 24),
           ],
         ),
@@ -794,7 +788,7 @@ class _MorningScreenState extends State<MorningScreen> {
     );
   }
 
-  Widget _buildPmfOption(BuildContext context, String emoji, String text, String value) {
+  Widget _buildPmfOption(BuildContext context, IconData icon, String text, String value) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -803,6 +797,7 @@ class _MorningScreenState extends State<MorningScreen> {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('pmf_survey_answered', true);
           AnalyticsService.logEvent('pmf_survey_answered', {'answer': value});
+          if (!context.mounted) return;
           Navigator.pop(context);
         },
         style: ElevatedButton.styleFrom(
@@ -814,7 +809,7 @@ class _MorningScreenState extends State<MorningScreen> {
         ),
         child: Row(
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 24)),
+            Icon(icon, size: 24, color: AppTokens.signal),
             const SizedBox(width: 16),
             Text(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],

@@ -71,7 +71,7 @@ class _SleepScreenState extends State<SleepScreen> {
       if (session != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Sleep tracked! Score: ${session.score}/100'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppTokens.signal,
         ));
       }
     } else {
@@ -122,9 +122,9 @@ class _SleepScreenState extends State<SleepScreen> {
      
      // Pseudo-logic to convert code back to icon/string without bloating
      String weatherStr = "Clear";
-     String icon = "☀️";
-     if (morningForecast.weatherCode >= 51 && morningForecast.weatherCode <= 67) { weatherStr = "Light rain expected"; icon = "🌧️"; }
-     if (morningForecast.weatherCode >= 71) { weatherStr = "Cold morning"; icon = "❄️"; }
+     IconData icon = Icons.wb_sunny;
+     if (morningForecast.weatherCode >= 51 && morningForecast.weatherCode <= 67) { weatherStr = "Light rain expected"; icon = Icons.water_drop; }
+     if (morningForecast.weatherCode >= 71) { weatherStr = "Cold morning"; icon = Icons.ac_unit; }
 
      return Container(
         margin: const EdgeInsets.only(bottom: 24),
@@ -135,7 +135,7 @@ class _SleepScreenState extends State<SleepScreen> {
         ),
         child: Row(
            children: [
-              Text(icon, style: const TextStyle(fontSize: 32)),
+              Icon(icon, size: 32, color: AppTokens.signal),
               const SizedBox(width: 16),
               Expanded(
                  child: Column(
@@ -167,7 +167,7 @@ class _SleepScreenState extends State<SleepScreen> {
             children: [
               const SizedBox(height: 16),
               Text(
-                'Tonight 🌙',
+                'Tonight',
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
               ),
               const SizedBox(height: 24),
@@ -191,12 +191,12 @@ class _SleepScreenState extends State<SleepScreen> {
                       children: [
                         Text(
                           _formatTimeLeft(_nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now())),
-                          style: AppTokens.display.copyWith(fontSize: 48, fontWeight: FontWeight.bold, color: _nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now()).isNegative ? Colors.orangeAccent : Theme.of(context).colorScheme.onSurface),
+                          style: AppTokens.display.copyWith(fontSize: 48, fontWeight: FontWeight.bold, color: _nextAlarm!.dateTime.subtract(Duration(minutes: (_missionSettings!.sleepGoal * 60).toInt())).difference(DateTime.now()).isNegative ? AppTokens.signal : Theme.of(context).colorScheme.onSurface),
                         ),
                         const SizedBox(width: 12),
                         const Text(
                           'until bedtime',
-                          style: TextStyle(color: Colors.blueAccent, fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: AppTokens.signal, fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -238,15 +238,8 @@ class _SleepScreenState extends State<SleepScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.indigo.shade900, Colors.purple.shade900],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-                      boxShadow: [
-                        BoxShadow(color: Colors.purple.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4)),
-                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -254,18 +247,18 @@ class _SleepScreenState extends State<SleepScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text("Tomorrow's Mission", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                            Text("Tomorrow's Mission", style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(AppTokens.radiusSm)),
-                              child: Text('$_userElo Points', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                              decoration: BoxDecoration(color: AppTokens.signal.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(AppTokens.radiusSm)),
+                              child: Text('$_userElo Points', style: const TextStyle(color: AppTokens.signal, fontWeight: FontWeight.bold, fontSize: 12)),
                             )
                           ],
                         ),
                         const SizedBox(height: 16),
-                        const Text("Goal: Beat 42 seconds", style: TextStyle(color: Colors.white70, fontSize: 14)),
+                        Text("Goal: Beat 42 seconds", style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
                         const SizedBox(height: 4),
-                        Text("🔥 Streak: $_currentStreak days", style: const TextStyle(color: Colors.orangeAccent, fontSize: 14, fontWeight: FontWeight.bold)),
+                        Text("🔥 Streak: $_currentStreak days", style: const TextStyle(color: AppTokens.signal, fontSize: 14, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -290,12 +283,14 @@ class _SleepScreenState extends State<SleepScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 24),
                     decoration: BoxDecoration(
                       color: _isTracking 
-                          ? Colors.green.shade800 
+                          ? Theme.of(context).colorScheme.surfaceContainerHighest
                           : (Theme.of(context).brightness == Brightness.light
                               ? AppTokens.signal.withValues(alpha: 0.15)
                               : AppTokens.signal),
                       borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-                      border: _isTracking ? null : (Theme.of(context).brightness == Brightness.light ? Border.all(color: AppTokens.signal.withValues(alpha: 0.3), width: 1) : null),
+                      border: _isTracking 
+                          ? Border.all(color: AppTokens.signal, width: 2)
+                          : (Theme.of(context).brightness == Brightness.light ? Border.all(color: AppTokens.signal.withValues(alpha: 0.3), width: 1) : null),
                       boxShadow: [
                         if (!_isTracking && Theme.of(context).brightness == Brightness.dark) 
                           BoxShadow(color: AppTokens.signal.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8)),
@@ -305,14 +300,14 @@ class _SleepScreenState extends State<SleepScreen> {
                       children: [
                         Icon(
                           _isTracking ? Icons.nights_stay : Icons.bedtime, 
-                          color: _isTracking ? Colors.white : (Theme.of(context).brightness == Brightness.light ? AppTokens.signalDeep : AppTokens.nightBg), 
+                          color: _isTracking ? AppTokens.signal : (Theme.of(context).brightness == Brightness.light ? AppTokens.signalDeep : AppTokens.nightBg), 
                           size: 32
                         ),
                         const SizedBox(height: 12),
                         Text(
                           _isTracking ? 'Hardcore Wake Active' : 'Start Sleep Mode',
                           style: TextStyle(
-                            color: _isTracking ? Colors.white : (Theme.of(context).brightness == Brightness.light ? AppTokens.signalDeep : AppTokens.nightBg), 
+                            color: _isTracking ? AppTokens.signal : (Theme.of(context).brightness == Brightness.light ? AppTokens.signalDeep : AppTokens.nightBg), 
                             fontSize: 20, 
                             fontWeight: FontWeight.bold
                           ),
@@ -320,7 +315,7 @@ class _SleepScreenState extends State<SleepScreen> {
                         if (_isTracking)
                            const Padding(
                               padding: EdgeInsets.only(top: 8.0),
-                              child: Text("✓ Tracking active", style: TextStyle(color: Colors.white70, fontSize: 12))
+                              child: Text("✓ Tracking active", style: TextStyle(color: AppTokens.signal, fontSize: 12))
                            )
                       ],
                     ),
@@ -334,10 +329,10 @@ class _SleepScreenState extends State<SleepScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildSoundButton('🌧️', 'Rain', 'audio/rain.mp3'),
-                    _buildSoundButton('🌊', 'Ocean', 'audio/ocean.mp3'),
-                    _buildSoundButton('🌴', 'Jungle', 'audio/brown_noise.mp3'),
-                    _buildSoundButton('🤍', 'White', 'audio/white_noise.mp3'),
+                    _buildSoundButton(Icons.water_drop, 'Rain', 'audio/rain.mp3'),
+                    _buildSoundButton(Icons.waves, 'Ocean', 'audio/ocean.mp3'),
+                    _buildSoundButton(Icons.forest, 'Jungle', 'audio/brown_noise.mp3'),
+                    _buildSoundButton(Icons.noise_control_off, 'White', 'audio/white_noise.mp3'),
                   ],
                 ),
                 
@@ -355,7 +350,7 @@ class _SleepScreenState extends State<SleepScreen> {
         padding: const EdgeInsets.symmetric(vertical: 6.0),
         child: Row(
            children: [
-              Icon(icon, color: Colors.greenAccent, size: 20),
+              Icon(icon, color: AppTokens.signal, size: 20),
               const SizedBox(width: 12),
               Text(text, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 15)),
            ]
@@ -363,7 +358,7 @@ class _SleepScreenState extends State<SleepScreen> {
      );
   }
 
-  Widget _buildSoundButton(String emoji, String name, String assetPath) {
+  Widget _buildSoundButton(IconData icon, String name, String assetPath) {
     bool isPlaying = _currentlyPlaying == name;
     return GestureDetector(
       onTap: () {
@@ -384,7 +379,7 @@ class _SleepScreenState extends State<SleepScreen> {
               ),
             ),
             child: Center(
-              child: Text(emoji, style: const TextStyle(fontSize: 32)),
+              child: Icon(icon, size: 32, color: isPlaying ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface),
             ),
           ),
           const SizedBox(height: 8),

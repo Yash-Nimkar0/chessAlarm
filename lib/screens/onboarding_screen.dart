@@ -72,9 +72,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         _completeOnboarding();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('You must create your first alarm to continue.'),
-            backgroundColor: Colors.redAccent,
+          SnackBar(
+            content: const Text('You must create your first alarm to continue.'),
+            backgroundColor: Theme.of(context).colorScheme.errorContainer,
           ),
         );
       }
@@ -84,7 +84,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTokens.nightSurface,
       body: SafeArea(
         child: Column(
           children: [
@@ -99,7 +99,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: LinearProgressIndicator(
                         value: (_currentPage + 1) / 3,
                         backgroundColor: Colors.white.withValues(alpha: 0.24),
-                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppTokens.signal),
                         minHeight: 8,
                       ),
                     ),
@@ -143,8 +143,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.greenAccent,
-                    foregroundColor: Colors.black,
+                    backgroundColor: AppTokens.signal,
+                    foregroundColor: AppTokens.nightSurface,
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm)),
                   ),
@@ -183,19 +183,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             style: TextStyle(fontSize: 16, color: Colors.white70),
           ),
           const SizedBox(height: 40),
-          _buildSelectionButton("🎯", "Consistency", _selectedImprovement, (val) => setState(() => _selectedImprovement = val)),
+          _buildSelectionButton(Icons.track_changes, "Consistency", _selectedImprovement, (val) => setState(() => _selectedImprovement = val)),
           const SizedBox(height: 16),
-          _buildSelectionButton("🧠", "Mental Sharpness", _selectedImprovement, (val) => setState(() => _selectedImprovement = val)),
+          _buildSelectionButton(Icons.psychology, "Mental Sharpness", _selectedImprovement, (val) => setState(() => _selectedImprovement = val)),
           const SizedBox(height: 16),
-          _buildSelectionButton("🔥", "Discipline", _selectedImprovement, (val) => setState(() => _selectedImprovement = val)),
+          _buildSelectionButton(Icons.local_fire_department, "Discipline", _selectedImprovement, (val) => setState(() => _selectedImprovement = val)),
           const SizedBox(height: 16),
-          _buildSelectionButton("⚡", "Thinking Speed", _selectedImprovement, (val) => setState(() => _selectedImprovement = val)),
+          _buildSelectionButton(Icons.bolt, "Thinking Speed", _selectedImprovement, (val) => setState(() => _selectedImprovement = val)),
         ],
       ),
     );
   }
   
-  Widget _buildSelectionButton(String icon, String label, String? selectedValue, Function(String) onSelect) {
+  Widget _buildSelectionButton(IconData icon, String label, String? selectedValue, Function(String) onSelect) {
     bool isSelected = selectedValue == label;
     return GestureDetector(
       onTap: () => onSelect(label),
@@ -204,20 +204,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.greenAccent.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.05),
-          border: Border.all(color: isSelected ? Colors.greenAccent : Colors.transparent, width: 2),
+          color: isSelected ? AppTokens.signal.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.05),
+          border: Border.all(color: isSelected ? AppTokens.signal : Colors.transparent, width: 2),
           borderRadius: BorderRadius.circular(AppTokens.radiusSm),
         ),
         child: Row(
           children: [
-            Text(icon, style: const TextStyle(fontSize: 24)),
+            Icon(icon, size: 24, color: isSelected ? AppTokens.signal : Colors.white),
             const SizedBox(width: 16),
             Text(
               label,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: isSelected ? Colors.greenAccent : Colors.white,
+                color: isSelected ? AppTokens.signal : Colors.white,
               ),
             ),
           ],
@@ -234,7 +234,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Icon(Icons.alarm_on_rounded, size: 100, color: Colors.amberAccent),
+          const Icon(Icons.alarm_on_rounded, size: 100, color: AppTokens.signal),
           const SizedBox(height: 40),
           const Text(
             "Start your first\nmorning challenge",
