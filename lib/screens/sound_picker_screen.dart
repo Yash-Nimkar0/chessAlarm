@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../features/sounds/domain/sound_model.dart';
@@ -13,15 +14,17 @@ class SoundPickerResult {
 }
 
 class SoundPickerScreen extends StatefulWidget {
-  final String initialSoundId;
+  final String? initialSoundId;
   final bool initialFadeIn;
   final int initialFadeDuration;
+  final void Function(SoundPickerResult) onChanged;
 
   const SoundPickerScreen({
     Key? key,
-    required this.initialSoundId,
-    required this.initialFadeIn,
-    required this.initialFadeDuration,
+    this.initialSoundId,
+    this.initialFadeIn = true,
+    this.initialFadeDuration = 30,
+    required this.onChanged,
   }) : super(key: key);
 
   @override
@@ -34,17 +37,18 @@ class _SoundPickerScreenState extends State<SoundPickerScreen> {
   late int _fadeDuration;
   final AudioPlayer _audioPlayer = AudioPlayer();
   String? _currentlyPlayingId;
+  Timer? _fadeTimer;
   
   late List<SoundModel> _sounds;
 
   @override
   void initState() {
     super.initState();
-    _selectedSoundId = widget.initialSoundId;
+    _sounds = SoundRepository.instance.getAvailableSounds();
+    _selectedSoundId = widget.initialSoundId ?? _sounds.first.id;
     _fadeIn = widget.initialFadeIn;
     _fadeDuration = widget.initialFadeDuration;
     if (_fadeDuration == 0) _fadeDuration = 30; // Migrating 'Off' from duration 0
-    _sounds = SoundRepository.instance.getAvailableSounds();
   }
 
   @override
@@ -54,12 +58,36 @@ class _SoundPickerScreenState extends State<SoundPickerScreen> {
   }
 
   void _togglePlay(SoundModel sound) async {
+    _fadeTimer?.cancel();
+    
     if (_currentlyPlayingId == sound.id) {
       await _audioPlayer.stop();
       setState(() => _currentlyPlayingId = null);
     } else {
       await _audioPlayer.stop();
-      await _audioPlayer.play(AssetSource(sound.path.replaceFirst('assets/', '')));
+      
+      if (_fadeIn) {
+        await _audioPlayer.setVolume(0.0);
+        await _audioPlayer.play(AssetSource(sound.path.replaceFirst('assets/', '')));
+        
+        final steps = _fadeDuration * 10; // 10 steps per second
+        int currentStep = 0;
+        
+        _fadeTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+          currentStep++;
+          if (currentStep >= steps) {
+            _audioPlayer.setVolume(1.0);
+            timer.cancel();
+          } else {
+            // Linear ramp
+            _audioPlayer.setVolume(currentStep / steps);
+          }
+        });
+      } else {
+        await _audioPlayer.setVolume(1.0);
+        await _audioPlayer.play(AssetSource(sound.path.replaceFirst('assets/', '')));
+      }
+      
       setState(() => _currentlyPlayingId = sound.id);
     }
   }
@@ -68,6 +96,7 @@ class _SoundPickerScreenState extends State<SoundPickerScreen> {
     setState(() {
       _selectedSoundId = sound.id;
     });
+    widget.onChanged(SoundPickerResult(_selectedSoundId, _fadeIn, _fadeDuration));
     // Autoplay when selected
     _togglePlay(sound);
   }
@@ -86,12 +115,6 @@ class _SoundPickerScreenState extends State<SoundPickerScreen> {
     return PlatformScaffold(
       appBar: AppBar(
         title: const Text('Alarm Sound'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context, SoundPickerResult(_selectedSoundId, _fadeIn, _fadeDuration));
-          },
-        ),
       ),
       body: Column(
         children: [
@@ -132,14 +155,27 @@ class _SoundPickerScreenState extends State<SoundPickerScreen> {
                                   color: isPlaying ? AppTokens.signal : colorScheme.onSurfaceVariant,
                                   size: 32,
                                 ),
-                                onPressed: () => _togglePlay(sound),
+                                onPressed: () => _selectSound(sound),
                               ),
-                              title: Text(
-                                sound.name,
-                                style: TextStyle(
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  color: isSelected ? AppTokens.signal : colorScheme.onSurface,
-                                ),
+                              title: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    sound.name,
+                                    style: TextStyle(
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      color: isSelected ? AppTokens.signal : colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  if (sound.durationSeconds != null)
+                                    Text(
+                                      '${sound.durationSeconds} sec',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                                      ),
+                                    ),
+                                ],
                               ),
                               trailing: isSelected 
                                   ? const Icon(Icons.check, color: AppTokens.signal)
@@ -158,67 +194,81 @@ class _SoundPickerScreenState extends State<SoundPickerScreen> {
           
           // Fade duration selector
           Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -5),
-                )
-              ]
-            ),
-            child: SafeArea(
-              top: false,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SwitchListTile(
-                    title: Text('Fade in', style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
-                    contentPadding: EdgeInsets.zero,
-                    value: _fadeIn,
-                    onChanged: (val) {
-                      setState(() => _fadeIn = val);
-                    },
-                    activeTrackColor: AppTokens.signal,
-                  ),
-                  const SizedBox(height: 8),
-                  Opacity(
-                    opacity: _fadeIn ? 1.0 : 0.5,
-                    child: IgnorePointer(
-                      ignoring: !_fadeIn,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Duration', style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [15, 30, 60].map((duration) {
-                              final isSelected = _fadeDuration == duration;
-                              return ChoiceChip(
-                                label: Text('${duration}s'),
-                                selected: isSelected,
-                                onSelected: (selected) {
-                                  if (selected) setState(() => _fadeDuration = duration);
-                                },
-                                selectedColor: AppTokens.signal.withValues(alpha: 0.2),
-                                labelStyle: TextStyle(
-                                  color: isSelected ? AppTokens.signalDeep : colorScheme.onSurface,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ],
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  )
+                ]
+              ),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Material(
+                      color: Colors.transparent,
+                      child: SwitchListTile(
+                        title: Text('Fade In', style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
+                        subtitle: Text('Volume ramps up over time', style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                        contentPadding: EdgeInsets.zero,
+                        value: _fadeIn,
+                        onChanged: (val) {
+                          setState(() => _fadeIn = val);
+                          widget.onChanged(SoundPickerResult(_selectedSoundId, _fadeIn, _fadeDuration));
+                          if (_currentlyPlayingId != null) {
+                            _togglePlay(_sounds.firstWhere((s) => s.id == _currentlyPlayingId));
+                          }
+                        },
+                        activeTrackColor: AppTokens.signal,
                       ),
                     ),
-                  )
-                ],
+                    const SizedBox(height: 8),
+                    Opacity(
+                      opacity: _fadeIn ? 1.0 : 0.5,
+                      child: IgnorePointer(
+                        ignoring: !_fadeIn,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Fade Duration', style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [15, 30, 60].map((duration) {
+                                final isSelected = _fadeDuration == duration;
+                                return ChoiceChip(
+                                  label: Text('${duration}s'),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    if (selected) {
+                                      setState(() => _fadeDuration = duration);
+                                      widget.onChanged(SoundPickerResult(_selectedSoundId, _fadeIn, _fadeDuration));
+                                      if (_currentlyPlayingId != null && _fadeIn) {
+                                        _togglePlay(_sounds.firstWhere((s) => s.id == _currentlyPlayingId));
+                                      }
+                                    }
+                                  },
+                                  selectedColor: AppTokens.signal.withValues(alpha: 0.2),
+                                  labelStyle: TextStyle(
+                                    color: isSelected ? AppTokens.signalDeep : colorScheme.onSurface,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  ],
+                ),
               ),
-            ),
-          )
+            )
         ],
       ),
     );

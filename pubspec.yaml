@@ -34,6 +34,8 @@ dependencies:
   mobile_scanner: ^7.4.0
   pedometer: ^4.2.0
   google_fonts: ^8.2.1
+  sentry_flutter: ^9.0.0
+  volume_controller: ^3.6.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

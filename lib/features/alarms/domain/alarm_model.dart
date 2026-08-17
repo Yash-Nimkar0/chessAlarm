@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:alarm/alarm.dart';
 import 'mission_config.dart';
 import 'recurrence.dart';
 
@@ -193,6 +195,41 @@ class WakelyAlarm {
 
   @override
   String toString() => 'WakelyAlarm(id: $id, time: $time, enabled: $enabled, type: $type, label: $label)';
+
+  /// Converts the domain model to a legacy AlarmSettings object.
+  /// Used primarily for backward compatibility with RingingScreen and SlideToStopScreen.
+  AlarmSettings toAlarmSettings() {
+    return AlarmSettings(
+      id: id,
+      dateTime: time,
+      assetAudioPath: soundId,
+      loopAudio: loopAudio,
+      vibrate: vibrate,
+      volumeSettings: fadeIn && fadeDuration > 0
+          ? VolumeSettings.fade(
+              volume: volume,
+              fadeDuration: Duration(seconds: fadeDuration),
+            )
+          : VolumeSettings.fixed(
+              volume: volume,
+            ),
+      notificationSettings: NotificationSettings(
+        title: label ?? (type == AlarmType.wakeRoutine ? 'Wake Routine' : 'Alarm'),
+        body: type == AlarmType.wakeRoutine
+            ? 'Time to wake up and solve your challenge.'
+            : 'Your alarm is ringing.',
+      ),
+      payload: jsonEncode({
+        'type': type.toStringValue(),
+        'mission': mission.type.toStringValue(),
+        'difficultyMode': mission.difficultyMode,
+        'difficultyOverride': mission.difficultyOverride,
+        'missionRounds': mission.rounds,
+        'missionData': mission.data,
+        'label': label,
+      }),
+    );
+  }
 }
 
 /// A composite of a WakelyAlarm and its resolved next occurrence.

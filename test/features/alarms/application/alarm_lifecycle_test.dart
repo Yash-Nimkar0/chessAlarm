@@ -5,11 +5,14 @@ import 'package:wakely/features/alarms/domain/recurrence.dart';
 import 'package:wakely/features/alarms/data/alarm_repository.dart';
 import 'package:wakely/features/alarms/data/alarm_scheduler.dart';
 import 'package:wakely/features/alarms/application/alarm_controller.dart';
-import 'package:alarm/alarm.dart';
+import 'package:wakely/features/alarms/domain/platform_alarm_state.dart';
 
-class FakeAlarmScheduler implements AlarmScheduler {
+class FakeAlarmScheduler extends AlarmScheduler {
   final List<WakelyAlarm> scheduledAlarms = [];
   final List<int> cancelledAlarms = [];
+
+  @override
+  Future<void> init() async {}
   
   @override
   Future<void> schedule(WakelyAlarm alarm) async {
@@ -25,8 +28,12 @@ class FakeAlarmScheduler implements AlarmScheduler {
   }
 
   @override
-  Future<List<AlarmSettings>> getScheduledAlarms() async {
-    throw UnimplementedError('Not needed for this test');
+  Future<List<PlatformAlarmState>> getScheduledAlarms() async {
+    return scheduledAlarms.map((a) => PlatformAlarmState(
+      alarmId: a.id,
+      nativeState: 'scheduled',
+      scheduledAt: a.time,
+    )).toList();
   }
 
   @override

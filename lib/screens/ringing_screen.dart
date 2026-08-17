@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:alarm/alarm.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import '../features/alarms/application/alarm_controller.dart';
+import '../features/alarms/application/wake_session_controller.dart';
 
 import 'dart:io';
 import '../models/mission_settings.dart';
@@ -120,7 +121,7 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
       setState(() => _isProcessing = true);
     }
     
-    await AlarmController.instance.completeAlarm(widget.alarmSettings.id);
+    await WakeSessionController.instance.completeSession();
     
     if (mounted) {
       int elapsed = DateTime.now().difference(_startTime).inSeconds;
@@ -181,7 +182,7 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
 
     await Future.delayed(const Duration(seconds: 2));
     
-    await AlarmController.instance.completeAlarm(widget.alarmSettings.id);
+    await WakeSessionController.instance.completeSession();
     
     if (mounted) {
       int elapsed = DateTime.now().difference(_startTime).inSeconds;

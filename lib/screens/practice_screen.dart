@@ -436,17 +436,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                       ],
                     ),
                     child: AbsorbPointer(
-                      absorbing: _isProcessing || _scrubIndex != -1,
-                      child: BoardController(
-                        labelConfig: const LabelConfig(showLabels: false),
-                        state: _renderState.board,
-                        playState: _scrubIndex != -1 ? PlayState.observing : _renderState.state,
-                        pieceSet: PieceSet.merida(),
-                        theme: boardTheme,
-                        moves: _renderState.moves,
-                        onMove: _onMove,
-                        onPremove: _onMove,
-                      ),
+                      child: Container(),
                     ),
                   ),
                 ),

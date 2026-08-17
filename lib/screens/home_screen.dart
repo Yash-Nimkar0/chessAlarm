@@ -5,8 +5,12 @@ import 'dart:async';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../features/alarms/application/alarm_controller.dart';
+import '../features/alarms/application/wake_session_controller.dart';
 import '../features/alarms/domain/alarm_capability_service.dart';
+import '../features/alarms/domain/alarm_event.dart';
 import '../features/alarms/domain/alarm_model.dart';
+import '../features/alarms/domain/mission_config.dart';
+import '../features/alarms/domain/recurrence.dart';
 import 'edit_alarm_screen.dart';
 import 'quick_alarm_screen.dart';
 import '../features/sounds/data/sound_repository.dart';
@@ -36,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     subscription = Alarm.ringing.listen((_) {
       loadAlarms();
     });
+    AlarmController.instance.addListener(loadAlarms);
     
     _countdownTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
       _updateNextAlarmText();
@@ -106,10 +111,45 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
+  Widget _buildMockSharedWakeCard() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.1),
+            child: Icon(Icons.people, color: Theme.of(context).colorScheme.onPrimaryContainer),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Wake Together • 7:00 AM', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimaryContainer)),
+                Text('Alex is sleeping', style: TextStyle(color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.7))),
+              ],
+            ),
+          ),
+          Switch(
+            value: true,
+            onChanged: (val) {},
+            activeColor: Theme.of(context).colorScheme.primary,
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     subscription?.cancel();
+    AlarmController.instance.removeListener(loadAlarms);
     _countdownTimer?.cancel();
     super.dispose();
   }
@@ -196,6 +236,80 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
+  void _showDeveloperHarness() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        String selectedSound = 'wakely_celestial';
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Developer Harness'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Trigger a synthetic wake session in 3 seconds.'),
+                  const SizedBox(height: 16),
+                  DropdownButton<String>(
+                    value: selectedSound,
+                    isExpanded: true,
+                    items: SoundRepository.instance.getAvailableSounds().map((s) {
+                      return DropdownMenuItem(value: s.id, child: Text(s.name));
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) setState(() => selectedSound = val);
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    
+                    // Create a fake alarm in the DB to represent this test
+                    final fakeAlarm = WakelyAlarm(
+                      id: 9999, // Developer ID
+                      time: DateTime.now(),
+                      enabled: true,
+                      type: AlarmType.standard,
+                      soundId: selectedSound,
+                      mission: MissionConfig(type: MissionType.typing),
+                      recurrence: Recurrence.none(),
+                      createdAt: DateTime.now(),
+                      updatedAt: DateTime.now(),
+                    );
+                    
+                    // Save it directly without scheduling
+                    await AlarmController.instance.createAlarm(fakeAlarm);
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Triggering in 3 seconds...')));
+                    
+                    Future.delayed(const Duration(seconds: 3), () {
+                      // Inject canonical event
+                      final event = AlarmEvent(
+                        alarmId: 9999,
+                        state: AlarmNativeState.firing,
+                        interaction: AlarmInteractionType.none,
+                        timestamp: DateTime.now(),
+                      );
+                      WakeSessionController.instance.handleAlarmEvent(event);
+                    });
+                  },
+                  child: const Text('Trigger'),
+                ),
+              ],
+            );
+          }
+        );
+      }
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -232,10 +346,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Flexible(
-                    child: Text(
-                      'Alarms', 
-                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
-                      overflow: TextOverflow.ellipsis,
+                    child: GestureDetector(
+                      onLongPress: _showDeveloperHarness,
+                      child: Text(
+                        'Alarms', 
+                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ],
@@ -296,9 +413,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      itemCount: alarms.length,
+                      itemCount: alarms.length + 1,
                       itemBuilder: (context, index) {
-                        final alarm = alarms[index];
+                        if (index == 0) return _buildMockSharedWakeCard();
+                        final alarmIndex = index - 1;
+                        final alarm = alarms[alarmIndex];
                         final locked = alarm.isLocked;
                         
                         return PlatformCard(

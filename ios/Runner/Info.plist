@@ -30,6 +30,10 @@
 
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>NSAlarmKitUsageDescription</key>
+	<string>Wakely requires permission to schedule highly reliable native alarms to wake you up.</string>
 	<key>NSUserNotificationUsageDescription</key>
 	<string>Wakely requires notification permissions to wake you up reliably when the alarm fires.</string>
 	<key>CFBundleDevelopmentRegion</key>

@@ -594,24 +594,24 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                             Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant, size: 20),
                           ],
                         ),
-                        onTap: () async {
-                          final result = await Navigator.push<SoundPickerResult>(
+                        onTap: () {
+                          Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => SoundPickerScreen(
                                 initialSoundId: soundId,
                                 initialFadeIn: fadeIn,
                                 initialFadeDuration: fadeDuration,
+                                onChanged: (result) {
+                                  setState(() {
+                                    soundId = result.soundId;
+                                    fadeIn = result.fadeIn;
+                                    fadeDuration = result.fadeDuration;
+                                  });
+                                },
                               ),
                             ),
                           );
-                          if (result != null) {
-                            setState(() {
-                              soundId = result.soundId;
-                              fadeIn = result.fadeIn;
-                              fadeDuration = result.fadeDuration;
-                            });
-                          }
                         },
                       ),
                     ),

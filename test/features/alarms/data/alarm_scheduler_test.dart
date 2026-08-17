@@ -104,7 +104,7 @@ void main() {
   group('AlarmScheduler.calculateFireTime', () {
     final now = DateTime(2023, 10, 10, 12, 0);
     
-    test('one-shot past advances to tomorrow', () {
+    test('one-shot past stays exactly as requested', () {
       final alarm = WakelyAlarm(
         id: 1,
         time: DateTime(now.year, now.month, now.day, 10, 0), // 10 AM, now is 12 PM
@@ -115,7 +115,7 @@ void main() {
       
       final fireTime = AlarmScheduler.calculateFireTime(alarm, now);
       
-      expect(fireTime.day, 11);
+      expect(fireTime.day, 10);
       expect(fireTime.hour, 10);
     });
 

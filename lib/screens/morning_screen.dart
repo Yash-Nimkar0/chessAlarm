@@ -308,6 +308,8 @@ class _MorningScreenState extends State<MorningScreen> {
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)
                 ),
                 const SizedBox(height: 24),
+                _buildMorningGiftCard(),
+                const SizedBox(height: 16),
 
                 if (_sleepMomentsCaptured > 0) ...[
                   _buildMorningSleepDiscoveryCard(),
@@ -324,6 +326,62 @@ class _MorningScreenState extends State<MorningScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  bool _giftRevealed = false;
+
+  Widget _buildMorningGiftCard() {
+    return GestureDetector(
+      onTap: () {
+        if (!_giftRevealed) {
+          setState(() {
+            _giftRevealed = true;
+          });
+          Haptics.vibrate(HapticsType.heavy);
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOutBack,
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: _giftRevealed
+                ? [Theme.of(context).colorScheme.primaryContainer, Theme.of(context).colorScheme.surfaceContainerHighest]
+                : [Colors.orange.shade700, Colors.deepOrange],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: _giftRevealed ? [] : [
+            BoxShadow(
+              color: Colors.orange.withOpacity(0.5),
+              blurRadius: 20,
+              spreadRadius: 2,
+            )
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (!_giftRevealed) ...[
+              const Icon(Icons.card_giftcard, color: Colors.white, size: 64),
+              const SizedBox(height: 24),
+              const Text('🎁 Something from Alex', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white)),
+              const SizedBox(height: 8),
+              const Text('Tap to reveal', style: TextStyle(color: Colors.white70, fontSize: 16)),
+            ] else ...[
+              const CircleAvatar(radius: 32, backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=68')),
+              const SizedBox(height: 16),
+              const Text('Good morning ❤️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28)),
+              const SizedBox(height: 8),
+              const Text('- Alex', style: TextStyle(fontSize: 18, fontStyle: FontStyle.italic)),
+            ]
+          ],
         ),
       ),
     );

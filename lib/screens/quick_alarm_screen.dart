@@ -61,7 +61,8 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
     setState(() {
       final now = DateTime.now();
       if (_targetTime == null || _targetTime!.isBefore(now)) {
-        _targetTime = now.add(duration);
+        final cleanNow = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+        _targetTime = cleanNow.add(duration);
       } else {
         _targetTime = _targetTime!.add(duration);
       }
@@ -120,7 +121,7 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
       id: 0,
       time: _targetTime!,
       enabled: true,
-      type: AlarmType.standard,
+      type: AlarmType.quickAlarm,
       recurrence: Recurrence.none(),
       label: 'Quick Alarm',
       soundId: _soundId,
@@ -517,24 +518,24 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                             Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant, size: 20),
                           ],
                         ),
-                        onTap: () async {
-                          final result = await Navigator.push<SoundPickerResult>(
+                        onTap: () {
+                          Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => SoundPickerScreen(
                                 initialSoundId: _soundId,
                                 initialFadeIn: _fadeIn,
                                 initialFadeDuration: _fadeDuration,
+                                onChanged: (result) {
+                                  setState(() {
+                                    _soundId = result.soundId;
+                                    _fadeIn = result.fadeIn;
+                                    _fadeDuration = result.fadeDuration;
+                                  });
+                                },
                               ),
                             ),
                           );
-                          if (result != null) {
-                            setState(() {
-                              _soundId = result.soundId;
-                              _fadeIn = result.fadeIn;
-                              _fadeDuration = result.fadeDuration;
-                            });
-                          }
                         },
                       ),
                       Padding(

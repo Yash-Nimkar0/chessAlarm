@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'package:alarm/alarm.dart';
 import '../domain/alarm_model.dart';
 import '../data/alarm_repository.dart';
 import '../data/alarm_scheduler.dart';
 import '../data/alarm_id_allocator.dart';
+import '../domain/alarm_event.dart';
+import 'wake_session_controller.dart';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 /// Application layer controller for Alarms.
 ///
@@ -23,6 +27,10 @@ class AlarmController extends ChangeNotifier {
   final AlarmRepository _repository;
   final AlarmScheduler _scheduler;
 
+  // Platform event channel for AlarmKit native interactions
+  static const EventChannel _eventChannel = EventChannel('wakely.alarmkit.events');
+  StreamSubscription? _eventSubscription;
+
   // Singleton instance for easy access across the app
   static final AlarmController instance = AlarmController._(
     AlarmRepository(),
@@ -33,6 +41,104 @@ class AlarmController extends ChangeNotifier {
 
   /// For dependency injection in tests
   AlarmController.test(this._repository, this._scheduler);
+
+  /// Initialize the controller and listen for native interactions (e.g., AlarmKit).
+  Future<void> init() async {
+    // 1. Initialize the correct platform scheduler based on OS capabilities
+    await _scheduler.init();
+
+    // 2. Setup native bridge for AlarmKit (iOS 26+)
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final channel = MethodChannel('wakely.alarmkit');
+
+      // Check for any interactions that happened while Flutter was dead
+      try {
+        final pendingId = await channel.invokeMethod<String>('getPendingAlarmInteraction');
+        if (pendingId != null) {
+          final id = int.tryParse(pendingId);
+          if (id != null) {
+            _routeNativeEvent(id, AlarmNativeState.unknown, AlarmInteractionType.stop);
+          }
+        }
+      } catch (e) {
+        debugPrint('Error getting pending interaction: $e');
+      }
+
+      // Listen for canonical events while Flutter is running
+      _eventSubscription = _eventChannel.receiveBroadcastStream().listen((event) {
+        if (event is Map) {
+          final type = event['type'];
+          
+          if (type == 'interaction') {
+            final id = int.tryParse(event['alarmId'] as String? ?? '');
+            if (id != null) {
+              _routeNativeEvent(id, AlarmNativeState.unknown, AlarmInteractionType.stop);
+            }
+          } else if (type == 'update') {
+            final alarms = event['alarms'] as List<dynamic>?;
+            if (alarms != null) {
+              for (final alarmData in alarms) {
+                if (alarmData is Map) {
+                  final idStr = alarmData['id'] as String?;
+                  final stateStr = alarmData['state'] as String?;
+                  
+                  // Only map valid IDs (the iOS UUID mapping assumes string parsing fallback or matching)
+                  // In AlarmKitManager.swift we map UUID.uuidString but Flutter expects integer IDs.
+                  // We must parse the UUID back to an integer ID.
+                  final id = _parseUUIDToId(idStr);
+                  
+                  if (id != null && stateStr != null) {
+                    final state = _parseState(stateStr);
+                    // Only route actionable states
+                    if (state == AlarmNativeState.firing) {
+                      _routeNativeEvent(id, state, AlarmInteractionType.none);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }, onError: (e) {
+        debugPrint('AlarmKit event channel error: $e');
+      });
+    }
+  }
+
+  int? _parseUUIDToId(String? uuidStr) {
+    if (uuidStr == null) return null;
+    // Remove all non-numeric characters that might have been mapped to UUID
+    final numericOnly = uuidStr.replaceAll(RegExp(r'[^0-9]'), '');
+    if (numericOnly.isEmpty) return null;
+    // The original ID is at the start or stripped of leading zeros
+    return int.tryParse(numericOnly.replaceFirst(RegExp(r'^0+'), ''));
+  }
+
+  AlarmNativeState _parseState(String stateStr) {
+    switch (stateStr) {
+      case 'scheduled': return AlarmNativeState.scheduled;
+      case 'firing': return AlarmNativeState.firing;
+      case 'snoozed': return AlarmNativeState.snoozed;
+      case 'completed': return AlarmNativeState.completed;
+      case 'stopped': return AlarmNativeState.stopped;
+      default: return AlarmNativeState.unknown;
+    }
+  }
+
+  void _routeNativeEvent(int alarmId, AlarmNativeState state, AlarmInteractionType interaction) {
+    final event = AlarmEvent(
+      alarmId: alarmId,
+      state: state,
+      interaction: interaction,
+      timestamp: DateTime.now(),
+    );
+    WakeSessionController.instance.handleAlarmEvent(event);
+  }
+
+  // Deprecated: Stream for main.dart to listen to native interactions
+  // Now handled by WakeSessionController
+  final _nativeInteractionController = StreamController<AlarmSettings>.broadcast();
+  Stream<AlarmSettings> get nativeInteractionStream => _nativeInteractionController.stream;
 
   /// Retrieve all alarms from the repository.
   Future<List<WakelyAlarm>> getAlarms() async {
@@ -61,7 +167,9 @@ class AlarmController extends ChangeNotifier {
     ScheduledAlarm? bestCandidate;
 
     for (final alarm in alarms) {
-      if (!alarm.enabled) continue;
+      if (!alarm.enabled) {
+        continue;
+      }
       if (typeFilter != null && alarm.type != typeFilter) continue;
 
       DateTime? occurrence;
@@ -79,7 +187,23 @@ class AlarmController extends ChangeNotifier {
         }
       }
     }
+
     return bestCandidate;
+  }
+
+  /// Helper to ensure a new or edited one-shot alarm is in the future.
+  DateTime _ensureFutureOneShot(WakelyAlarm alarm, DateTime now) {
+    if (alarm.recurrence.isOneShot && (alarm.time.isBefore(now) || alarm.time.isAtSameMomentAs(now))) {
+      return DateTime(
+        now.year,
+        now.month,
+        now.day + 1,
+        alarm.time.hour,
+        alarm.time.minute,
+        0,
+      );
+    }
+    return alarm.time;
   }
 
   /// Create a new alarm.
@@ -88,11 +212,13 @@ class AlarmController extends ChangeNotifier {
   Future<WakelyAlarm> createAlarm(WakelyAlarm alarm) async {
     final newId = await AlarmIdAllocator.allocate();
     
-    // Set ID and calculate initial fire time
+    // Set ID and enforce future time for creation
     final alarmWithId = alarm.copyWith(id: newId);
-    final fireTime = AlarmScheduler.calculateFireTime(alarmWithId, DateTime.now());
+    final timeWithFuture = _ensureFutureOneShot(alarmWithId, DateTime.now());
+    final alarmWithFuture = alarmWithId.copyWith(time: timeWithFuture);
     
-    final finalAlarm = alarmWithId.copyWith(time: fireTime);
+    final fireTime = AlarmScheduler.calculateFireTime(alarmWithFuture, DateTime.now());
+    final finalAlarm = alarmWithFuture.copyWith(time: fireTime);
 
     if (finalAlarm.enabled) {
       await _scheduler.schedule(finalAlarm);
@@ -108,19 +234,24 @@ class AlarmController extends ChangeNotifier {
   /// Cancels the old schedule (if any), calculates the new fire time,
   /// schedules it if enabled, and updates persistence.
   Future<WakelyAlarm> updateAlarm(WakelyAlarm alarm) async {
+    
     // 1. Cancel existing schedule to prevent duplicates
     await _scheduler.cancel(alarm.id);
 
-    // 2. Calculate new fire time based on updated properties
-    final fireTime = AlarmScheduler.calculateFireTime(alarm, DateTime.now());
-    final finalAlarm = alarm.copyWith(time: fireTime, updatedAt: DateTime.now());
+    // 2. Enforce future time for edits
+    final timeWithFuture = _ensureFutureOneShot(alarm, DateTime.now());
+    final alarmWithFuture = alarm.copyWith(time: timeWithFuture);
 
-    // 3. Schedule if enabled
+    // 3. Calculate new fire time based on updated properties
+    final fireTime = AlarmScheduler.calculateFireTime(alarmWithFuture, DateTime.now());
+    final finalAlarm = alarmWithFuture.copyWith(time: fireTime, updatedAt: DateTime.now());
+
+    // 4. Schedule if enabled
     if (finalAlarm.enabled) {
       await _scheduler.schedule(finalAlarm);
     }
 
-    // 4. Save to repository
+    // 5. Save to repository
     final saved = await _repository.save(finalAlarm);
     notifyListeners();
     return saved;
@@ -180,7 +311,10 @@ class AlarmController extends ChangeNotifier {
     // Always cancel current first to prevent any race conditions or duplicates
     await _scheduler.cancel(id);
 
-    if (alarm.recurrence.isOneShot) {
+    if (alarm.type == AlarmType.quickAlarm) {
+      // Quick alarms are ephemeral. Once completed, they are deleted.
+      await _repository.delete(id);
+    } else if (alarm.recurrence.isOneShot) {
       final updatedAlarm = alarm.copyWith(enabled: false, updatedAt: DateTime.now());
       await _repository.save(updatedAlarm);
     } else {
@@ -210,6 +344,15 @@ class AlarmController extends ChangeNotifier {
     await _scheduler.cancel(id);
     
     if (alarm.enabled) {
+      if (alarm.recurrence.isOneShot && alarm.time.isBefore(DateTime.now())) {
+        // Recovery of a one-shot alarm that should have fired while device was off.
+        // DO NOT silently advance to tomorrow. Disable it.
+        final updatedAlarm = alarm.copyWith(enabled: false, updatedAt: DateTime.now());
+        await _repository.save(updatedAlarm);
+        notifyListeners();
+        return;
+      }
+
       // Recalculate fire time in case we missed it while offline
       final fireTime = AlarmScheduler.calculateFireTime(alarm, DateTime.now());
       final updatedAlarm = alarm.copyWith(time: fireTime, updatedAt: DateTime.now());

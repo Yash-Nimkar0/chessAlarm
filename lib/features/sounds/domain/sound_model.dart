@@ -11,6 +11,7 @@ class SoundModel {
   final String path;
   final bool isPremium;
   final String? category;
+  final int? durationSeconds;
 
   const SoundModel({
     required this.id,
@@ -19,5 +20,6 @@ class SoundModel {
     required this.path,
     this.isPremium = false,
     this.category,
+    this.durationSeconds,
   });
 }

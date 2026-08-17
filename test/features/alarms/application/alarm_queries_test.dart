@@ -2,29 +2,38 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakely/features/alarms/domain/alarm_model.dart';
 import 'package:wakely/features/alarms/domain/recurrence.dart';
+import 'package:wakely/features/alarms/domain/platform_alarm_state.dart';
 import 'package:wakely/features/alarms/data/alarm_repository.dart';
 import 'package:wakely/features/alarms/data/alarm_scheduler.dart';
 import 'package:wakely/features/alarms/application/alarm_controller.dart';
 import 'package:alarm/alarm.dart';
 
 // Same fake scheduler used in alarm_lifecycle_test.dart
-class FakeAlarmScheduler implements AlarmScheduler {
+class FakeAlarmScheduler extends AlarmScheduler {
   final List<WakelyAlarm> scheduledAlarms = [];
-  
+  final List<int> cancelledAlarms = [];
+
+  @override
+  Future<void> init() async {}
+
   @override
   Future<void> schedule(WakelyAlarm alarm) async {
-    scheduledAlarms.removeWhere((a) => a.id == alarm.id);
     scheduledAlarms.add(alarm);
   }
 
   @override
   Future<void> cancel(int alarmId) async {
+    cancelledAlarms.add(alarmId);
     scheduledAlarms.removeWhere((a) => a.id == alarmId);
   }
 
   @override
-  Future<List<AlarmSettings>> getScheduledAlarms() async {
-    return [];
+  Future<List<PlatformAlarmState>> getScheduledAlarms() async {
+    return scheduledAlarms.map((a) => PlatformAlarmState(
+      alarmId: a.id,
+      nativeState: 'scheduled',
+      scheduledAt: a.time,
+    )).toList();
   }
 
   @override

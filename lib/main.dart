@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:alarm/alarm.dart';
 import 'screens/main_screen.dart';
 import 'screens/slide_to_stop_screen.dart';
+import 'screens/ringing_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/weather_service.dart';
 import 'services/analytics_service.dart';
@@ -18,6 +19,10 @@ import 'theme/design_tokens.dart';
 import 'features/alarms/data/alarm_migration.dart';
 import 'features/alarms/data/alarm_repository.dart';
 import 'features/alarms/data/alarm_scheduler.dart';
+import 'features/alarms/application/alarm_controller.dart';
+import 'features/alarms/application/wake_session_controller.dart';
+
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +31,13 @@ Future<void> main() async {
     DeviceOrientation.portraitUp,
   ]);
   
-  runApp(const WakelyAppLoader());
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = const String.fromEnvironment('SENTRY_DSN', defaultValue: '');
+      options.tracesSampleRate = 1.0;
+    },
+    appRunner: () => runApp(const WakelyAppLoader()),
+  );
 }
 
 class WakelyAppLoader extends StatefulWidget {
@@ -50,6 +61,9 @@ class _WakelyAppLoaderState extends State<WakelyAppLoader> {
     try {
       // Restore Alarm.init() since we resolved the crash
       await Alarm.init().timeout(const Duration(seconds: 5));
+      
+      // Initialize AlarmController which sets up the correct PlatformScheduler and native event listeners
+      await AlarmController.instance.init();
       
       await NotificationService.initialize();
       await NotificationService.setupSleepReminders();
@@ -117,6 +131,17 @@ class _WakelyAppState extends State<WakelyApp> {
       if (alarmSet.alarms.isNotEmpty) {
         navigateToRingScreen(alarmSet.alarms.first);
       }
+    });
+
+    // Listen for WakeSession triggers (from AlarmKit or internal)
+    WakeSessionController.instance.sessionStream.listen((alarm) {
+      // For native notifications, the user already 'swiped' the notification to open the app.
+      // So we skip the SlideToStopScreen and go straight to the missions (RingingScreen).
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (context) => RingingScreen(alarmSettings: alarm.toAlarmSettings()),
+        ),
+      );
     });
   }
 
