@@ -52,6 +52,36 @@ import alarm
                 } else {
                     result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
                 }
+            case "cancelWakeCheckChain":
+                if let args = call.arguments as? [String: Any], let idString = args["id"] as? String, let id = Int(idString) {
+                    manager.cancelWakeCheckChain(originalId: id) { error in
+                        if let error = error {
+                            result(FlutterError(code: "CANCEL_ERROR", message: error.localizedDescription, details: nil))
+                        } else {
+                            result(true)
+                        }
+                    }
+                } else {
+                    result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
+                }
+            case "pauseWakeCheckChain":
+                if let args = call.arguments as? [String: Any], let idString = args["id"] as? String, let id = Int(idString) {
+                    let keepLiveTailCount = args["keepLiveTailCount"] as? Int ?? 2
+                    manager.pauseWakeCheckChain(originalId: id, keepLiveTailCount: keepLiveTailCount) { error in
+                        result(error == nil)
+                    }
+                } else {
+                    result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
+                }
+            case "resumeWakeCheckChain":
+                if let args = call.arguments as? [String: Any], let idString = args["id"] as? String, let id = Int(idString) {
+                    let keepLiveTailCount = args["keepLiveTailCount"] as? Int ?? 2
+                    manager.resumeWakeCheckChain(originalId: id, keepLiveTailCount: keepLiveTailCount) { error in
+                        result(error == nil)
+                    }
+                } else {
+                    result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
+                }
             default:
                 result(FlutterMethodNotImplemented)
             }

@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:math';
 
 import '../../models/mission_settings.dart';
+import '../../features/alarms/application/wake_session_controller.dart';
 
 class ShakeMission extends StatefulWidget {
   final VoidCallback onSuccess;
@@ -46,6 +47,13 @@ class _ShakeMissionState extends State<ShakeMission> {
         final now = DateTime.now();
         if (now.difference(_lastShakeTime).inMilliseconds > 200) { // Debounce
           _lastShakeTime = now;
+          // Shaking is the mission's own progress signal, not a screen
+          // tap — the watchdog's idle timer only resets on
+          // recordMissionInteraction(), so without this a shake mission
+          // taking longer than the idle timeout would get interrupted by
+          // a fresh alert mid-shake even though the user is actively,
+          // genuinely doing the mission.
+          WakeSessionController.instance.recordMissionInteraction();
           setState(() {
             _shakes++;
           });

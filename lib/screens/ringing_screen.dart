@@ -32,7 +32,7 @@ class RingingScreen extends StatefulWidget {
   State<RingingScreen> createState() => _RingingScreenState();
 }
 
-class _RingingScreenState extends State<RingingScreen> with TickerProviderStateMixin {
+class _RingingScreenState extends State<RingingScreen> with TickerProviderStateMixin, WidgetsBindingObserver {
   bool _isLoading = true;
   bool _isProcessing = false;
   bool _isSuccess = false;
@@ -51,6 +51,12 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // The mission screen genuinely being shown is the watchdog's "user is
+    // actively engaged" signal — pauses the relentless chain's back half
+    // (a short live tail always stays armed regardless, so this is safe
+    // even if the app is killed the instant after this call).
+    WakeSessionController.instance.armMissionWatchdog();
     AnalyticsService.logEvent('alarm_triggered', {'alarm_id': widget.alarmSettings.id});
     _startTime = DateTime.now();
     _pulseController = AnimationController(
@@ -236,7 +242,20 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // The instant the app leaves the foreground while the watchdog is
+    // paused, resume immediately — no grace period. Backgrounding or being
+    // killed is exactly the scenario the chain exists to survive; the
+    // watchdog's pause is only ever safe while we can actually confirm the
+    // user is looking at the mission screen.
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      WakeSessionController.instance.resumeMissionWatchdogImmediately();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pulseController.dispose();
     _sunriseController.dispose();
     super.dispose();
@@ -347,7 +366,13 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
                           );
                         },
                       ),
-                      Expanded(child: content),
+                      Expanded(
+                        child: Listener(
+                          behavior: HitTestBehavior.translucent,
+                          onPointerDown: (_) => WakeSessionController.instance.recordMissionInteraction(),
+                          child: content,
+                        ),
+                      ),
                       Padding(
                         padding: const EdgeInsets.only(top: 16.0),
                         child: GestureDetector(

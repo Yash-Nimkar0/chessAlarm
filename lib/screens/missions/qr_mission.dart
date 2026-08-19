@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import '../../theme/design_tokens.dart';
+import '../../features/alarms/application/wake_session_controller.dart';
 
 class QRMission extends StatefulWidget {
   final Map<String, dynamic> missionData;
@@ -31,6 +32,13 @@ class _QRMissionState extends State<QRMission> {
 
   void _onDetect(BarcodeCapture capture) {
     if (_isSuccess) return;
+
+    // A detected barcode in frame — matching or not — is the mission's own
+    // "still actively scanning" signal, since the user isn't tapping the
+    // screen while holding the camera up to a code. Without this, a scan
+    // taking longer than the watchdog's idle timeout would get interrupted
+    // by a fresh alert mid-scan.
+    WakeSessionController.instance.recordMissionInteraction();
 
     final targetValue = widget.missionData['qrTargetValue'] as String?;
     if (targetValue == null) {

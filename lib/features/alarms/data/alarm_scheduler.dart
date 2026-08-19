@@ -117,6 +117,27 @@ class AlarmScheduler {
     return await scheduler.isScheduled(alarmId);
   }
 
+  /// Cancel all not-yet-fired alarms in [alarmId]'s pre-scheduled Wake
+  /// Check chain (iOS AlarmKit only — no-op elsewhere).
+  Future<void> cancelWakeCheckChain(int alarmId) async {
+    final scheduler = await _scheduler;
+    await scheduler.cancelWakeCheckChain(alarmId);
+  }
+
+  /// Pause the back half of [alarmId]'s chain while its mission is
+  /// actively being solved (iOS AlarmKit only — no-op elsewhere).
+  Future<void> pauseWakeCheckChain(int alarmId) async {
+    final scheduler = await _scheduler;
+    await scheduler.pauseWakeCheckChain(alarmId);
+  }
+
+  /// Resume the back half [pauseWakeCheckChain] paused (iOS AlarmKit only
+  /// — no-op elsewhere).
+  Future<void> resumeWakeCheckChain(int alarmId) async {
+    final scheduler = await _scheduler;
+    await scheduler.resumeWakeCheckChain(alarmId);
+  }
+
   // ---------------------------------------------------------------------------
   // Recurrence calculation (pure logic, independently testable)
   // ---------------------------------------------------------------------------

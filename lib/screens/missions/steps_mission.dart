@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import 'package:pedometer/pedometer.dart';
+import '../../features/alarms/application/wake_session_controller.dart';
 
 class StepsMission extends StatefulWidget {
   final Map<String, dynamic> missionData;
@@ -51,6 +52,11 @@ class _StepsMissionState extends State<StepsMission> {
     final takenSteps = event.steps - _initialSteps;
     
     if (takenSteps != _currentSteps) {
+      // Each detected step is the mission's own progress signal — the user
+      // isn't touching the screen while walking. Without this, walking a
+      // longer step count than the watchdog's idle timeout allows would
+      // get interrupted by a fresh alert mid-walk.
+      WakeSessionController.instance.recordMissionInteraction();
       setState(() {
         _currentSteps = takenSteps;
       });

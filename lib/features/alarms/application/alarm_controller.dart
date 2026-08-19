@@ -7,6 +7,7 @@ import '../data/alarm_id_allocator.dart';
 import '../domain/alarm_event.dart';
 import '../domain/platform_alarm_state.dart';
 import '../data/alarm_kit_uuid.dart';
+import '../domain/wake_check_id.dart';
 import 'wake_session_controller.dart';
 
 import 'package:flutter/foundation.dart';
@@ -130,10 +131,58 @@ class AlarmController extends ChangeNotifier {
     
     final nativeIds = nativeAlarms.map((na) => na.alarmId).toSet();
     final activeSessionId = await WakeSessionController.instance.getDurableActiveSessionId();
-    
+
+    // Whether any native alarm belonging to [originalId]'s family (the
+    // real alarm itself, its reactive Wake Check slot, or any pre-scheduled
+    // chain descendant) is CURRENTLY firing/alerting, per the platform's
+    // own live state — not Dart's persisted bookkeeping. This matters
+    // because activeSessionId is only ever set by WakeSessionController
+    // actually running in-process; if the app was killed before the alarm
+    // ever fired (the exact scenario the Wake Check chain exists for),
+    // nothing ever set it, so activeSessionId alone can never recognize a
+    // still-ringing alarm on cold start. Confirmed live: a killed app,
+    // reopened while its chain kept relentlessly ringing, showed a normal
+    // alarm list instead of recovering into the mission screen.
+    bool isFiringForOriginal(int originalId) {
+      return nativeAlarms.any((na) {
+        if (na.nativeState != 'firing') return false;
+        if (na.alarmId == originalId) return true;
+        if (na.alarmId == wakeCheckAlarmIdFor(originalId)) return true;
+        if (isWakeCheckChainAlarmId(na.alarmId) && chainOriginalAlarmId(na.alarmId) == originalId) return true;
+        return false;
+      });
+    }
+
     for (final alarm in alarms) {
       final isInNative = nativeIds.contains(alarm.id);
-      
+
+      // Recovery takes priority over EVERYTHING below, including whether
+      // the alarm is currently marked enabled — checked first,
+      // unconditionally, before the enabled-gate that used to sit ahead of
+      // it. A stale `enabled: false` written by an earlier reconcile bug
+      // (this exact class of bug has bitten this alarm before tonight) must
+      // never be able to permanently block recovering a session that is,
+      // right now, genuinely still firing on the native side — a
+      // disabled-but-firing alarm is a contradiction that can only mean our
+      // own bookkeeping is out of sync with reality, and reality (the
+      // native platform's own live state) wins. Also covers the
+      // RECURRING-alarm case: nextOccurrence() always resolves to a future
+      // date once any time has passed today — always true while ringing —
+      // so the stale/future classification further below would never
+      // recognize a recurring alarm as needing recovery on its own; it
+      // would see "next occurrence is tomorrow" and silently advance it.
+      // Confirmed live, repeatedly: a killed app reopened while its Wake
+      // Check chain kept relentlessly ringing showed the normal alarm list
+      // instead of recovering into the mission screen.
+      if (activeSessionId == alarm.id || isFiringForOriginal(alarm.id)) {
+        debugPrint('Reconcile: Alarm ${alarm.id} was the active session or is currently firing natively. Recovering WakeSession.');
+        if (!alarm.enabled) {
+          await _repository.save(alarm.copyWith(enabled: true, updatedAt: now));
+        }
+        _routeNativeEvent(alarm.id, AlarmNativeState.firing, AlarmInteractionType.none);
+        continue;
+      }
+
       if (!alarm.enabled) {
         // Disabled but exists in native -> Cancel
         if (isInNative) {
@@ -142,7 +191,7 @@ class AlarmController extends ChangeNotifier {
         }
         continue;
       }
-      
+
       // It is Enabled. Let's check its time relevance.
       DateTime? resolvedTime;
       if (alarm.recurrence.isOneShot) {
@@ -151,32 +200,19 @@ class AlarmController extends ChangeNotifier {
         // For recurring alarms, the original `time` might be past, but we look at nextOccurrence
         resolvedTime = AlarmScheduler.nextOccurrence(alarm, now);
       }
-      
+
       if (resolvedTime == null) {
-        // A one-shot that is past, or a recurrence that couldn't yield a next time
-        // Wait, what if it's an interrupted WakeSession?
-        if (activeSessionId == alarm.id) {
-          // This was the active session during a crash. Recover it.
-          debugPrint('Reconcile: Alarm ${alarm.id} crashed during mission. Recovering WakeSession.');
-          _routeNativeEvent(alarm.id, AlarmNativeState.firing, AlarmInteractionType.none);
-        } else {
-          // Normal stale one-shot
-          debugPrint('Reconcile: Alarm ${alarm.id} is stale and was not active. Disabling.');
-          final updatedAlarm = alarm.copyWith(enabled: false, updatedAt: now);
-          await _repository.save(updatedAlarm);
-          if (isInNative) await _scheduler.cancel(alarm.id);
-        }
+        // A one-shot that is past, or a recurrence that couldn't yield a next time.
+        debugPrint('Reconcile: Alarm ${alarm.id} is stale and was not active. Disabling.');
+        final updatedAlarm = alarm.copyWith(enabled: false, updatedAt: now);
+        await _repository.save(updatedAlarm);
+        if (isInNative) await _scheduler.cancel(alarm.id);
       } else if (resolvedTime.isBefore(now) || resolvedTime.isAtSameMomentAs(now)) {
         // Still stale even after resolution (should only happen for one-shot past alarms)
-        if (activeSessionId == alarm.id) {
-          debugPrint('Reconcile: Alarm ${alarm.id} crashed during mission. Recovering WakeSession.');
-          _routeNativeEvent(alarm.id, AlarmNativeState.firing, AlarmInteractionType.none);
-        } else {
-          debugPrint('Reconcile: Alarm ${alarm.id} is stale and was not active. Disabling.');
-          final updatedAlarm = alarm.copyWith(enabled: false, updatedAt: now);
-          await _repository.save(updatedAlarm);
-          if (isInNative) await _scheduler.cancel(alarm.id);
-        }
+        debugPrint('Reconcile: Alarm ${alarm.id} is stale and was not active. Disabling.');
+        final updatedAlarm = alarm.copyWith(enabled: false, updatedAt: now);
+        await _repository.save(updatedAlarm);
+        if (isInNative) await _scheduler.cancel(alarm.id);
       } else {
         // It's in the future.
         if (!isInNative) {
@@ -201,9 +237,16 @@ class AlarmController extends ChangeNotifier {
     }
     
     // Pass 2: Find orphaned native alarms (deleted locally)
+    //
+    // Wake Check chain alarms (see kWakeCheckChainIdBase) are scheduled
+    // directly by native code and deliberately have no Dart-side record —
+    // they must NOT be treated as orphaned, or this wipes out the entire
+    // hardware-button-dismiss backstop the moment the app is ever
+    // reconciled (e.g. on cold start, or when brought to foreground by the
+    // alarm's own "Open Wakely" intent) while the chain is still pending.
     final localIds = alarms.map((a) => a.id).toSet();
     for (final nativeAlarm in nativeAlarms) {
-      if (!localIds.contains(nativeAlarm.alarmId)) {
+      if (!localIds.contains(nativeAlarm.alarmId) && !isWakeCheckChainAlarmId(nativeAlarm.alarmId)) {
         debugPrint('Reconcile: Alarm ${nativeAlarm.alarmId} exists natively but is deleted locally. Canceling native.');
         await _scheduler.cancel(nativeAlarm.alarmId);
       }
@@ -377,6 +420,25 @@ class AlarmController extends ChangeNotifier {
     await _scheduler.cancel(id);
     await _repository.delete(id);
     notifyListeners();
+  }
+
+  /// Cancel all not-yet-fired alarms in [id]'s pre-scheduled Wake Check
+  /// chain (iOS AlarmKit only). Called on mission completion/escape so the
+  /// chain doesn't keep ringing after the user has genuinely finished.
+  Future<void> cancelWakeCheckChain(int id) async {
+    await _scheduler.cancelWakeCheckChain(id);
+  }
+
+  /// Pause the back half of [id]'s Wake Check chain while its mission is
+  /// actively being solved, keeping a short live tail armed (iOS AlarmKit
+  /// only). See WakeSessionController's mission watchdog.
+  Future<void> pauseWakeCheckChain(int id) async {
+    await _scheduler.pauseWakeCheckChain(id);
+  }
+
+  /// Resume the back half [pauseWakeCheckChain] paused.
+  Future<void> resumeWakeCheckChain(int id) async {
+    await _scheduler.resumeWakeCheckChain(id);
   }
 
   /// Enable a disabled alarm.

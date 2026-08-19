@@ -32,6 +32,69 @@ class WakeSessionController extends ChangeNotifier {
   static const String _activeSessionKey = 'wakely_active_session_alarm_id';
   static String _wakeCheckCountKey(int originalAlarmId) => 'wakely_wake_check_count_$originalAlarmId';
 
+  // Guards against a stale/duplicate native "stop" event re-opening a
+  // session that was already genuinely completed — e.g. if cleanup after
+  // completion (AlarmManager.stop() on every Wake Check chain id) turns
+  // out to itself trigger the configured stopIntent, or any other source
+  // of a late/duplicate callback. Without this, such an event would hit
+  // the `else` branch below, overwrite sessionState back to
+  // awaitingWakeCheck, and schedule a brand new re-alert for an alarm the
+  // user just finished — the worst possible confusing outcome.
+  int? _recentlyCompletedOriginalId;
+  DateTime? _recentlyCompletedAt;
+  static const Duration _completionEchoWindow = Duration(seconds: 10);
+
+  // Mission watchdog: pauses the relentless chain's back half while the
+  // user is actively, genuinely engaged with the mission screen, so
+  // solving it isn't interrupted by a fresh alert every ~20s — but resumes
+  // automatically, either instantly (backgrounding/kill) or after an idle
+  // timeout with no interaction, so pausing can never become a way to
+  // escape. The chain's own live-tail-kept design (see
+  // pauseWakeCheckChain on the native side) means even a hard kill right
+  // after pausing still leaves something armed — this Dart-side timer is
+  // only responsible for the *normal* resume path, not for safety, which
+  // is guaranteed natively regardless of whether this timer ever fires.
+  Timer? _missionIdleTimer;
+  static const Duration _missionIdleTimeout = Duration(seconds: 90);
+  bool _chainPaused = false;
+
+  /// Call when the mission screen genuinely becomes active/visible.
+  Future<void> armMissionWatchdog() async {
+    if (_activeAlarm == null) return;
+    final originalId = originalAlarmIdFor(_activeAlarm!.id);
+    _chainPaused = true;
+    await AlarmController.instance.pauseWakeCheckChain(originalId);
+    _resetMissionIdleTimer();
+  }
+
+  /// Call on any meaningful mission interaction (a tap, a correct answer,
+  /// a step completed) to keep the pause alive.
+  void recordMissionInteraction() {
+    if (!_chainPaused) return;
+    _resetMissionIdleTimer();
+  }
+
+  void _resetMissionIdleTimer() {
+    _missionIdleTimer?.cancel();
+    _missionIdleTimer = Timer(_missionIdleTimeout, _resumeChainIfPaused);
+  }
+
+  Future<void> _resumeChainIfPaused() async {
+    if (!_chainPaused || _activeAlarm == null) return;
+    _chainPaused = false;
+    _missionIdleTimer?.cancel();
+    _missionIdleTimer = null;
+    final originalId = originalAlarmIdFor(_activeAlarm!.id);
+    await AlarmController.instance.resumeWakeCheckChain(originalId);
+  }
+
+  /// Call the instant the app is backgrounded or about to be killed while
+  /// the watchdog is paused — no grace period, since that's exactly the
+  /// scenario the chain exists to survive.
+  Future<void> resumeMissionWatchdogImmediately() async {
+    await _resumeChainIfPaused();
+  }
+
   /// Deterministic ID for the Wake Check fallback alarm derived from its
   /// parent alarm's ID. Using a fixed offset (rather than an allocated ID)
   /// lets us reliably cancel the fallback later without round-tripping
@@ -65,7 +128,25 @@ class WakeSessionController extends ChangeNotifier {
 
     if (event.interaction == AlarmInteractionType.stop) {
       debugPrint('WakeSessionController: Native stop received for alarm ${event.alarmId}.');
-      final alarm = await AlarmController.instance.getAlarm(event.alarmId);
+
+      final eventOriginalId = originalAlarmIdFor(event.alarmId);
+      if (_recentlyCompletedOriginalId == eventOriginalId &&
+          _recentlyCompletedAt != null &&
+          DateTime.now().difference(_recentlyCompletedAt!) < _completionEchoWindow) {
+        debugPrint('WakeSessionController: Ignoring stale native stop for already-completed alarm $eventOriginalId.');
+        return;
+      }
+
+      // Chain-derived interactions (the vast majority once the chain is
+      // running — 30 chain slots vs. 1 reactive slot) have no DB record of
+      // their own by design; fall back to the real original alarm's
+      // record, which always exists. Without this, any stop interaction
+      // that happened to land on a chain entry silently found nothing and
+      // did nothing at all — confirmed live: tapping the alert's Stop
+      // button opened the app to the plain alarm list with no mission
+      // screen and the alarm still ringing.
+      final alarm = await AlarmController.instance.getAlarm(event.alarmId) ??
+          await AlarmController.instance.getAlarm(eventOriginalId);
       if (alarm != null) {
         // MUST check whether a mission is actually configured
         // (mission.type != none), not alarm.type == AlarmType.standard.
@@ -84,14 +165,25 @@ class WakeSessionController extends ChangeNotifier {
           await completeSession();
           return;
         } else {
-          debugPrint('WakeSessionController: Mission alarm stopped natively. Transitioning to awaitingWakeCheck.');
+          debugPrint('WakeSessionController: Mission alarm stopped natively. Showing mission screen and arming Wake Check fallback.');
+          // MUST set _activeAlarm here — without it, isActive stays false
+          // (isActive requires _activeAlarm != null), so main.dart's
+          // listener has nothing to navigate to. The app would open (the
+          // intent's .foreground(.immediate) still launches it) but land on
+          // the plain alarm list, doing nothing, until some LATER re-alert
+          // happened to fire a real "firing" event that finally set
+          // _activeAlarm — a confusing multi-second-or-more delay instead
+          // of landing on the mission screen the instant Stop is pressed.
+          _activeAlarm = alarm;
           _sessionState = WakeSessionState.awaitingWakeCheck;
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setInt(_activeSessionKey, originalAlarmIdFor(alarm.id));
           // Stop any audio, wait for user to open app or wake check to fire
           await WakeAudioSessionController.instance.stopAudio();
           // We don't start audio. The user must open the app to see the mission.
           notifyListeners();
-          
-          // Schedule Wake Check fallback alarm for 5 minutes later using AlarmKit
+
+          // Schedule the Wake Check fallback re-alert.
           await _scheduleWakeCheckFallback(alarm);
           return;
         }
@@ -151,9 +243,12 @@ class WakeSessionController extends ChangeNotifier {
   /// Starts a wake session for the given alarm ID if one isn't already active.
   /// If [startAudio] is true, WakeAudioSession takes over playback.
   Future<void> startSession(int alarmId, {bool startAudio = true}) async {
-    // 1. Idempotency Check
-    final isAlreadyActive = (_activeAlarm?.id == alarmId);
-    
+    // 1. Idempotency Check — compared by ORIGINAL id, not raw id: alarmId
+    // may be a chain entry's own id (a different number every re-alert
+    // slot), which must still count as "the same session" as whatever
+    // real alarm id/reactive slot id _activeAlarm is currently tracking.
+    final isAlreadyActive = _activeAlarm != null && originalAlarmIdFor(_activeAlarm!.id) == originalAlarmIdFor(alarmId);
+
     if (isAlreadyActive) {
       debugPrint('WakeSessionController: Session for $alarmId is already active. Checking audio handoff.');
     } else {
@@ -163,8 +258,16 @@ class WakeSessionController extends ChangeNotifier {
         await stopSession();
       }
 
-      // 2. Fetch full alarm details
-      final alarm = await AlarmController.instance.getAlarm(alarmId);
+      // 2. Fetch full alarm details. Chain-derived ids (the vast majority
+      // of interactions once the chain is running) have no DB record of
+      // their own by design — fall back to the real original alarm's
+      // record, which always exists. Without this, any recovery/handoff
+      // that happened to land on a chain entry's id silently found
+      // nothing and did nothing (confirmed live: the alert's "Open
+      // Wakely" button opened the app to a blank screen instead of the
+      // mission screen).
+      final alarm = await AlarmController.instance.getAlarm(alarmId) ??
+          await AlarmController.instance.getAlarm(originalAlarmIdFor(alarmId));
       if (alarm == null) {
         debugPrint('WakeSessionController: Alarm $alarmId not found in persistence. Cannot start session.');
         return;
@@ -187,8 +290,18 @@ class WakeSessionController extends ChangeNotifier {
       }
       notifyListeners();
 
-      // Persist the active session ID
-      await prefs.setInt(_activeSessionKey, alarmId);
+      // Persist the active session ID — always normalized to the ORIGINAL
+      // alarm's id, never a Wake Check variant's. AlarmController.reconcile()
+      // compares this against each real alarm's own (always-original) id to
+      // decide whether it's mid-mission (and should be recovered/left alone)
+      // versus genuinely stale (and should be disabled or advanced to its
+      // next recurrence). If a later re-alert cycle overwrote this with a
+      // reactive Wake Check slot's id instead, that comparison would stop
+      // matching the real alarm the next time the app reconciles — which
+      // silently disabled/advanced a still-in-progress alarm without the
+      // mission ever being completed (confirmed live: alarm showed as
+      // completed / jumped to its next occurrence mid wake-session).
+      await prefs.setInt(_activeSessionKey, originalAlarmIdFor(alarmId));
 
       // Claim the audio session immediately — silently, regardless of
       // whether Wakely owns the actual alarm sound yet. This keeps
@@ -218,7 +331,11 @@ class WakeSessionController extends ChangeNotifier {
   /// Useful for crashes, cancellations, or teardowns.
   Future<void> stopSession() async {
     if (_activeAlarm == null) return;
-    
+
+    _missionIdleTimer?.cancel();
+    _missionIdleTimer = null;
+    _chainPaused = false;
+
     await WakeAudioSessionController.instance.stopAudio();
     _activeAlarm = null;
     _currentAudioOwnership = AudioOwnership.nativeAlarmKit; // Reset ownership
@@ -245,6 +362,8 @@ class WakeSessionController extends ChangeNotifier {
     // a one-shot would never disable; only the ephemeral Wake Check record
     // would get cleaned up.
     final originalId = originalAlarmIdFor(_activeAlarm!.id);
+    _recentlyCompletedOriginalId = originalId;
+    _recentlyCompletedAt = DateTime.now();
 
     // 1. Mark state and stop audio/UI session
     _sessionState = WakeSessionState.completed;
@@ -255,8 +374,12 @@ class WakeSessionController extends ChangeNotifier {
 
     // Also cancel the Wake Check alarm slot (reused across every re-alert
     // cycle, so this single delete cleans up regardless of which cycle we
-    // were on) and reset the cycle counter.
+    // were on), the entire pre-scheduled chain (see cancelWakeCheckChain —
+    // the native-side chain that survives even a hardware-button kill also
+    // needs explicit cleanup so it doesn't keep ringing after a genuine
+    // completion), and reset the cycle counter.
     await AlarmController.instance.deleteAlarm(wakeCheckAlarmIdFor(originalId));
+    await AlarmController.instance.cancelWakeCheckChain(originalId);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_wakeCheckCountKey(originalId));
 
@@ -267,10 +390,13 @@ class WakeSessionController extends ChangeNotifier {
     if (!isActive) return;
     final originalId = originalAlarmIdFor(_activeAlarm!.id);
     debugPrint('WakeSessionController: EMERGENCY ESCAPE triggered for $originalId.');
+    _recentlyCompletedOriginalId = originalId;
+    _recentlyCompletedAt = DateTime.now();
     _sessionState = WakeSessionState.emergencyEscaped;
     await stopSession();
     await AlarmController.instance.completeAlarm(originalId);
     await AlarmController.instance.deleteAlarm(wakeCheckAlarmIdFor(originalId));
+    await AlarmController.instance.cancelWakeCheckChain(originalId);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_wakeCheckCountKey(originalId));
   }

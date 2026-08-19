@@ -52,6 +52,40 @@ class AlarmKitIOSAlarmScheduler implements PlatformAlarmScheduler {
   }
 
   @override
+  Future<void> cancelWakeCheckChain(int alarmId) async {
+    try {
+      await _channel.invokeMethod('cancelWakeCheckChain', {
+        'id': alarmId.toString(),
+      });
+    } on PlatformException catch (e) {
+      // Best-effort cleanup — if the chain is already gone/never existed,
+      // the goal (nothing left to cancel) is already achieved.
+    }
+  }
+
+  @override
+  Future<void> pauseWakeCheckChain(int alarmId) async {
+    try {
+      await _channel.invokeMethod('pauseWakeCheckChain', {
+        'id': alarmId.toString(),
+      });
+    } on PlatformException catch (e) {
+      // Best-effort — worst case the chain stays fully armed, which is safe.
+    }
+  }
+
+  @override
+  Future<void> resumeWakeCheckChain(int alarmId) async {
+    try {
+      await _channel.invokeMethod('resumeWakeCheckChain', {
+        'id': alarmId.toString(),
+      });
+    } on PlatformException catch (e) {
+      // Best-effort.
+    }
+  }
+
+  @override
   Future<List<PlatformAlarmState>> getScheduledAlarms() async {
     final List<dynamic> alarms = await _channel.invokeMethod('getScheduledAlarms');
     

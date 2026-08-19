@@ -35,6 +35,15 @@ class LegacyPluginAlarmScheduler implements PlatformAlarmScheduler {
     return alarms.any((a) => a.id == alarmId);
   }
 
+  @override
+  Future<void> cancelWakeCheckChain(int alarmId) async {}
+
+  @override
+  Future<void> pauseWakeCheckChain(int alarmId) async {}
+
+  @override
+  Future<void> resumeWakeCheckChain(int alarmId) async {}
+
   /// Convert a [WakelyAlarm] to the platform [AlarmSettings].
   AlarmSettings _toPlatformSettings(WakelyAlarm alarm, DateTime fireTime) {
     final sound = SoundRepository.instance.getSoundById(alarm.soundId);
