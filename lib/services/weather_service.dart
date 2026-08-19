@@ -95,25 +95,6 @@ class WeatherService {
   static WeatherData? cachedWeather;
   static DateTime? _lastFetchTime;
 
-  static Future<bool> _handleLocationPermission() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-    
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return false;
-    
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return false;
-      }
-    }
-    if (permission == LocationPermission.deniedForever) return false;
-    
-    return true;
-  }
-
   static Future<WeatherData?> getCurrentWeather() async {
     if (cachedWeather != null && _lastFetchTime != null) {
       if (DateTime.now().difference(_lastFetchTime!).inMinutes < 60) {

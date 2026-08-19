@@ -24,7 +24,6 @@ class SettingScreen extends StatefulWidget {
 }
 
 class _SettingScreenState extends State<SettingScreen> {
-  final bool _isSyncing = false;
   Map<String, dynamic> _stats = {};
   int _privacyMode = 2; // 0=Off, 1=Detect Only, 2=Save Moments
   String _bedtimeReminder = 'at_bedtime';
@@ -257,6 +256,10 @@ class _SettingScreenState extends State<SettingScreen> {
                           const Icon(Icons.local_fire_department, color: AppTokens.signal, size: 16),
                           const SizedBox(width: 4),
                           Text('$currentStreak day streak', style: const TextStyle(color: AppTokens.signal)),
+                          const SizedBox(width: 12),
+                          Icon(Icons.emoji_events, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 16),
+                          const SizedBox(width: 4),
+                          Text('$morningsWon won', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                         ],
                       ),
                     ],
