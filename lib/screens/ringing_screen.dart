@@ -16,6 +16,7 @@ import 'missions/steps_mission.dart';
 import 'mission_complete_screen.dart';
 import '../theme/design_tokens.dart';
 import '../widgets/platform_theme.dart';
+import '../widgets/animated_pressable.dart';
 import '../services/analytics_service.dart';
 import '../services/elo_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -378,7 +379,7 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
                       ),
                       Padding(
                         padding: const EdgeInsets.only(top: 16.0),
-                        child: GestureDetector(
+                        child: AnimatedPressable(
                           onLongPress: _emergencyEscape,
                           child: OutlinedButton.icon(
                             onPressed: () {
