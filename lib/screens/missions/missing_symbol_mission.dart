@@ -22,23 +22,32 @@ class MissingSymbolMission extends StatefulWidget {
   State<MissingSymbolMission> createState() => _MissingSymbolMissionState();
 }
 
-class _MissingSymbolMissionState extends State<MissingSymbolMission> {
+class _MissingSymbolMissionState extends State<MissingSymbolMission> with SingleTickerProviderStateMixin {
   final Random _random = Random();
   late int _num1;
   late int _num2;
   late int _result;
   late String _correctSymbol;
-  
+
   int _currentRound = 0;
   late int _totalRounds;
-  
+
   final List<String> _symbols = ['+', '-', '*', '/'];
+
+  late final AnimationController _shakeController;
 
   @override
   void initState() {
     super.initState();
     _totalRounds = widget.settings.missionRounds;
+    _shakeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _generateEquation();
+  }
+
+  @override
+  void dispose() {
+    _shakeController.dispose();
+    super.dispose();
   }
 
   void _generateEquation() {
@@ -82,6 +91,7 @@ class _MissingSymbolMissionState extends State<MissingSymbolMission> {
       }
     } else {
       Haptics.vibrate(HapticsType.error);
+      _shakeController.forward(from: 0);
       setState(() {
         _generateEquation(); // Regenerate on mistake to prevent brute force
       });
@@ -137,11 +147,19 @@ class _MissingSymbolMissionState extends State<MissingSymbolMission> {
           ),
         ),
         const SizedBox(height: 60),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: _symbols.map((s) => _buildSymbolButton(s, colorScheme)).toList(),
+        AnimatedBuilder(
+          animation: _shakeController,
+          builder: (context, child) {
+            final t = _shakeController.value;
+            final shake = sin(t * pi * 6) * 10 * (1 - t);
+            return Transform.translate(offset: Offset(shake, 0), child: child);
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: _symbols.map((s) => _buildSymbolButton(s, colorScheme)).toList(),
+            ),
           ),
         ),
         const SizedBox(height: 40),

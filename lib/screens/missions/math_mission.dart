@@ -20,7 +20,7 @@ class MathMission extends MissionWidget {
   State<MathMission> createState() => _MathMissionState();
 }
 
-class _MathMissionState extends State<MathMission> {
+class _MathMissionState extends State<MathMission> with SingleTickerProviderStateMixin {
   late int num1;
   late int num2;
   late int num3;
@@ -33,12 +33,21 @@ class _MathMissionState extends State<MathMission> {
   late int _totalRounds;
   late int _difficulty;
 
+  late final AnimationController _shakeController;
+
   @override
   void initState() {
     super.initState();
     _difficulty = widget.settings.difficultyOverride ?? 400;
     _totalRounds = widget.settings.missionRounds;
+    _shakeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _generateEquation();
+  }
+
+  @override
+  void dispose() {
+    _shakeController.dispose();
+    super.dispose();
   }
 
   void _generateEquation() {
@@ -88,6 +97,7 @@ class _MathMissionState extends State<MathMission> {
       }
     } else {
       Haptics.vibrate(HapticsType.error);
+      _shakeController.forward(from: 0);
       setState(() {
         _generateEquation();
       });
@@ -129,27 +139,35 @@ class _MathMissionState extends State<MathMission> {
           ),
         ),
         const SizedBox(height: 60),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 2.5,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-          ),
-          itemCount: 4,
-          itemBuilder: (context, index) {
-            final opt = options[index];
-            return PlatformButton(
-              onPressed: () => _checkAnswer(opt),
-              backgroundColor: colorScheme.surfaceContainerHighest,
-              child: Text(
-                opt.toString(),
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-            );
+        AnimatedBuilder(
+          animation: _shakeController,
+          builder: (context, child) {
+            final t = _shakeController.value;
+            final shake = sin(t * pi * 6) * 10 * (1 - t);
+            return Transform.translate(offset: Offset(shake, 0), child: child);
           },
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 2.5,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
+            itemCount: 4,
+            itemBuilder: (context, index) {
+              final opt = options[index];
+              return PlatformButton(
+                onPressed: () => _checkAnswer(opt),
+                backgroundColor: colorScheme.surfaceContainerHighest,
+                child: Text(
+                  opt.toString(),
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+              );
+            },
+          ),
         ),
         const SizedBox(height: 40),
         TextButton(

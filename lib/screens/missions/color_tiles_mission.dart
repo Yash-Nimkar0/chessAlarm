@@ -22,16 +22,16 @@ class ColorTilesMission extends StatefulWidget {
   State<ColorTilesMission> createState() => _ColorTilesMissionState();
 }
 
-class _ColorTilesMissionState extends State<ColorTilesMission> {
+class _ColorTilesMissionState extends State<ColorTilesMission> with SingleTickerProviderStateMixin {
   final Random _random = Random();
   late List<Color> _gridColors;
   late List<bool> _selectedTiles;
   late Color _targetColor;
   late int _targetCount;
-  
+
   int _currentRound = 0;
   late int _totalRounds;
-  
+
   final List<Color> _availableColors = [
     Colors.redAccent,
     Colors.greenAccent,
@@ -40,11 +40,20 @@ class _ColorTilesMissionState extends State<ColorTilesMission> {
     Colors.purpleAccent,
   ];
 
+  late final AnimationController _shakeController;
+
   @override
   void initState() {
     super.initState();
     _totalRounds = widget.settings.missionRounds;
+    _shakeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _initLevel();
+  }
+
+  @override
+  void dispose() {
+    _shakeController.dispose();
+    super.dispose();
   }
 
   void _initLevel() {
@@ -84,6 +93,7 @@ class _ColorTilesMissionState extends State<ColorTilesMission> {
     } else {
       // Wrong tile, reset
       Haptics.vibrate(HapticsType.heavy);
+      _shakeController.forward(from: 0);
       _initLevel();
     }
   }
@@ -141,7 +151,14 @@ class _ColorTilesMissionState extends State<ColorTilesMission> {
           ),
         ),
         const SizedBox(height: 40),
-        Padding(
+        AnimatedBuilder(
+          animation: _shakeController,
+          builder: (context, child) {
+            final t = _shakeController.value;
+            final shake = sin(t * pi * 6) * 10 * (1 - t);
+            return Transform.translate(offset: Offset(shake, 0), child: child);
+          },
+          child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
           child: GridView.builder(
             shrinkWrap: true,
@@ -169,6 +186,7 @@ class _ColorTilesMissionState extends State<ColorTilesMission> {
                 ),
               );
             },
+          ),
           ),
         ),
         const SizedBox(height: 40),
