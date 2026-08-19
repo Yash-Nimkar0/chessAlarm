@@ -55,8 +55,14 @@ void main() {
       expect(WakeSessionController.instance.isActive, isTrue);
       expect(WakeSessionController.instance.activeAlarm?.id, equals(1));
       
-      // Audio should NOT be playing because the event was purely 'firing' (AlarmKit owns audio)
-      expect(WakeAudioSessionController.instance.isActive, isFalse);
+      // Wakely claims the audio session immediately on any firing event
+      // (silently — see armForWakeSession) specifically to stay alive in
+      // the background from the first ring, even while AlarmKit still
+      // natively owns the AUDIBLE sound. isActive now reflects "session
+      // claimed" (possibly silent); isAudible is the old "actually making
+      // noise" signal this assertion originally meant.
+      expect(WakeAudioSessionController.instance.isActive, isTrue);
+      expect(WakeAudioSessionController.instance.isAudible, isFalse);
 
       // Simulate duplicate firing event (idempotency check)
       await WakeSessionController.instance.handleAlarmEvent(firingEvent);

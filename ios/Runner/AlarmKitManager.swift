@@ -163,8 +163,8 @@ public class WakelyAlarmKitManager: NSObject, FlutterStreamHandler {
     // Mirrors lib/features/alarms/domain/wake_check_id.dart exactly — both
     // sides must agree on these values.
     private static let wakeCheckIdOffset = 99999
-    private static let maxWakeCheckReAlerts = 20
-    private static let wakeCheckIntervalSeconds: TimeInterval = 30
+    private static let wakeCheckIntervalSeconds: TimeInterval = 3
+    private static let maxWakeCheckReAlerts = 200
 
     private static func wakeCheckRequiredKey(_ id: String) -> String { "wakely_requires_wake_check_\(id)" }
     private static func soundKey(_ id: String) -> String { "wakely_sound_\(id)" }

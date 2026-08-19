@@ -189,16 +189,26 @@ class WakeSessionController extends ChangeNotifier {
 
       // Persist the active session ID
       await prefs.setInt(_activeSessionKey, alarmId);
-      
+
+      // Claim the audio session immediately — silently, regardless of
+      // whether Wakely owns the actual alarm sound yet. This keeps
+      // Wakely's own Dart code alive in the background from the instant
+      // the alarm fires (see the doc comment on armForWakeSession for why
+      // that matters), so volume-floor enforcement is protecting the
+      // alarm from the very first ring, not just after a later handoff.
+      await WakeAudioSessionController.instance.armForWakeSession(alarm);
+
       // UI navigation is handled reactively via the ChangeNotifier's notifyListeners()
       // in main.dart / WakelyApp, ensuring it isn't lost on cold boot.
       debugPrint('WakeSessionController: Wake session started for $alarmId.');
     }
-    
+
     // 4. Start Audio conditionally (This is the Dual-Layer handoff)
-    // Even if session is already active, we might need to take over audio
-    // if the user just tapped the native notification banner.
-    if (startAudio && !WakeAudioSessionController.instance.isActive) {
+    // Even if the session (and the armed, silent audio session) is already
+    // active, we might need to take over AUDIBLE audio if the user just
+    // tapped the native notification banner — gate on isAudible, not
+    // isActive, since arming alone must not suppress this.
+    if (startAudio && !WakeAudioSessionController.instance.isAudible) {
       debugPrint('WakeSessionController: Taking over audio playback for $alarmId.');
       await WakeAudioSessionController.instance.startAudio(_activeAlarm!, isHandoff: isAlreadyActive);
     }

@@ -28,16 +28,22 @@ int originalAlarmIdFor(int alarmId) =>
 /// normalizes first, so re-scheduling a chain always targets the same slot).
 int wakeCheckAlarmIdFor(int originalAlarmId) => kWakeCheckIdOffset + originalAlarmIdFor(originalAlarmId);
 
+/// Spacing between Wake Check re-alerts. Explicit product requirement: this
+/// must read as "the alarm just keeps ringing," not a snooze — a 30s (let
+/// alone multi-minute) gap is a completely different, much weaker
+/// experience. Kept above 0 only because scheduling a new native alarm on
+/// every single tick has real overhead and no verified floor from Apple;
+/// a few seconds is as close to instant as is reasonable to ship without
+/// physical-device confirmation that shorter is safe.
+const int kWakeCheckIntervalSeconds = 3;
+
 /// How many times a Wake Check is allowed to re-alert before Wakely stops
 /// automatically rescheduling it and just leaves the mission unresolved
 /// (still not counted as complete — the user can still open the app and
-/// finish it, there's just no further automatic native re-alert). Chosen to
-/// feel relentless (matching the explicit product goal: a heavy sleeper
-/// must not be able to escape by repeatedly silencing it) while stopping
-/// short of literal unbounded notification spam.
-const int kMaxWakeCheckReAlerts = 20;
-
-/// Spacing between Wake Check re-alerts. Deliberately short — a multi-minute
-/// gap reads as a snooze, which is a different feature; this is meant to be
-/// close to immediate.
-const int kWakeCheckIntervalSeconds = 30;
+/// finish it, there's just no further automatic native re-alert). Sized
+/// against kWakeCheckIntervalSeconds to keep the same ~10-minute total
+/// relentless window as before, just far more frequent within it —
+/// matching the explicit product goal that a heavy sleeper must not be
+/// able to escape by repeatedly silencing it, while stopping short of
+/// literal unbounded spam.
+const int kMaxWakeCheckReAlerts = 200;
