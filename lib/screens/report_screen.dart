@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/audio_clip_tile.dart';
 import '../widgets/animated_counter.dart';
+import '../widgets/animated_pressable.dart';
 import '../services/sleep_service.dart';
 import '../services/performance_insight_service.dart';
 import '../services/elo_service.dart';
@@ -94,7 +95,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Widget _buildTab(int index, String text) {
     bool isSelected = _selectedTab == index;
-    return GestureDetector(
+    return AnimatedPressable(
       onTap: () => setState(() => _selectedTab = index),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),

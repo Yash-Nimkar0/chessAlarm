@@ -6,6 +6,7 @@ import '../services/weather_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/design_tokens.dart';
 import '../utils/greeting_utils.dart';
+import 'animated_pressable.dart';
 
 enum WeatherShapeType { sun, moon, clouds, rain, snow, storm, fog }
 
@@ -341,7 +342,7 @@ class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserv
     }
 
     if (_weatherData == null) {
-      return GestureDetector(
+      return AnimatedPressable(
         onTap: () async {
           final perm = await Geolocator.requestPermission();
           if (perm != LocationPermission.denied && perm != LocationPermission.deniedForever) {

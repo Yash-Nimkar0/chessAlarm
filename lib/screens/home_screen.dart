@@ -18,6 +18,7 @@ import 'quick_alarm_screen.dart';
 import '../features/sounds/data/sound_repository.dart';
 import '../theme/design_tokens.dart';
 import '../widgets/fade_slide_in.dart';
+import '../widgets/animated_pressable.dart';
 import '../widgets/platform_theme.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -513,7 +514,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           children: [
             // Header
             if (!_permissionsGranted)
-              GestureDetector(
+              AnimatedPressable(
+                scaleOnPress: 0.98,
                 onTap: () => AlarmCapabilityService.requestAlarmPermissions().then((_) => _checkPermissions()),
                 child: Container(
                   width: double.infinity,

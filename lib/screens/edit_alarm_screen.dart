@@ -583,17 +583,17 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                                 Text('Repeat', style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14, fontWeight: FontWeight.bold)),
                                 Row(
                                    children: [
-                                      GestureDetector(
+                                      AnimatedPressable(
                                          onTap: () => setState(() => _selectedDays.fillRange(0, 7, true)),
                                          child: Text('Everyday', style: TextStyle(color: colorScheme.primary, fontSize: 12)),
                                       ),
                                       const SizedBox(width: 8),
-                                      GestureDetector(
+                                      AnimatedPressable(
                                          onTap: () => setState(() { _selectedDays.fillRange(0, 5, true); _selectedDays.fillRange(5, 7, false); }),
                                          child: Text('Weekdays', style: TextStyle(color: colorScheme.primary, fontSize: 12)),
                                       ),
                                       const SizedBox(width: 8),
-                                      GestureDetector(
+                                      AnimatedPressable(
                                          onTap: () => setState(() { _selectedDays.fillRange(0, 5, false); _selectedDays.fillRange(5, 7, true); }),
                                          child: Text('Weekends', style: TextStyle(color: colorScheme.primary, fontSize: 12)),
                                       ),

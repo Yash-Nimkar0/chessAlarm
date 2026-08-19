@@ -4,6 +4,7 @@ import 'package:haptic_feedback/haptic_feedback.dart';
 import '../../models/mission_settings.dart';
 import 'mission_interface.dart';
 import '../../theme/design_tokens.dart';
+import '../../widgets/animated_pressable.dart';
 
 class MemoryMission extends MissionWidget {
   final MissionSettings settings;
@@ -155,7 +156,7 @@ class _MemoryMissionState extends State<MemoryMission> {
             itemCount: 4,
             itemBuilder: (context, index) {
               final isFlashing = _activeFlash == index;
-              return GestureDetector(
+              return AnimatedPressable(
                 onTap: () => _onTileTapped(index),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
