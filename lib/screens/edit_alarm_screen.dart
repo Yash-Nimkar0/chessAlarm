@@ -24,8 +24,18 @@ import '../widgets/fade_slide_in.dart';
 class EditAlarmScreen extends StatefulWidget {
   final WakelyAlarm? alarm;
   final bool isWakeRoutine;
-  
-  const EditAlarmScreen({Key? key, this.alarm, this.isWakeRoutine = true}) : super(key: key);
+  final DateTime? initialTime;
+  final String? initialMission;
+  final double? initialSleepGoal;
+
+  const EditAlarmScreen({
+    Key? key,
+    this.alarm,
+    this.isWakeRoutine = true,
+    this.initialTime,
+    this.initialMission,
+    this.initialSleepGoal,
+  }) : super(key: key);
 
   @override
   State<EditAlarmScreen> createState() => _EditAlarmScreenState();
@@ -86,15 +96,27 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
         smartLock: widget.alarm!.smartLock,
       );
     } else {
-      selectedDateTime = DateTime.now().add(const Duration(minutes: 1));
-      selectedDateTime = selectedDateTime.copyWith(second: 0, millisecond: 0);
+      if (widget.initialTime != null) {
+        final now = DateTime.now();
+        selectedDateTime = DateTime(now.year, now.month, now.day, widget.initialTime!.hour, widget.initialTime!.minute);
+        if (selectedDateTime.isBefore(now)) {
+          selectedDateTime = selectedDateTime.add(const Duration(days: 1));
+        }
+      } else {
+        selectedDateTime = DateTime.now().add(const Duration(minutes: 1));
+        selectedDateTime = selectedDateTime.copyWith(second: 0, millisecond: 0);
+      }
       loopAudio = true;
       vibrate = true;
       volume = 0.8;
       soundId = 'wakely_soft_morning';
       fadeIn = false;
       fadeDuration = 30;
-      _missionSettings = MissionSettings(type: widget.isWakeRoutine ? "wakeRoutine" : "alarm");
+      _missionSettings = MissionSettings(
+        type: widget.isWakeRoutine ? "wakeRoutine" : "alarm",
+        mission: widget.initialMission ?? 'memory',
+        sleepGoal: widget.initialSleepGoal ?? 8.0,
+      );
       _labelController.text = '';
       _selectedDays = List.filled(7, false); // default to one-shot
     }
