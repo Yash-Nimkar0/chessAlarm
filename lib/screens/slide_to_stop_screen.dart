@@ -49,7 +49,7 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
   }
 
   Future<void> _loadName() async {
-    final name = await PreferencesService.getUserName();
+    final name = await PreferencesService.getDisplayName();
     if (mounted) setState(() => _userName = name);
   }
   

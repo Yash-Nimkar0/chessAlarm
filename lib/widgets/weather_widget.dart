@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import '../services/weather_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/design_tokens.dart';
+import '../utils/greeting_utils.dart';
 
 enum WeatherShapeType { sun, moon, clouds, rain, snow, storm, fog }
 
@@ -263,7 +264,7 @@ class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserv
   }
 
   Future<void> _loadName() async {
-    final name = await PreferencesService.getUserName();
+    final name = await PreferencesService.getDisplayName();
     if (mounted) setState(() => _userName = name);
   }
 
@@ -312,12 +313,7 @@ class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserv
     return bgColor.computeLuminance() > 0.5 ? AppTokens.nightBg.withValues(alpha: 0.6) : Colors.white60;
   }
 
-  String _greeting() {
-    final h = DateTime.now().hour;
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
-  }
+  String _greeting() => GreetingUtils.getGreeting();
 
   @override
   Widget build(BuildContext context) {

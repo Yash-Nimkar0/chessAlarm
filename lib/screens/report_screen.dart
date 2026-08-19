@@ -188,16 +188,16 @@ class _ReportScreenState extends State<ReportScreen> {
     }
     
     final lastSession = _sleepHistory.last;
-    
-    // Generate dummy fl_chart data based on sleep history if available
-    List<FlSpot> spots = [];
-    if (_sleepHistory.length >= 2) {
-      for (int i = 0; i < _sleepHistory.length; i++) {
-        spots.add(FlSpot(i.toDouble(), _sleepHistory[i].score.toDouble()));
-      }
-    } else {
-      spots = const [FlSpot(0, 60), FlSpot(1, 80), FlSpot(2, 75), FlSpot(3, 90), FlSpot(4, 85)];
-    }
+
+    // A trend line needs at least 2 real nights — with fewer than that,
+    // this used to fabricate 5 fake data points instead, which meant a
+    // brand new user's very first "Sleep Consistency" chart would show an
+    // entirely made-up trend with no relationship to their actual night,
+    // sitting right next to their real score number below it.
+    final hasTrend = _sleepHistory.length >= 2;
+    final spots = <FlSpot>[
+      for (int i = 0; i < _sleepHistory.length; i++) FlSpot(i.toDouble(), _sleepHistory[i].score.toDouble()),
+    ];
 
     return SingleChildScrollView(
       child: Column(
@@ -220,27 +220,35 @@ class _ReportScreenState extends State<ReportScreen> {
                 const SizedBox(height: 16),
                 SizedBox(
                   height: 120,
-                  child: LineChart(
-                    LineChartData(
-                      gridData: FlGridData(show: false),
-                      titlesData: FlTitlesData(show: false),
-                      borderData: FlBorderData(show: false),
-                      lineBarsData: [
-                        LineChartBarData(
-                          spots: spots,
-                          isCurved: true,
-                          color: Colors.white,
-                          barWidth: 4,
-                          isStrokeCapRound: true,
-                          dotData: FlDotData(show: false),
-                          belowBarData: BarAreaData(
-                            show: true,
-                            color: Colors.white.withValues(alpha: 0.2),
+                  child: hasTrend
+                      ? LineChart(
+                          LineChartData(
+                            gridData: FlGridData(show: false),
+                            titlesData: FlTitlesData(show: false),
+                            borderData: FlBorderData(show: false),
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: spots,
+                                isCurved: true,
+                                color: Colors.white,
+                                barWidth: 4,
+                                isStrokeCapRound: true,
+                                dotData: FlDotData(show: false),
+                                belowBarData: BarAreaData(
+                                  show: true,
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Center(
+                          child: Text(
+                            'Track one more night to see your trend',
+                            style: AppTokens.body.copyWith(color: Colors.white70, fontSize: 14),
+                            textAlign: TextAlign.center,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -317,33 +325,15 @@ class _ReportScreenState extends State<ReportScreen> {
 
 
   Widget _buildInsightCard() {
-    int puzzlesSolved = _stats['puzzlesSolved'] ?? 0;
-    
-    if (puzzlesSolved < 50) {
-      return Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.lock_clock, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                const SizedBox(width: 8),
-                Text('Keep completing missions.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text('Your Wakely profile is being built.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, height: 1.4)),
-          ],
-        ),
-      );
-    }
-    
+    // This is only ever called once _buildWakeReport has already confirmed
+    // totalPuzzles > 0 (real mission data exists) — it used to re-check a
+    // completely unrelated, always-zero counter (puzzlesSolved, a separate
+    // practice-mode stat — see the comment on totalPuzzles above) and show
+    // a "still building your profile" placeholder regardless, directly
+    // contradicting the real "Missions Beaten" count shown just above it.
+    // The card below already handles a low streak gracefully via its own
+    // "Getting Started" vs "Unstoppable" copy, so there's no need for an
+    // outer gate at all once real data is confirmed to exist.
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(

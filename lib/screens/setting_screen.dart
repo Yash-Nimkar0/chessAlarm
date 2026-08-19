@@ -10,6 +10,7 @@ import '../features/social/presentation/friends_screen.dart';
 import '../experiments/pushup_detection.dart';
 import '../features/alarms/data/alarm_kit_plugin.dart' as wakely_alarm_kit;
 import 'experiment_screen.dart';
+import '../services/elo_service.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({Key? key}) : super(key: key);
@@ -35,7 +36,7 @@ class _SettingScreenState extends State<SettingScreen> {
   }
 
   Future<void> _loadName() async {
-    final name = await PreferencesService.getUserName();
+    final name = await PreferencesService.getDisplayName();
     if (mounted) setState(() => _userName = name);
   }
 
@@ -70,11 +71,26 @@ class _SettingScreenState extends State<SettingScreen> {
   }
 
   Future<void> _loadStats() async {
+    // Was a hardcoded stub — Settings always showed "0 day streak"
+    // regardless of the real value, disagreeing with the Report tab
+    // (which does call EloService.getStats() correctly) at the same time.
+    final stats = await EloService.getStats();
     if (mounted) {
       setState(() {
-        _stats = {'currentStreak': 0, 'morningsWon': 0};
+        _stats = stats;
       });
     }
+  }
+
+  /// One or two initials from a display name, for the profile avatar —
+  /// replaces a flat generic person-icon placeholder with something that
+  /// actually reflects the user, matching how most modern apps render a
+  /// profile picture before a real photo is set.
+  String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
   }
 
 
@@ -118,10 +134,22 @@ class _SettingScreenState extends State<SettingScreen> {
               // Top Profile
               Row(
                 children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-                    child: Icon(Icons.person, color: Theme.of(context).colorScheme.onSurface, size: 30),
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [AppTokens.signal, AppTokens.dawnEnd],
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      _initials(_userName),
+                      style: const TextStyle(color: AppTokens.nightBg, fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Column(

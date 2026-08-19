@@ -594,7 +594,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      // Extra bottom padding clears the extended FAB — it
+                      // was 8px, which let the FAB permanently sit on top
+                      // of the last card's toggle/delete controls with no
+                      // way to scroll past it and reach them.
+                      padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 96.0),
                       itemCount: alarms.length + 1,
                       itemBuilder: (context, index) {
                         if (index == 0) return _buildMockSharedWakeCard();

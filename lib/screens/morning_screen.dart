@@ -40,7 +40,7 @@ class _MorningScreenState extends State<MorningScreen> {
   }
 
   Future<void> _loadName() async {
-    final name = await PreferencesService.getUserName();
+    final name = await PreferencesService.getDisplayName();
     if (mounted) setState(() => _userName = name);
   }
 

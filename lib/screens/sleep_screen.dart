@@ -149,8 +149,6 @@ class _SleepScreenState extends State<SleepScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    
     final bool isWakeRoutine = _nextAlarm != null;
     
     return PlatformScaffold(
@@ -168,12 +166,7 @@ class _SleepScreenState extends State<SleepScreen> {
               const SizedBox(height: 24),
               
               if (_nextAlarm == null)
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32.0),
-                    child: Text('No wake routines set for tonight.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                  ),
-                )
+                _buildNoRoutineCard(context)
               else ...[
                 // Next Wake Header
                 if (isWakeRoutine) ...[
@@ -275,9 +268,17 @@ class _SleepScreenState extends State<SleepScreen> {
                   
                   const SizedBox(height: 32),
                 ],
-                
-                // Sleep Tracking Magic Button
-                GestureDetector(
+              ],
+
+              // Sleep tracking and relax sounds are useful regardless of
+              // whether a wake routine is scheduled tonight — they used to
+              // live inside the "else" branch above, which meant having no
+              // alarm set hid real, always-relevant features (not just an
+              // empty state) behind an unrelated condition.
+              if (_nextAlarm == null) const SizedBox(height: 8),
+
+              // Sleep Tracking Magic Button
+              GestureDetector(
                   onTap: _toggleTracking,
                   child: Container(
                     width: double.infinity,
@@ -338,7 +339,6 @@ class _SleepScreenState extends State<SleepScreen> {
                 ),
                 
                 const SizedBox(height: 40),
-              ],
             ],
           ),
         ),
@@ -346,6 +346,44 @@ class _SleepScreenState extends State<SleepScreen> {
     );
   }
   
+  Widget _buildNoRoutineCard(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+      margin: const EdgeInsets.only(bottom: 32),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppTokens.signal.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.nightlight_round, color: AppTokens.signal, size: 32),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No wake routine set for tonight',
+            style: TextStyle(color: colorScheme.onSurface, fontSize: 17, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Set one from the Alarm tab to see your countdown, mission preview, and sleep readiness here.',
+            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildChecklistItem(IconData icon, String text) {
      return Padding(
         padding: const EdgeInsets.symmetric(vertical: 6.0),
