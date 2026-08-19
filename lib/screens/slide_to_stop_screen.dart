@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'dart:async';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import '../features/alarms/application/alarm_controller.dart';
+import '../features/alarms/application/wake_session_controller.dart';
 import 'ringing_screen.dart';
 import '../models/mission_settings.dart';
 import '../services/weather_service.dart';
@@ -96,6 +97,20 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
     
     if (!mounted) return;
     if (isWakeRoutine || hasMission) {
+      // RingingScreen's completion paths (_handleSuccess / _emergencyEscape)
+      // resolve through WakeSessionController.completeSession() /
+      // emergencyEscape(), both of which are no-ops unless a session is
+      // already active for this alarm. On iOS that session is started by
+      // the AlarmKit event pipeline before RingingScreen ever appears; on
+      // this legacy/Android path nothing else starts one, so without this
+      // call, completing a mission here would silently never invoke
+      // AlarmController.completeAlarm() — recurring alarms would never
+      // reschedule, and one-shot alarms wouldn't be cleanly disabled.
+      // startAudio is false because the `alarm` plugin already owns
+      // playback on this path; WakeAudioSessionController must not also
+      // start audio and double up.
+      await WakeSessionController.instance.startSession(widget.alarmSettings.id, startAudio: false);
+      if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => RingingScreen(alarmSettings: widget.alarmSettings),
