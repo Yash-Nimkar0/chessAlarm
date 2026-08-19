@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import '../domain/sound_model.dart';
 
 class SoundRepository {
@@ -161,7 +162,7 @@ class SoundRepository {
       case 'wakely_jingle': return 'jingle.wav';
       default:
         // Log fallback and use the most generic system sound if ID is completely invalid
-        print('WARNING: Sound $id not found in native mapping. Falling back to default ringphone.');
+        if (kDebugMode) print('WARNING: Sound $id not found in native mapping. Falling back to default ringphone.');
         return 'misogi77.wav'; 
     }
   }

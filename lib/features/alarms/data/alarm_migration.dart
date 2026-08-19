@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:alarm/alarm.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/alarm_model.dart';
@@ -34,7 +35,7 @@ class AlarmMigration {
       await prefs.setInt(_migrationVersionKey, _targetVersion);
     } catch (e) {
       // Allow it to retry on next launch if it fails halfway
-      print('Alarm migration failed: $e');
+      if (kDebugMode) print('Alarm migration failed: $e');
     }
   }
 
