@@ -256,6 +256,24 @@ class _WakelyAppState extends State<WakelyApp> {
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
               ),
             ),
+            // Without these, FloatingActionButton and Switch fall back to
+            // Material 3's default of colorScheme.primary — which is
+            // deliberately the dawnStart purple in light mode, not amber.
+            // Every other interactive element (buttons above, dark mode's
+            // whole theme) is explicitly amber, so a purple FAB and switch
+            // thumb read as a jarring, unrelated second accent color rather
+            // than a deliberate choice. Dark mode doesn't need this
+            // override — its colorScheme.primary already IS AppTokens.signal.
+            floatingActionButtonTheme: FloatingActionButtonThemeData(
+              backgroundColor: AppTokens.signal,
+              foregroundColor: AppTokens.signalDeep,
+            ),
+            switchTheme: SwitchThemeData(
+              thumbColor: WidgetStateProperty.resolveWith((states) =>
+                  states.contains(WidgetState.selected) ? AppTokens.signal : null),
+              trackColor: WidgetStateProperty.resolveWith((states) =>
+                  states.contains(WidgetState.selected) ? AppTokens.signal.withValues(alpha: 0.4) : null),
+            ),
           ),
           darkTheme: ThemeData(
             useMaterial3: true,

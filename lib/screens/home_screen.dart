@@ -114,33 +114,42 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildMockSharedWakeCard() {
+    // Explicit amber tones rather than colorScheme.primaryContainer/primary
+    // — those correctly follow Material's own conventions, but this app's
+    // light theme deliberately seeds primary from a contrast-safe indigo
+    // (see main.dart), not the brand's actual amber. Every other highlight
+    // surface in the app (buttons, FAB, alarm toggles) is explicitly
+    // amber, so this card following the generic Material role instead
+    // stood out as an unrelated purple card in light mode.
+    final onDark = AppTokens.nightBg;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
+        color: AppTokens.signal,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.1),
-            child: Icon(Icons.people, color: Theme.of(context).colorScheme.onPrimaryContainer),
+            backgroundColor: onDark.withValues(alpha: 0.15),
+            child: Icon(Icons.people, color: onDark),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Wake Together • 7:00 AM', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimaryContainer)),
-                Text('Alex is sleeping', style: TextStyle(color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.7))),
+                Text('Wake Together • 7:00 AM', style: TextStyle(fontWeight: FontWeight.bold, color: onDark)),
+                Text('Alex is sleeping', style: TextStyle(color: onDark.withValues(alpha: 0.7))),
               ],
             ),
           ),
           Switch(
             value: true,
             onChanged: (val) {},
-            activeColor: Theme.of(context).colorScheme.primary,
+            activeColor: onDark,
+            activeTrackColor: onDark.withValues(alpha: 0.3),
           ),
         ],
       ),

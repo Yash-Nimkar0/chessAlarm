@@ -319,7 +319,12 @@ class _SettingScreenState extends State<SettingScreen> {
               const SizedBox(height: 16),
               _buildSection(colorScheme, [
                 ListTile(
-                  leading: Icon(Icons.dark_mode, color: Theme.of(context).colorScheme.onSurface),
+                  leading: Icon(
+                    ThemeService().themeMode == ThemeMode.light
+                        ? Icons.light_mode
+                        : (ThemeService().themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.brightness_auto),
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   title: Text('Theme', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                   trailing: Text(ThemeService().themeMode == ThemeMode.light ? 'Light' : (ThemeService().themeMode == ThemeMode.dark ? 'Dark' : 'System'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                   onTap: () {
