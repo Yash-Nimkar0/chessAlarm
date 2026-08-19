@@ -153,7 +153,7 @@ class _ReportScreenState extends State<ReportScreen> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          Row(
+          FadeSlideIn(child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(
@@ -170,9 +170,9 @@ class _ReportScreenState extends State<ReportScreen> {
                 ],
               ),
             ],
-          ),
+          )),
           const SizedBox(height: 24),
-          _buildStatRow('Current Streak', '$_currentStreak Days', Icons.local_fire_department),
+          FadeSlideIn(delay: const Duration(milliseconds: 70), child: _buildStatRow('Current Streak', '$_currentStreak Days', Icons.local_fire_department)),
           const SizedBox(height: 24),
           if (totalPuzzles == 0)
             FadeSlideIn(
