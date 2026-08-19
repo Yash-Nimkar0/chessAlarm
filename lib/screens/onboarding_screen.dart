@@ -7,6 +7,8 @@ import 'edit_alarm_screen.dart';
 import '../services/analytics_service.dart';
 import '../theme/design_tokens.dart';
 import '../widgets/animated_pressable.dart';
+import '../widgets/fade_slide_in.dart';
+import '../widgets/breathing_icon.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({Key? key}) : super(key: key);
@@ -165,7 +167,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildSlide1() {
     return Padding(
       padding: const EdgeInsets.all(32.0),
-      child: Column(
+      child: FadeSlideIn(child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -192,7 +194,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(height: 16),
           _buildSelectionButton(Icons.bolt, "Thinking Speed", _selectedImprovement, (val) => setState(() => _selectedImprovement = val)),
         ],
-      ),
+      )),
     );
   }
   
@@ -231,11 +233,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildSlide3() {
     return Padding(
       padding: const EdgeInsets.all(32.0),
-      child: Column(
+      child: FadeSlideIn(child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Icon(Icons.alarm_on_rounded, size: 100, color: AppTokens.signal),
+          BreathingIcon(
+            icon: Icons.alarm_on_rounded,
+            size: 140,
+            iconSize: 72,
+            color: AppTokens.signal,
+            backgroundColor: AppTokens.signal.withValues(alpha: 0.12),
+          ),
           const SizedBox(height: 40),
           Text(
             "Start your first\nmorning challenge",
@@ -254,7 +262,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.5),
           ),
         ],
-      ),
+      )),
     );
   }
 }
