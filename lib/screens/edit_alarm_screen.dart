@@ -477,19 +477,32 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                             ),
                           ),
                         ),
-                        child: CupertinoDatePicker(
-                          mode: CupertinoDatePickerMode.time,
-                          initialDateTime: selectedDateTime,
-                          onDateTimeChanged: (DateTime newDateTime) {
-                            Haptics.vibrate(HapticsType.selection);
-                            setState(() {
-                              selectedDateTime = newDateTime.copyWith(
-                                year: selectedDateTime.year,
-                                month: selectedDateTime.month,
-                                day: selectedDateTime.day,
-                              );
-                            });
-                          },
+                        child: ExcludeSemantics(
+                          // CupertinoDatePicker corrupts the semantics tree
+                          // for this entire screen when included: Cancel,
+                          // Save, and every other control below it silently
+                          // stop being exposed to UIAccessibility (confirmed
+                          // by removing it experimentally — everything else
+                          // becomes reachable). Excluding it here is a
+                          // deliberate tradeoff: the picker itself won't be
+                          // individually announced by VoiceOver, but the
+                          // rest of the screen — including Save, without
+                          // which the alarm can't be created at all — is
+                          // reachable again.
+                          child: CupertinoDatePicker(
+                            mode: CupertinoDatePickerMode.time,
+                            initialDateTime: selectedDateTime,
+                            onDateTimeChanged: (DateTime newDateTime) {
+                              Haptics.vibrate(HapticsType.selection);
+                              setState(() {
+                                selectedDateTime = newDateTime.copyWith(
+                                  year: selectedDateTime.year,
+                                  month: selectedDateTime.month,
+                                  day: selectedDateTime.day,
+                                );
+                              });
+                            },
+                          ),
                         ),
                       ),
                     ),
