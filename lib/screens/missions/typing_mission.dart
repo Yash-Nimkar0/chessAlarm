@@ -129,6 +129,11 @@ class _TypingMissionState extends State<TypingMission> {
             ),
           ),
         ),
+        const SizedBox(height: 40),
+        TextButton(
+          onPressed: widget.onSkip,
+          child: Text('Skip (-10 Points)', style: TextStyle(color: colorScheme.error, fontSize: 16)),
+        ),
       ],
     ),
     );

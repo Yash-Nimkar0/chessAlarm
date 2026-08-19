@@ -4,6 +4,7 @@ import 'dart:math';
 
 import '../../models/mission_settings.dart';
 import '../../theme/design_tokens.dart';
+import '../../widgets/animated_pressable.dart';
 
 class MissingSymbolMission extends StatefulWidget {
   final VoidCallback onSuccess;
@@ -143,12 +144,17 @@ class _MissingSymbolMissionState extends State<MissingSymbolMission> {
             children: _symbols.map((s) => _buildSymbolButton(s, colorScheme)).toList(),
           ),
         ),
+        const SizedBox(height: 40),
+        TextButton(
+          onPressed: widget.onSkip,
+          child: Text('Skip (-10 Points)', style: TextStyle(color: colorScheme.error, fontSize: 16)),
+        ),
       ],
     );
   }
 
   Widget _buildSymbolButton(String symbol, ColorScheme colorScheme) {
-    return GestureDetector(
+    return AnimatedPressable(
       onTap: () => _onSymbolTap(symbol),
       child: Container(
         width: 64,

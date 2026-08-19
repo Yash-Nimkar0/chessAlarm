@@ -10,6 +10,7 @@ import '../services/weather_service.dart';
 import '../features/alarms/application/alarm_controller.dart';
 import '../features/alarms/domain/alarm_model.dart';
 import '../theme/design_tokens.dart';
+import '../widgets/animated_pressable.dart';
 
 class SleepScreen extends StatefulWidget {
   const SleepScreen({Key? key}) : super(key: key);
@@ -278,7 +279,7 @@ class _SleepScreenState extends State<SleepScreen> {
               if (_nextAlarm == null) const SizedBox(height: 8),
 
               // Sleep Tracking Magic Button
-              GestureDetector(
+              AnimatedPressable(
                   onTap: _toggleTracking,
                   child: Container(
                     width: double.infinity,
@@ -399,7 +400,7 @@ class _SleepScreenState extends State<SleepScreen> {
 
   Widget _buildSoundButton(IconData icon, String name, String assetPath) {
     bool isPlaying = _currentlyPlaying == name;
-    return GestureDetector(
+    return AnimatedPressable(
       onTap: () {
          Haptics.vibrate(HapticsType.light);
          _toggleAudio(name, assetPath);

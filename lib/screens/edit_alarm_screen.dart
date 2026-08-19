@@ -20,6 +20,7 @@ import 'missions/steps_config_screen.dart';
 import 'sound_picker_screen.dart';
 import '../features/sounds/data/sound_repository.dart';
 import '../theme/design_tokens.dart';
+import '../widgets/animated_pressable.dart';
 
 class EditAlarmScreen extends StatefulWidget {
   final WakelyAlarm? alarm;
@@ -419,6 +420,52 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
     });
   }
 
+  /// Was previously not wired up at all — the Sleep Goal row displayed a
+  /// hardcoded "8 Hours" regardless of the actual value and had no onTap,
+  /// so it looked editable (same ListTile pattern as Sound/Mission above
+  /// it, which are) but silently did nothing.
+  void _showSleepGoalPicker() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final colorScheme = Theme.of(context).colorScheme;
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Sleep Goal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${_missionSettings.sleepGoal % 1 == 0 ? _missionSettings.sleepGoal.toInt() : _missionSettings.sleepGoal} Hours',
+                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: colorScheme.primary),
+                    ),
+                    Slider(
+                      value: _missionSettings.sleepGoal,
+                      min: 4,
+                      max: 12,
+                      divisions: 16,
+                      activeColor: colorScheme.primary,
+                      onChanged: (val) {
+                        Haptics.vibrate(HapticsType.selection);
+                        setSheetState(() {});
+                        setState(() => _missionSettings = _missionSettings.copyWith(sleepGoal: val));
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -559,7 +606,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: List.generate(7, (index) {
                               final isSelected = _selectedDays[index];
-                              return GestureDetector(
+                              return AnimatedPressable(
                                 onTap: () {
                                   Haptics.vibrate(HapticsType.selection);
                                   setState(() {
@@ -656,7 +703,18 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                                 contentPadding: EdgeInsets.zero,
                                 leading: const Icon(Icons.bedtime, color: Colors.blueAccent),
                                 title: const Text('Sleep Goal'),
-                                trailing: Text('8 Hours', style: TextStyle(color: colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold)),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '${_missionSettings.sleepGoal % 1 == 0 ? _missionSettings.sleepGoal.toInt() : _missionSettings.sleepGoal} Hours',
+                                      style: TextStyle(color: colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant, size: 20),
+                                  ],
+                                ),
+                                onTap: _showSleepGoalPicker,
                               ),
                               ],
                           ),

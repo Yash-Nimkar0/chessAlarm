@@ -17,6 +17,7 @@ import 'edit_alarm_screen.dart';
 import 'quick_alarm_screen.dart';
 import '../features/sounds/data/sound_repository.dart';
 import '../theme/design_tokens.dart';
+import '../widgets/fade_slide_in.dart';
 import '../widgets/platform_theme.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -610,12 +611,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 96.0),
                       itemCount: alarms.length + 1,
                       itemBuilder: (context, index) {
-                        if (index == 0) return _buildMockSharedWakeCard();
+                        if (index == 0) return FadeSlideIn(child: _buildMockSharedWakeCard());
                         final alarmIndex = index - 1;
                         final alarm = alarms[alarmIndex];
                         final locked = alarm.isLocked;
-                        
-                        return PlatformCard(
+
+                        return FadeSlideIn(
+                          delay: Duration(milliseconds: (alarmIndex * 40).clamp(0, 320)),
+                          child: PlatformCard(
                           margin: const EdgeInsets.symmetric(vertical: 8),
                           onTap: locked ? () {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -735,6 +738,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 ),
                               ),
                             ),
+                          ),
                         );
                       },
                     ),

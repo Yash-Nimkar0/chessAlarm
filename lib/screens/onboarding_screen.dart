@@ -6,6 +6,7 @@ import 'main_screen.dart';
 import 'edit_alarm_screen.dart';
 import '../services/analytics_service.dart';
 import '../theme/design_tokens.dart';
+import '../widgets/animated_pressable.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({Key? key}) : super(key: key);
@@ -197,7 +198,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   
   Widget _buildSelectionButton(IconData icon, String label, String? selectedValue, Function(String) onSelect) {
     bool isSelected = selectedValue == label;
-    return GestureDetector(
+    return AnimatedPressable(
       onTap: () => onSelect(label),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),

@@ -23,9 +23,11 @@ class MissionCompleteScreen extends StatefulWidget {
 class _MissionCompleteScreenState extends State<MissionCompleteScreen> with SingleTickerProviderStateMixin {
   int _currentStreak = 0;
   bool _isLoading = true;
-  
+
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+  late AnimationController _badgeController;
+  late Animation<double> _badgeScale;
 
   @override
   void initState() {
@@ -38,7 +40,15 @@ class _MissionCompleteScreenState extends State<MissionCompleteScreen> with Sing
       parent: _fadeController,
       curve: Curves.easeIn,
     ));
-    
+    // This is the app's core reward moment — a completed wake mission — so
+    // it deserves more than a flat fade. The badge overshoots slightly
+    // (elasticOut) for a satisfying "pop" instead of just appearing.
+    _badgeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _badgeScale = CurvedAnimation(parent: _badgeController, curve: Curves.elasticOut);
+
     _loadStats();
   }
 
@@ -50,7 +60,10 @@ class _MissionCompleteScreenState extends State<MissionCompleteScreen> with Sing
         _isLoading = false;
       });
       _fadeController.forward();
-      
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted) _badgeController.forward();
+      });
+
       // Auto-transition after 3 seconds
       Future.delayed(const Duration(seconds: 3), () {
         if (mounted) {
@@ -82,6 +95,7 @@ class _MissionCompleteScreenState extends State<MissionCompleteScreen> with Sing
   @override
   void dispose() {
     _fadeController.dispose();
+    _badgeController.dispose();
     super.dispose();
   }
 
@@ -99,6 +113,19 @@ class _MissionCompleteScreenState extends State<MissionCompleteScreen> with Sing
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              ScaleTransition(
+                scale: _badgeScale,
+                child: Container(
+                  width: 88,
+                  height: 88,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppTokens.signal,
+                  ),
+                  child: Icon(Icons.check_rounded, color: Theme.of(context).colorScheme.surface, size: 52),
+                ),
+              ),
+              const SizedBox(height: 32),
               const Text(
                 'Morning Won',
                 style: TextStyle(

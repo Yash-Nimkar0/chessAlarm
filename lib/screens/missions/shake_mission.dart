@@ -129,8 +129,16 @@ class _ShakeMissionState extends State<ShakeMission> {
                 "${(progress * 100).toInt()}%",
                 style: TextStyle(
                   color: progress > 0.5 ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.surface,
-                  fontSize: 60, 
+                  fontSize: 60,
                   fontWeight: FontWeight.w900
+                ),
+              ),
+              const SizedBox(height: 40),
+              TextButton(
+                onPressed: widget.onSkip,
+                child: Text(
+                  'Skip (-10 Points)',
+                  style: TextStyle(color: progress > 0.5 ? Theme.of(context).colorScheme.error : Colors.redAccent.shade100, fontSize: 16),
                 ),
               ),
             ],

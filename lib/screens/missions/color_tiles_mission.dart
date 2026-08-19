@@ -4,6 +4,7 @@ import 'dart:math';
 
 import '../../models/mission_settings.dart';
 import '../../theme/design_tokens.dart';
+import '../../widgets/animated_pressable.dart';
 
 class ColorTilesMission extends StatefulWidget {
   final VoidCallback onSuccess;
@@ -153,7 +154,7 @@ class _ColorTilesMissionState extends State<ColorTilesMission> {
             itemCount: 16,
             itemBuilder: (context, index) {
               bool isSelected = _selectedTiles[index];
-              return GestureDetector(
+              return AnimatedPressable(
                 onTap: isSelected ? null : () => _onTileTap(index),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
@@ -169,6 +170,11 @@ class _ColorTilesMissionState extends State<ColorTilesMission> {
               );
             },
           ),
+        ),
+        const SizedBox(height: 40),
+        TextButton(
+          onPressed: widget.onSkip,
+          child: Text('Skip (-10 Points)', style: TextStyle(color: colorScheme.error, fontSize: 16)),
         ),
       ],
     );
