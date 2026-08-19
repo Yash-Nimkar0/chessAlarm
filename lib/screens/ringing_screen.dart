@@ -119,7 +119,7 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
     
     if (mounted) {
       int elapsed = DateTime.now().difference(_startTime).inSeconds;
-      await SleepService.recordWakePerformance(elapsed, 0, true);
+      await SleepService.recordWakePerformance(elapsed, true);
       if (_missionSettings.type == 'quickAlarm' || _missionSettings.type == 'alarm') {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
@@ -183,7 +183,7 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
       AnalyticsService.logEvent('mission_completed', {
         'solve_time': elapsed,
       });
-      await SleepService.recordWakePerformance(elapsed, 0, false);
+      await SleepService.recordWakePerformance(elapsed, false);
       await EloService.recordMorningSuccess(solveTimeSeconds: elapsed);
       if (_missionSettings.type == 'quickAlarm' || _missionSettings.type == 'alarm') {
         Navigator.of(context).pushReplacement(

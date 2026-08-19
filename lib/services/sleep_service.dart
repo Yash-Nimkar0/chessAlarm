@@ -439,24 +439,16 @@ class SleepService {
     return session;
   }
   
-  static Future<void> recordWakePerformance(int solveTimeSec, int hintsRemaining, bool isSkip) async {
+  static Future<void> recordWakePerformance(int solveTimeSec, bool isSkip) async {
     List<SleepSession> history = await getHistory();
     if (history.isEmpty) return;
-    
+
     SleepSession lastSession = history.last;
     if (DateTime.now().difference(lastSession.endTime).inHours < 1 && lastSession.wakePerformanceScore == null) {
       int wakeBonus = 0;
       if (!isSkip) {
         wakeBonus += 10;
-        
-        if (hintsRemaining == 3) {
-          wakeBonus += 5;
-        } else if (hintsRemaining == 2) {
-          wakeBonus += 3;
-        } else if (hintsRemaining == 1) {
-          wakeBonus += 1;
-        }
-        
+
         // Compare with personal average
         final prefs = await SharedPreferences.getInstance();
         int personalFastest = prefs.getInt('fastest_solve_sec') ?? 999;
