@@ -618,6 +618,43 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
                         return FadeSlideIn(
                           delay: Duration(milliseconds: (alarmIndex * 40).clamp(0, 320)),
+                          child: Dismissible(
+                          key: ValueKey('alarm_${alarm.id}'),
+                          direction: locked ? DismissDirection.none : DismissDirection.endToStart,
+                          confirmDismiss: (_) async {
+                            return await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Delete Alarm?'),
+                                content: const Text('Are you sure you want to delete this alarm?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, true),
+                                    style: TextButton.styleFrom(foregroundColor: colorScheme.error),
+                                    child: const Text('Delete'),
+                                  ),
+                                ],
+                              ),
+                            ) ?? false;
+                          },
+                          onDismissed: (_) async {
+                            await AlarmController.instance.deleteAlarm(alarm.id);
+                            loadAlarms();
+                          },
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 28),
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: BoxDecoration(
+                              color: colorScheme.error,
+                              borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                            ),
+                            child: Icon(Icons.delete_outline_rounded, color: colorScheme.onError, size: 28),
+                          ),
                           child: PlatformCard(
                           margin: const EdgeInsets.symmetric(vertical: 8),
                           onTap: locked ? () {
@@ -681,7 +718,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                             Icon(Icons.psychology, size: 14, color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.3) : colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
                                             const SizedBox(width: 4),
                                             Text(
-                                              alarm.mission.type.toString().split('.').last, // Simplistic mission name
+                                              alarm.mission.type.displayName,
                                               style: TextStyle(fontSize: 12, color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : colorScheme.onSurfaceVariant.withValues(alpha: 0.8)),
                                             ),
                                           ],
@@ -738,6 +775,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 ),
                               ),
                             ),
+                          ),
                           ),
                         );
                       },

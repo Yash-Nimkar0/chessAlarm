@@ -38,8 +38,7 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
   bool _isSuccess = false;
   
   late AnimationController _pulseController;
-  late Animation<Color?> _pulseAnimation;
-  final bool _isFlashingRed = false;
+  late Animation<double> _pulseAnimation;
 
   late AnimationController _sunriseController;
   late Animation<Color?> _skyAnimation;
@@ -59,15 +58,17 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
     WakeSessionController.instance.armMissionWatchdog();
     AnalyticsService.logEvent('alarm_triggered', {'alarm_id': widget.alarmSettings.id});
     _startTime = DateTime.now();
+    // A gentle breathing amber glow behind the content — this used to be a
+    // ColorTween whose actual value was never read anywhere in build() (it
+    // only drove _isFlashingRed, a bool permanently hardcoded to false),
+    // so it animated every second for the entire ringing session for no
+    // visible effect at all. Repurposed into a real, visible ambient pulse.
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 1),
+      duration: const Duration(milliseconds: 1800),
     )..repeat(reverse: true);
-    
-    _pulseAnimation = ColorTween(
-      begin: const Color(0xFF1A0000),
-      end: const Color(0xFF4A0000),
-    ).animate(_pulseController);
+
+    _pulseAnimation = CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut);
 
     _sunriseController = AnimationController(
       vsync: this,
@@ -321,15 +322,25 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    _isSuccess 
-                        ? Colors.green.withValues(alpha: 0.4) 
-                        : _isFlashingRed 
-                            ? Colors.red.withValues(alpha: 0.8) 
-                            : skyColor,
+                    _isSuccess ? Colors.green.withValues(alpha: 0.4) : skyColor,
                     AppTokens.nightBg,
                   ],
                 )
               ),
+              // A gentle breathing amber glow — reinforces urgency without
+              // the jarring red flash this used to (never actually) do.
+              foregroundDecoration: _isSuccess
+                  ? null
+                  : BoxDecoration(
+                      gradient: RadialGradient(
+                        center: Alignment.topCenter,
+                        radius: 1.1,
+                        colors: [
+                          AppTokens.signal.withValues(alpha: 0.10 + (0.08 * _pulseAnimation.value)),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
               child: SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),

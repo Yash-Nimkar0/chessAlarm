@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'services/theme_service.dart';
 import 'theme/design_tokens.dart';
+import 'widgets/splash_screen.dart';
 
 import 'features/alarms/data/alarm_migration.dart';
 import 'features/alarms/data/alarm_repository.dart';
@@ -91,15 +92,7 @@ class _WakelyAppLoaderState extends State<WakelyAppLoader> {
       future: _initFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const MaterialApp(
-            debugShowCheckedModeBanner: false,
-            home: Scaffold(
-              backgroundColor: Colors.black,
-              body: Center(
-                child: CircularProgressIndicator(color: Colors.greenAccent),
-              ),
-            ),
-          );
+          return const SplashScreen();
         }
         
         final hasSeenOnboarding = snapshot.data ?? false;
