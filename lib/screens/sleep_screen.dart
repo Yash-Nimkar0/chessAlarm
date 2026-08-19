@@ -11,6 +11,8 @@ import '../features/alarms/application/alarm_controller.dart';
 import '../features/alarms/domain/alarm_model.dart';
 import '../theme/design_tokens.dart';
 import '../widgets/animated_pressable.dart';
+import '../features/sounds/data/custom_sound_service.dart';
+import '../features/sounds/domain/sound_model.dart';
 
 class SleepScreen extends StatefulWidget {
   const SleepScreen({Key? key}) : super(key: key);
@@ -30,6 +32,8 @@ class _SleepScreenState extends State<SleepScreen> {
 
   final AudioPlayer _audioPlayer = AudioPlayer();
   String? _currentlyPlaying;
+  List<SoundModel> _customSounds = [];
+  bool _isImportingSound = false;
 
   @override
   void initState() {
@@ -41,15 +45,41 @@ class _SleepScreenState extends State<SleepScreen> {
   Future<void> _loadData() async {
     final scheduled = await AlarmController.instance.getNextEnabledWakeRoutine();
     _nextAlarm = scheduled;
-    
+
     _userElo = await EloService.getElo();
     final stats = await EloService.getStats();
     _currentStreak = stats['currentStreak'] ?? 0;
     _fastestSolve = stats['fastestSolve'] ?? 0;
-    
+
     _weatherData = await WeatherService.getCurrentWeather();
-    
+    _customSounds = await CustomSoundService.getCustomSounds();
+
     if (mounted) setState(() {});
+  }
+
+  Future<void> _importCustomSound() async {
+    if (_isImportingSound) return;
+    setState(() => _isImportingSound = true);
+    try {
+      final sound = await CustomSoundService.importSound();
+      if (sound != null && mounted) {
+        setState(() => _customSounds = [..._customSounds, sound]);
+        Haptics.vibrate(HapticsType.success);
+      }
+    } finally {
+      if (mounted) setState(() => _isImportingSound = false);
+    }
+  }
+
+  Future<void> _deleteCustomSound(SoundModel sound) async {
+    if (_currentlyPlaying == sound.name) {
+      await _audioPlayer.stop();
+      _currentlyPlaying = null;
+    }
+    await CustomSoundService.deleteCustomSound(sound.id);
+    if (mounted) {
+      setState(() => _customSounds = _customSounds.where((s) => s.id != sound.id).toList());
+    }
   }
 
   @override
@@ -77,13 +107,13 @@ class _SleepScreenState extends State<SleepScreen> {
     }
   }
 
-  void _toggleAudio(String name, String path) async {
+  void _toggleAudio(String name, Source source) async {
     if (_currentlyPlaying == name) {
       await _audioPlayer.stop();
       setState(() => _currentlyPlaying = null);
     } else {
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
-      await _audioPlayer.play(AssetSource(path));
+      await _audioPlayer.play(source);
       setState(() => _currentlyPlaying = name);
     }
   }
@@ -328,17 +358,34 @@ class _SleepScreenState extends State<SleepScreen> {
                 const SizedBox(height: 40),
                 Text('Relax Sounds', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
-                
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildSoundButton(Icons.water_drop, 'Rain', 'audio/rain.mp3'),
-                    _buildSoundButton(Icons.waves, 'Ocean', 'audio/ocean.mp3'),
-                    _buildSoundButton(Icons.forest, 'Jungle', 'audio/brown_noise.mp3'),
-                    _buildSoundButton(Icons.noise_control_off, 'White', 'audio/white_noise.mp3'),
-                  ],
+
+                SizedBox(
+                  height: 96,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _buildSoundButton(Icons.water_drop, 'Rain', AssetSource('audio/rain.mp3')),
+                      const SizedBox(width: 16),
+                      _buildSoundButton(Icons.waves, 'Ocean', AssetSource('audio/ocean.mp3')),
+                      const SizedBox(width: 16),
+                      _buildSoundButton(Icons.forest, 'Jungle', AssetSource('audio/brown_noise.mp3')),
+                      const SizedBox(width: 16),
+                      _buildSoundButton(Icons.noise_control_off, 'White', AssetSource('audio/white_noise.mp3')),
+                      for (final sound in _customSounds) ...[
+                        const SizedBox(width: 16),
+                        _buildSoundButton(
+                          Icons.music_note,
+                          sound.name,
+                          DeviceFileSource(sound.path),
+                          onLongPress: () => _confirmDeleteCustomSound(sound),
+                        ),
+                      ],
+                      const SizedBox(width: 16),
+                      _buildAddSoundButton(),
+                    ],
+                  ),
                 ),
-                
+
                 const SizedBox(height: 40),
             ],
           ),
@@ -398,32 +445,99 @@ class _SleepScreenState extends State<SleepScreen> {
      );
   }
 
-  Widget _buildSoundButton(IconData icon, String name, String assetPath) {
+  Widget _buildSoundButton(IconData icon, String name, Source source, {VoidCallback? onLongPress}) {
     bool isPlaying = _currentlyPlaying == name;
     return AnimatedPressable(
       onTap: () {
          Haptics.vibrate(HapticsType.light);
-         _toggleAudio(name, assetPath);
+         _toggleAudio(name, source);
       },
-      child: Column(
-        children: [
-          Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              color: isPlaying ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isPlaying ? Theme.of(context).colorScheme.primary : Colors.transparent,
-                width: 2,
+      onLongPress: onLongPress,
+      child: SizedBox(
+        width: 70,
+        child: Column(
+          children: [
+            Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                color: isPlaying ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isPlaying ? Theme.of(context).colorScheme.primary : Colors.transparent,
+                  width: 2,
+                ),
+              ),
+              child: Center(
+                child: Icon(icon, size: 32, color: isPlaying ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface),
               ),
             ),
-            child: Center(
-              child: Icon(icon, size: 32, color: isPlaying ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface),
+            const SizedBox(height: 8),
+            Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: isPlaying ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: isPlaying ? FontWeight.bold : FontWeight.normal),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddSoundButton() {
+    return AnimatedPressable(
+      onTap: _importCustomSound,
+      child: SizedBox(
+        width: 70,
+        child: Column(
+          children: [
+            Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                  width: 2,
+                  style: BorderStyle.solid,
+                ),
+              ),
+              child: Center(
+                child: _isImportingSound
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      )
+                    : Icon(Icons.add, size: 28, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text('Add', maxLines: 1, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteCustomSound(SoundModel sound) {
+    Haptics.vibrate(HapticsType.medium);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove sound?'),
+        content: Text('"${sound.name}" will be removed from your relax sounds.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteCustomSound(sound);
+            },
+            child: Text('Remove', style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ),
-          const SizedBox(height: 8),
-          Text(name, style: TextStyle(color: isPlaying ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: isPlaying ? FontWeight.bold : FontWeight.normal)),
         ],
       ),
     );
