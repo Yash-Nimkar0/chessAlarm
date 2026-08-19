@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/design_tokens.dart';
 import '../services/elo_service.dart';
 import 'main_screen.dart';
+import '../widgets/platform_theme.dart';
 
 class MissionCompleteScreen extends StatefulWidget {
   final int elapsedSeconds;
@@ -104,9 +105,8 @@ class _MissionCompleteScreenState extends State<MissionCompleteScreen> with Sing
     if (_isLoading) {
       return Scaffold(backgroundColor: Theme.of(context).colorScheme.surface);
     }
-    
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+
+    return PlatformScaffold(
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: Center(

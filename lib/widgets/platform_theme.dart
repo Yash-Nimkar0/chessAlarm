@@ -11,6 +11,15 @@ class PlatformScaffold extends StatelessWidget {
   final FloatingActionButtonLocation? floatingActionButtonLocation;
   final Widget? bottomNavigationBar;
 
+  /// Wake-context screens (ringing, slide-to-stop) always use light text
+  /// on a deliberately dark/night aesthetic regardless of the app's own
+  /// light/dark theme choice — a "time to wake up" screen stays dark for
+  /// eye comfort at typical wake hours even if you run the rest of the
+  /// app in Light mode. The wallpaper scrim needs to match that same
+  /// choice, not the app theme, or light-on-dark text would turn
+  /// illegible the moment Light mode picks a light scrim.
+  final bool forceDarkWallpaperScrim;
+
   const PlatformScaffold({
     Key? key,
     required this.body,
@@ -18,25 +27,46 @@ class PlatformScaffold extends StatelessWidget {
     this.appBar,
     this.floatingActionButtonLocation,
     this.bottomNavigationBar,
+    this.forceDarkWallpaperScrim = false,
   }) : super(key: key);
 
   /// Renders the user's chosen background photo full-bleed behind
-  /// everything, dimmed by their chosen amount so text and cards (already
-  /// semi-transparent/frosted) stay legible over any photo. A single
-  /// shared implementation here means every screen gets this for free
-  /// through PlatformScaffold rather than needing its own wiring.
-  Widget _backgroundLayer() {
+  /// everything, blurred and dimmed so text and cards stay legible over
+  /// any photo. A single shared implementation here means every screen
+  /// gets this for free through PlatformScaffold rather than needing its
+  /// own wiring.
+  ///
+  /// The scrim color used to always be black regardless of theme — wrong
+  /// for Light mode specifically, where the app's own text is dark: a
+  /// black scrim darkens the photo but does nothing to guarantee contrast
+  /// against dark text, and can make some regions worse. The scrim now
+  /// matches the theme's own background tone (dark in dark mode, light in
+  /// light mode) so the photo gets pushed toward the same luminance the
+  /// theme's own text was designed to sit on, and a blur removes the
+  /// high-frequency detail (edges, bright spots) that hurts legibility
+  /// even under a flat color scrim — the same combination iOS itself uses
+  /// for a custom photo wallpaper with text over it.
+  Widget _backgroundLayer(BuildContext context) {
     return ListenableBuilder(
       listenable: WallpaperService(),
       builder: (context, _) {
         final path = WallpaperService().wallpaperPath;
         if (path == null) return const SizedBox.shrink();
+        final isDark = forceDarkWallpaperScrim || Theme.of(context).brightness == Brightness.dark;
+        final scrimColor = isDark ? AppTokens.nightBg : AppTokens.daylightBg;
+        // A floor keeps text legible even if the user drags the dim slider
+        // to its minimum on a busy photo — the slider still meaningfully
+        // changes how much of the photo shows through above that floor.
+        final effectiveDim = 0.35 + (WallpaperService().dimAmount * 0.55);
         return Positioned.fill(
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.file(File(path), fit: BoxFit.cover),
-              Container(color: Colors.black.withValues(alpha: WallpaperService().dimAmount)),
+              ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: Image.file(File(path), fit: BoxFit.cover),
+              ),
+              Container(color: scrimColor.withValues(alpha: effectiveDim)),
             ],
           ),
         );
@@ -55,7 +85,7 @@ class PlatformScaffold extends StatelessWidget {
         floatingActionButtonLocation: floatingActionButtonLocation,
         body: Stack(
           children: [
-            _backgroundLayer(),
+            _backgroundLayer(context),
             SafeArea(child: body),
           ],
         ),
@@ -71,7 +101,7 @@ class PlatformScaffold extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Stack(
           children: [
-            _backgroundLayer(),
+            _backgroundLayer(context),
             SafeArea(child: body),
           ],
         ),

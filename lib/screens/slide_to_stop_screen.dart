@@ -11,6 +11,8 @@ import '../services/weather_service.dart';
 import '../services/preferences_service.dart';
 import '../utils/greeting_utils.dart';
 import '../theme/design_tokens.dart';
+import '../services/wallpaper_service.dart';
+import '../widgets/platform_theme.dart';
 
 class SlideToStopScreen extends StatefulWidget {
   final AlarmSettings alarmSettings;
@@ -152,14 +154,23 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      child: Scaffold(
+      child: PlatformScaffold(
+        forceDarkWallpaperScrim: true,
         body: AnimatedBuilder(
           animation: _bgAnimController,
           builder: (context, child) {
+            // This used to be a fully opaque gradient, which — like the
+            // ringing screen's own sunrise gradient — silently made a
+            // custom wallpaper invisible on this screen (the legacy/
+            // Android "slide to stop" lock-screen UI) even once
+            // PlatformScaffold was wired in to render one underneath.
+            final hasWallpaper = WallpaperService().wallpaperPath != null;
             return Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: _getWeatherGradients(),
+                  colors: hasWallpaper
+                      ? _getWeatherGradients().map((c) => c.withValues(alpha: 0.45)).toList()
+                      : _getWeatherGradients(),
                   begin: Alignment.topLeft,
                   end: Alignment(1.0, _bgAnimController.value * 2 - 1.0),
                 ),

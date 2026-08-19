@@ -23,6 +23,7 @@ import '../services/elo_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../services/sleep_service.dart';
+import '../services/wallpaper_service.dart';
 
 class RingingScreen extends StatefulWidget {
   final AlarmSettings alarmSettings;
@@ -312,18 +313,26 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
     return PopScope(
       canPop: _isSuccess,
       child: PlatformScaffold(
+        forceDarkWallpaperScrim: true,
         body: AnimatedBuilder(
           animation: Listenable.merge([_pulseAnimation, _sunriseController]),
           builder: (context, child) {
             final skyColor = _skyAnimation.value ?? AppTokens.nightBg;
+            // This gradient used to be fully opaque, which meant a custom
+            // wallpaper (rendered behind it by PlatformScaffold) was
+            // completely invisible on this screen despite technically
+            // being wired up. Letting it show through here still keeps
+            // the sunrise animation, just as a tint over the photo instead
+            // of a solid fill, when a wallpaper is actually set.
+            final hasWallpaper = WallpaperService().wallpaperPath != null;
             return Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    _isSuccess ? Colors.green.withValues(alpha: 0.4) : skyColor,
-                    AppTokens.nightBg,
+                    (_isSuccess ? Colors.green : skyColor).withValues(alpha: _isSuccess ? 0.4 : (hasWallpaper ? 0.55 : 1.0)),
+                    AppTokens.nightBg.withValues(alpha: hasWallpaper ? 0.55 : 1.0),
                   ],
                 )
               ),
