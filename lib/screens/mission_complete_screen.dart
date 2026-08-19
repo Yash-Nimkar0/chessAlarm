@@ -21,7 +21,7 @@ class MissionCompleteScreen extends StatefulWidget {
   State<MissionCompleteScreen> createState() => _MissionCompleteScreenState();
 }
 
-class _MissionCompleteScreenState extends State<MissionCompleteScreen> with SingleTickerProviderStateMixin {
+class _MissionCompleteScreenState extends State<MissionCompleteScreen> with TickerProviderStateMixin {
   int _currentStreak = 0;
   bool _isLoading = true;
 

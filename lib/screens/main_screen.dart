@@ -7,6 +7,7 @@ import 'morning_screen.dart';
 import 'report_screen.dart';
 import 'setting_screen.dart';
 import '../widgets/platform_theme.dart';
+import '../widgets/wakely_tab_bar.dart';
 
 class MainScreen extends StatefulWidget {
   final int initialIndex;
@@ -36,20 +37,9 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Widget bottomNavBar = NavigationBar(
-      selectedIndex: _currentIndex,
-      onDestinationSelected: (index) {
-        setState(() {
-          _currentIndex = index;
-        });
-      },
-      destinations: const [
-        NavigationDestination(icon: Icon(Icons.alarm), label: 'Alarm'),
-        NavigationDestination(icon: Icon(Icons.nights_stay), label: 'Sleep'),
-        NavigationDestination(icon: Icon(Icons.wb_sunny), label: 'Morning'),
-        NavigationDestination(icon: Icon(Icons.receipt_long), label: 'Report'),
-        NavigationDestination(icon: Icon(Icons.settings), label: 'Setting'),
-      ],
+    Widget bottomNavBar = WakelyTabBar(
+      currentIndex: _currentIndex,
+      onTap: (index) => setState(() => _currentIndex = index),
     );
 
     if (Platform.isIOS) {
@@ -58,27 +48,14 @@ class _MainScreenState extends State<MainScreen> {
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-            child: BottomNavigationBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              currentIndex: _currentIndex,
-              selectedItemColor: Theme.of(context).colorScheme.onSurface,
-              unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
-              onTap: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
-              items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.alarm), label: 'Alarm'),
-                BottomNavigationBarItem(icon: Icon(Icons.nights_stay), label: 'Sleep'),
-                BottomNavigationBarItem(icon: Icon(Icons.wb_sunny), label: 'Morning'),
-                BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'Report'),
-                BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Setting'),
-              ],
-            ),
+            child: bottomNavBar,
           ),
         ),
+      );
+    } else {
+      bottomNavBar = Container(
+        color: Theme.of(context).colorScheme.surface,
+        child: bottomNavBar,
       );
     }
 
@@ -86,10 +63,16 @@ class _MainScreenState extends State<MainScreen> {
     // The inner screens will just use standard transparent Scaffolds.
     return PlatformScaffold(
       body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        switchInCurve: Curves.easeOut,
+        duration: const Duration(milliseconds: 260),
+        switchInCurve: Curves.easeOutCubic,
         switchOutCurve: Curves.easeIn,
-        transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(begin: const Offset(0, 0.02), end: Offset.zero).animate(animation),
+            child: child,
+          ),
+        ),
         child: KeyedSubtree(
           key: ValueKey(_currentIndex),
           child: _screens[_currentIndex],

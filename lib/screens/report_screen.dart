@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../widgets/audio_clip_tile.dart';
 import '../widgets/animated_counter.dart';
 import '../widgets/animated_pressable.dart';
+import '../widgets/score_ring.dart';
+import '../widgets/fade_slide_in.dart';
+import '../widgets/breathing_icon.dart';
 import '../services/sleep_service.dart';
 import '../services/performance_insight_service.dart';
 import '../services/elo_service.dart';
@@ -153,16 +156,24 @@ class _ReportScreenState extends State<ReportScreen> {
           _buildStatRow('Current Streak', '$_currentStreak Days', Icons.local_fire_department),
           const SizedBox(height: 24),
           if (totalPuzzles == 0)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 48.0, horizontal: 24.0),
-              child: Column(
-                children: [
-                  Icon(Icons.query_stats, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
-                  const SizedBox(height: 16),
-                  Text('Your first morning starts here', style: AppTokens.display.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                  const SizedBox(height: 8),
-                  Text('Complete your first wake mission to start tracking your consistency.', style: AppTokens.body.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.4), textAlign: TextAlign.center),
-                ],
+            FadeSlideIn(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 48.0, horizontal: 24.0),
+                child: Column(
+                  children: [
+                    BreathingIcon(
+                      icon: Icons.query_stats,
+                      size: 72,
+                      iconSize: 36,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      backgroundColor: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Your first morning starts here', style: AppTokens.display.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                    const SizedBox(height: 8),
+                    Text('Complete your first wake mission to start tracking your consistency.', style: AppTokens.body.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.4), textAlign: TextAlign.center),
+                  ],
+                ),
               ),
             )
           else ...[
@@ -175,21 +186,37 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Widget _buildSleepReport() {
     if (_sleepHistory.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 48.0, horizontal: 24.0),
-        child: Column(
-          children: [
-            Icon(Icons.bedtime_off, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
-            const SizedBox(height: 16),
-            Text('Your first night starts here', style: AppTokens.display.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-            const SizedBox(height: 8),
-            Text('Track your sleep to unlock insights and build your consistency score.', style: AppTokens.body.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.4), textAlign: TextAlign.center),
-          ],
+      return FadeSlideIn(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 48.0, horizontal: 24.0),
+          child: Column(
+            children: [
+              BreathingIcon(
+                icon: Icons.bedtime_off,
+                size: 72,
+                iconSize: 36,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                backgroundColor: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
+              ),
+              const SizedBox(height: 16),
+              Text('Your first night starts here', style: AppTokens.display.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+              Text('Track your sleep to unlock insights and build your consistency score.', style: AppTokens.body.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.4), textAlign: TextAlign.center),
+            ],
+          ),
         ),
       );
     }
     
     final lastSession = _sleepHistory.last;
+
+    String scoreLabel(int score) {
+      if (score >= 85) return 'Excellent sleep';
+      if (score >= 70) return 'Great sleep';
+      if (score >= 50) return 'Decent night';
+      if (score >= 30) return 'Rough night';
+      return 'Poor sleep';
+    }
 
     // A trend line needs at least 2 real nights — with fewer than that,
     // this used to fabricate 5 fake data points instead, which meant a
@@ -205,7 +232,7 @@ class _ReportScreenState extends State<ReportScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
+          FadeSlideIn(child: Container(
             width: double.infinity,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
@@ -255,23 +282,42 @@ class _ReportScreenState extends State<ReportScreen> {
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('${lastSession.score}', style: AppTokens.display.copyWith(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
-                        Text('Last Night Score', style: AppTokens.body.copyWith(color: Colors.white70)),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Last Night Score', style: AppTokens.body.copyWith(color: Colors.white70, fontSize: 14)),
+                          const SizedBox(height: 4),
+                          Text(
+                            scoreLabel(lastSession.score),
+                            style: AppTokens.display.copyWith(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    ScoreRing(
+                      score: lastSession.score,
+                      size: 84,
+                      ringColor: Colors.white,
+                      trackColor: Colors.white.withValues(alpha: 0.2),
+                      textColor: Colors.white,
+                      suffix: '/ 100',
                     ),
                   ],
                 ),
               ],
             ),
-          ),
+          )),
           const SizedBox(height: 24),
 
           if (_performanceInsight['hasInsight'] == true)
-            Container(
+            FadeSlideIn(delay: const Duration(milliseconds: 90), child: Container(
               padding: const EdgeInsets.all(20),
               margin: const EdgeInsets.only(bottom: 24),
               decoration: BoxDecoration(
@@ -295,7 +341,10 @@ class _ReportScreenState extends State<ReportScreen> {
                   Text('${_performanceInsight['bestPerformanceSleep']}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
                 ],
               ),
-            ),
+            )),
+          FadeSlideIn(delay: const Duration(milliseconds: 150), child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           Text('Sounds Captured', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Row(
@@ -320,6 +369,8 @@ class _ReportScreenState extends State<ReportScreen> {
           if (lastSession.audioEvents.isEmpty)
              Text('No sounds captured last night.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ...lastSession.audioEvents.map((e) => AudioClipTile(event: e, sessionStart: lastSession.startTime)).toList(),
+            ],
+          )),
         ],
       ),
     );

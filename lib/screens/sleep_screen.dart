@@ -11,6 +11,8 @@ import '../features/alarms/application/alarm_controller.dart';
 import '../features/alarms/domain/alarm_model.dart';
 import '../theme/design_tokens.dart';
 import '../widgets/animated_pressable.dart';
+import '../widgets/fade_slide_in.dart';
+import '../widgets/breathing_icon.dart';
 import '../features/sounds/data/custom_sound_service.dart';
 import '../features/sounds/domain/sound_model.dart';
 
@@ -197,63 +199,73 @@ class _SleepScreenState extends State<SleepScreen> {
               const SizedBox(height: 24),
               
               if (_nextAlarm == null)
-                _buildNoRoutineCard(context)
+                FadeSlideIn(child: _buildNoRoutineCard(context))
               else ...[
                 // Next Wake Header
-                if (isWakeRoutine) ...[
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          _formatTimeLeft(_nextAlarm!.nextOccurrence.subtract(Duration(minutes: (_nextAlarm!.alarm.sleepGoal * 60).toInt())).difference(DateTime.now())),
-                          style: AppTokens.display.copyWith(fontSize: 48, fontWeight: FontWeight.bold, color: _nextAlarm!.nextOccurrence.subtract(Duration(minutes: (_nextAlarm!.alarm.sleepGoal * 60).toInt())).difference(DateTime.now()).isNegative ? AppTokens.signal : Theme.of(context).colorScheme.onSurface),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'until bedtime',
-                          style: TextStyle(color: AppTokens.signal, fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    'Wake up at ${_formatTime(_nextAlarm!.nextOccurrence)}',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16),
-                  ),
-                ] else ...[
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(_formatTime(_nextAlarm!.nextOccurrence), style: AppTokens.display.copyWith(fontSize: 48, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Quick Alarm',
-                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    'Time until wake: ${_nextAlarm!.nextOccurrence.difference(DateTime.now()).inHours}h ${_nextAlarm!.nextOccurrence.difference(DateTime.now()).inMinutes % 60}m',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16),
-                  ),
-                ],
-                
+                FadeSlideIn(
+                  child: isWakeRoutine
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  _formatTimeLeft(_nextAlarm!.nextOccurrence.subtract(Duration(minutes: (_nextAlarm!.alarm.sleepGoal * 60).toInt())).difference(DateTime.now())),
+                                  style: AppTokens.display.copyWith(fontSize: 48, fontWeight: FontWeight.bold, color: _nextAlarm!.nextOccurrence.subtract(Duration(minutes: (_nextAlarm!.alarm.sleepGoal * 60).toInt())).difference(DateTime.now()).isNegative ? AppTokens.signal : Theme.of(context).colorScheme.onSurface),
+                                ),
+                                const SizedBox(width: 12),
+                                const Text(
+                                  'until bedtime',
+                                  style: TextStyle(color: AppTokens.signal, fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            'Wake up at ${_formatTime(_nextAlarm!.nextOccurrence)}',
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(_formatTime(_nextAlarm!.nextOccurrence), style: AppTokens.display.copyWith(fontSize: 48, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Quick Alarm',
+                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            'Time until wake: ${_nextAlarm!.nextOccurrence.difference(DateTime.now()).inHours}h ${_nextAlarm!.nextOccurrence.difference(DateTime.now()).inMinutes % 60}m',
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                ),
+
                 const SizedBox(height: 32),
-                
-                _buildTomorrowPreview(),
-                
+
+                FadeSlideIn(delay: const Duration(milliseconds: 70), child: _buildTomorrowPreview()),
+
                 if (isWakeRoutine) ...[
                   // Tomorrow's Mission
-                  Container(
+                  FadeSlideIn(delay: const Duration(milliseconds: 140), child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -266,7 +278,15 @@ class _SleepScreenState extends State<SleepScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text("Tomorrow's Mission", style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
+                            Expanded(
+                              child: Text(
+                                "Tomorrow's Mission",
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(color: AppTokens.signal.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(AppTokens.radiusSm)),
@@ -281,22 +301,37 @@ class _SleepScreenState extends State<SleepScreen> {
                           children: [
                             const Icon(Icons.local_fire_department, color: AppTokens.signal, size: 16),
                             const SizedBox(width: 4),
-                            Text("Streak: $_currentStreak days", style: const TextStyle(color: AppTokens.signal, fontSize: 14, fontWeight: FontWeight.bold)),
+                            Flexible(
+                              child: Text(
+                                "Streak: $_currentStreak days",
+                                style: const TextStyle(color: AppTokens.signal, fontSize: 14, fontWeight: FontWeight.bold),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         ),
                       ],
                     ),
-                  ),
-                  
+                  )),
+
                   const SizedBox(height: 24),
-                  
+
                   // Sleep Readiness Checklist
-                  Text('Sleep Readiness', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  _buildChecklistItem(Icons.alarm_on, 'Alarm armed for ${_formatTime(_nextAlarm!.nextOccurrence)}'),
-                  _buildChecklistItem(Icons.bedtime, 'Sleep goal: ${_nextAlarm!.alarm.sleepGoal}h'),
-                  _buildChecklistItem(Icons.psychology, 'Challenge loaded'),
-                  
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 210),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Sleep Readiness', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 12),
+                        _buildChecklistItem(Icons.alarm_on, 'Alarm armed for ${_formatTime(_nextAlarm!.nextOccurrence)}'),
+                        _buildChecklistItem(Icons.bedtime, 'Sleep goal: ${_nextAlarm!.alarm.sleepGoal}h'),
+                        _buildChecklistItem(Icons.psychology, 'Challenge loaded'),
+                      ],
+                    ),
+                  ),
+
                   const SizedBox(height: 32),
                 ],
               ],
@@ -309,7 +344,7 @@ class _SleepScreenState extends State<SleepScreen> {
               if (_nextAlarm == null) const SizedBox(height: 8),
 
               // Sleep Tracking Magic Button
-              AnimatedPressable(
+              FadeSlideIn(delay: const Duration(milliseconds: 280), child: AnimatedPressable(
                   onTap: _toggleTracking,
                   child: Container(
                     width: double.infinity,
@@ -354,13 +389,18 @@ class _SleepScreenState extends State<SleepScreen> {
                     ),
                   ),
                 ),
-                
-                const SizedBox(height: 40),
-                Text('Relax Sounds', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
+              ),
 
-                SizedBox(
-                  height: 96,
+                const SizedBox(height: 40),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 350),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Relax Sounds', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                  height: 108,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     children: [
@@ -385,6 +425,9 @@ class _SleepScreenState extends State<SleepScreen> {
                     ],
                   ),
                 ),
+                    ],
+                  ),
+                ),
 
                 const SizedBox(height: 40),
             ],
@@ -406,14 +449,10 @@ class _SleepScreenState extends State<SleepScreen> {
       ),
       child: Column(
         children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: AppTokens.signal.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.nightlight_round, color: AppTokens.signal, size: 32),
+          BreathingIcon(
+            icon: Icons.nightlight_round,
+            color: AppTokens.signal,
+            backgroundColor: AppTokens.signal.withValues(alpha: 0.15),
           ),
           const SizedBox(height: 16),
           Text(
@@ -439,7 +478,14 @@ class _SleepScreenState extends State<SleepScreen> {
            children: [
               Icon(icon, color: AppTokens.signal, size: 20),
               const SizedBox(width: 12),
-              Text(text, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 15)),
+              Expanded(
+                child: Text(
+                  text,
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 15),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
            ]
         )
      );
@@ -456,8 +502,11 @@ class _SleepScreenState extends State<SleepScreen> {
       child: SizedBox(
         width: 70,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
               width: 70,
               height: 70,
               decoration: BoxDecoration(
@@ -467,9 +516,14 @@ class _SleepScreenState extends State<SleepScreen> {
                   color: isPlaying ? Theme.of(context).colorScheme.primary : Colors.transparent,
                   width: 2,
                 ),
+                boxShadow: isPlaying
+                    ? [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.35), blurRadius: 14, offset: const Offset(0, 4))]
+                    : null,
               ),
               child: Center(
-                child: Icon(icon, size: 32, color: isPlaying ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface),
+                child: isPlaying
+                    ? _PlayingPulseIcon(icon: icon, color: Theme.of(context).colorScheme.primary)
+                    : Icon(icon, size: 32, color: Theme.of(context).colorScheme.onSurface),
               ),
             ),
             const SizedBox(height: 8),
@@ -477,7 +531,11 @@ class _SleepScreenState extends State<SleepScreen> {
               name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: isPlaying ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: isPlaying ? FontWeight.bold : FontWeight.normal),
+              style: TextStyle(
+                fontSize: 12,
+                color: isPlaying ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: isPlaying ? FontWeight.bold : FontWeight.normal,
+              ),
             ),
           ],
         ),
@@ -491,6 +549,7 @@ class _SleepScreenState extends State<SleepScreen> {
       child: SizedBox(
         width: 70,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 70,
@@ -515,7 +574,7 @@ class _SleepScreenState extends State<SleepScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Text('Add', maxLines: 1, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            Text('Add', maxLines: 1, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ],
         ),
       ),
@@ -540,6 +599,46 @@ class _SleepScreenState extends State<SleepScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// A gentle breathing scale on a sound's icon while it's actively
+/// playing — a small "this is alive" signal that a static icon plus a
+/// colored border alone doesn't give.
+class _PlayingPulseIcon extends StatefulWidget {
+  final IconData icon;
+  final Color color;
+  const _PlayingPulseIcon({required this.icon, required this.color});
+
+  @override
+  State<_PlayingPulseIcon> createState() => _PlayingPulseIconState();
+}
+
+class _PlayingPulseIconState extends State<_PlayingPulseIcon> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      child: Icon(widget.icon, size: 32, color: widget.color),
+      builder: (context, child) {
+        final t = Curves.easeInOut.transform(_controller.value);
+        return Transform.scale(scale: 0.92 + (0.16 * t), child: child);
+      },
     );
   }
 }

@@ -17,6 +17,7 @@ import 'quick_alarm_screen.dart';
 import '../features/sounds/data/sound_repository.dart';
 import '../theme/design_tokens.dart';
 import '../widgets/fade_slide_in.dart';
+import '../widgets/breathing_icon.dart';
 import '../widgets/animated_pressable.dart';
 import '../widgets/platform_theme.dart';
 
@@ -592,16 +593,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             Expanded(
               child: alarms.isEmpty
                   ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.alarm_off_rounded, size: 80, color: colorScheme.onSurface.withValues(alpha: 0.1)),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Set your first wake-up challenge.',
-                            style: TextStyle(fontSize: 18, color: colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
-                          ),
-                        ],
+                      child: FadeSlideIn(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            BreathingIcon(
+                              icon: Icons.alarm_off_rounded,
+                              size: 96,
+                              iconSize: 48,
+                              color: AppTokens.signal,
+                              backgroundColor: AppTokens.signal.withValues(alpha: 0.1),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              'Set your first wake-up challenge.',
+                              style: TextStyle(fontSize: 18, color: colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   : ListView.builder(

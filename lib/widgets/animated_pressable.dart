@@ -32,17 +32,28 @@ class _AnimatedPressableState extends State<AnimatedPressable> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
-      onTapDown: (_) => _setPressed(true),
-      onTapUp: (_) => _setPressed(false),
-      onTapCancel: () => _setPressed(false),
-      child: AnimatedScale(
-        scale: _pressed ? widget.scaleOnPress : 1.0,
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.easeOut,
-        child: widget.child,
+    // A plain GestureDetector's tap action lives on its own semantics
+    // node, separate from any Text/Icon label inside `child` — without
+    // merging them, assistive tech (and UI test tooling) sees an
+    // unlabeled actionable node next to an inert label with no action,
+    // instead of one "Rain, button"-style element.
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        enabled: widget.onTap != null || widget.onLongPress != null,
+        child: GestureDetector(
+          onTap: widget.onTap,
+          onLongPress: widget.onLongPress,
+          onTapDown: (_) => _setPressed(true),
+          onTapUp: (_) => _setPressed(false),
+          onTapCancel: () => _setPressed(false),
+          child: AnimatedScale(
+            scale: _pressed ? widget.scaleOnPress : 1.0,
+            duration: const Duration(milliseconds: 100),
+            curve: Curves.easeOut,
+            child: widget.child,
+          ),
+        ),
       ),
     );
   }
