@@ -318,6 +318,19 @@ class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserv
 
   @override
   Widget build(BuildContext context) {
+    final stateKey = _isLoading && _weatherData == null
+        ? 'loading'
+        : (_weatherData == null ? 'prompt' : 'loaded');
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      child: KeyedSubtree(
+        key: ValueKey(stateKey),
+        child: _buildContent(context),
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
     final day = _isDay;
     final bgColor = _weatherData != null ? _getBackgroundColor(context, _weatherData!.weatherCode, day) : (Theme.of(context).brightness == Brightness.dark ? (Theme.of(context).cardTheme.color ?? Colors.white.withValues(alpha: 0.05)) : (day ? AppTokens.daylightBg : AppTokens.nightBg));
     final textColor = _getTextColor(context, bgColor);

@@ -14,6 +14,7 @@ import 'missions/shake_mission.dart';
 import 'missions/qr_mission.dart';
 import 'missions/steps_mission.dart';
 import 'mission_complete_screen.dart';
+import 'wake_success_screen.dart';
 import '../theme/design_tokens.dart';
 import '../widgets/platform_theme.dart';
 import '../widgets/animated_pressable.dart';
@@ -124,29 +125,7 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
       if (_missionSettings.type == 'quickAlarm' || _missionSettings.type == 'alarm') {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => Scaffold(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.check_circle_outline, color: Colors.green, size: 80),
-                    const SizedBox(height: 20),
-                    Text('Wake up!', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                    const SizedBox(height: 40),
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTokens.signal, 
-                        foregroundColor: AppTokens.nightBg, 
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm))
-                      ),
-                      child: const Text("Done", style: TextStyle(fontSize: 18)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            builder: (context) => const WakeSuccessScreen(),
           ),
         );
       } else {
@@ -191,29 +170,7 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
       if (_missionSettings.type == 'quickAlarm' || _missionSettings.type == 'alarm') {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => Scaffold(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.check_circle_outline, color: Colors.green, size: 80),
-                    const SizedBox(height: 20),
-                    Text('Wake up!', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                    const SizedBox(height: 40),
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTokens.signal,
-                        foregroundColor: AppTokens.nightBg,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm))
-                      ),
-                      child: const Text("Done", style: TextStyle(fontSize: 18)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            builder: (context) => const WakeSuccessScreen(),
           ),
         );
       } else {

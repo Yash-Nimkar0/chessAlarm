@@ -6,6 +6,7 @@ import 'package:haptic_feedback/haptic_feedback.dart';
 import '../features/alarms/application/alarm_controller.dart';
 import '../features/alarms/application/wake_session_controller.dart';
 import 'ringing_screen.dart';
+import 'wake_success_screen.dart';
 import '../models/mission_settings.dart';
 import '../services/weather_service.dart';
 import '../services/preferences_service.dart';
@@ -123,28 +124,8 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
       await AlarmController.instance.completeAlarm(widget.alarmSettings.id);
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => Scaffold(
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.check_circle_outline, color: Colors.green, size: 80),
-                  const SizedBox(height: 20),
-                  Text(_userName.isEmpty ? 'Wake up!' : 'Wake up, $_userName!', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                  const SizedBox(height: 40),
-                  ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTokens.signal,
-                      foregroundColor: AppTokens.nightBg,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm))
-                    ),
-                    child: const Text("Done", style: TextStyle(fontSize: 18)),
-                  ),
-                ],
-              ),
-            ),
+          builder: (context) => WakeSuccessScreen(
+            message: _userName.isEmpty ? 'Wake up!' : 'Wake up, $_userName!',
           ),
         ),
       );

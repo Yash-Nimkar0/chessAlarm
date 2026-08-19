@@ -3,6 +3,7 @@ import 'package:audioplayers/audioplayers.dart' hide AudioEvent;
 import 'package:intl/intl.dart';
 import '../services/sleep_service.dart';
 import '../theme/design_tokens.dart';
+import 'animated_pressable.dart';
 
 class AudioClipTile extends StatefulWidget {
   final AudioEvent event;
@@ -61,7 +62,26 @@ class _AudioClipTileState extends State<AudioClipTile> {
     }
   }
 
-  void _deleteClip() async {
+  Future<void> _deleteClip() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Clip?'),
+        content: const Text('This sleep audio clip will be permanently removed.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text('Delete', style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
     await SleepService.deleteAudioEvent(widget.sessionStart, widget.event.file);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -79,50 +99,77 @@ class _AudioClipTileState extends State<AudioClipTile> {
       });
     }
   }
-  
+
   bool _isHidden = false;
 
   @override
   Widget build(BuildContext context) {
-    if (_isHidden) return const SizedBox.shrink();
     final timeStr = DateFormat('h:mm a').format(widget.event.time);
-    
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('${widget.event.type} • $timeStr', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text('${widget.event.durationSeconds} seconds', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
-            ],
-          ),
-          Row(
-            children: [
-              TextButton.icon(
-                icon: Icon(_isSaved ? Icons.star : Icons.star_border, color: _isSaved ? Colors.amber : Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
-                label: Text('Keep', style: TextStyle(color: _isSaved ? Colors.amber : Theme.of(context).colorScheme.onSurfaceVariant)),
-                onPressed: _toggleSave,
+
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: _isHidden ? 0.0 : 1.0,
+        child: _isHidden
+            ? const SizedBox.shrink()
+            : AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _isPlaying
+                      ? Colors.blueAccent.withValues(alpha: 0.12)
+                      : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${widget.event.type} • $timeStr', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 4),
+                        Text('${widget.event.durationSeconds} seconds', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        AnimatedPressable(
+                          onTap: _toggleSave,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(_isSaved ? Icons.star : Icons.star_border, color: _isSaved ? Colors.amber : Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
+                                const SizedBox(width: 4),
+                                Text('Keep', style: TextStyle(color: _isSaved ? Colors.amber : Theme.of(context).colorScheme.onSurfaceVariant)),
+                              ],
+                            ),
+                          ),
+                        ),
+                        AnimatedPressable(
+                          onTap: _deleteClip,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          ),
+                        ),
+                        AnimatedPressable(
+                          onTap: _togglePlay,
+                          child: Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: Icon(_isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill, color: Colors.blueAccent, size: 36),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
               ),
-              IconButton(
-                icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                onPressed: _deleteClip,
-              ),
-              IconButton(
-                icon: Icon(_isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill, color: Colors.blueAccent, size: 36),
-                onPressed: _togglePlay,
-              ),
-            ],
-          )
-        ],
       ),
     );
   }
