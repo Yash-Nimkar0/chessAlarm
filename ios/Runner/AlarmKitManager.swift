@@ -160,19 +160,42 @@ public class WakelyAlarmKitManager: NSObject, FlutterStreamHandler {
     // and OpenWakelyIntent are declared in this same app target (no separate
     // extension), so they share the exact same sandboxed container/process
     // as the running Flutter app; no App Group is needed.
+    // Mirrors lib/features/alarms/domain/wake_check_id.dart exactly — both
+    // sides must agree on these values.
+    private static let wakeCheckIdOffset = 99999
+    private static let maxWakeCheckReAlerts = 20
+    private static let wakeCheckIntervalSeconds: TimeInterval = 30
+
     private static func wakeCheckRequiredKey(_ id: String) -> String { "wakely_requires_wake_check_\(id)" }
     private static func soundKey(_ id: String) -> String { "wakely_sound_\(id)" }
+    private static func wakeCheckCountKey(_ originalId: Int) -> String { "wakely_wake_check_count_\(originalId)" }
 
-    /// Mirrors WakeSessionController.wakeCheckAlarmId(int) on the Dart side
-    /// exactly: parentId + 99999, as a plain decimal string.
+    /// The original (real, user-created) alarm ID a Wake Check chain
+    /// belongs to. Mirrors originalAlarmIdFor() in wake_check_id.dart.
+    private static func originalAlarmId(for id: String) -> Int {
+        let numeric = Int(id.filter { $0.isNumber }) ?? 0
+        return numeric >= wakeCheckIdOffset ? numeric - wakeCheckIdOffset : numeric
+    }
+
+    /// Deterministic ID for the Wake Check alarm belonging to [originalId].
+    /// Always the SAME slot regardless of re-alert cycle — mirrors
+    /// wakeCheckAlarmIdFor() in wake_check_id.dart.
     private static func wakeCheckAlarmId(for id: String) -> String {
-        let parentId = Int(id.filter { $0.isNumber }) ?? 0
-        return String(parentId + 99999)
+        String(wakeCheckIdOffset + originalAlarmId(for: id))
     }
 
     public func scheduleAlarm(id: String, date: Date, soundName: String, requiresWakeCheck: Bool, completion: @escaping (Error?) -> Void) {
         UserDefaults.standard.set(requiresWakeCheck, forKey: Self.wakeCheckRequiredKey(id))
         UserDefaults.standard.set(soundName, forKey: Self.soundKey(id))
+
+        // Scheduling a real (non-Wake-Check) alarm is a genuinely fresh
+        // start, not a re-alert continuation — reset the cycle counter so a
+        // new morning's chain doesn't inherit yesterday's count. Mirrors
+        // the equivalent reset in WakeSessionController.startSession().
+        let numericId = Int(id.filter { $0.isNumber }) ?? 0
+        if numericId < Self.wakeCheckIdOffset {
+            UserDefaults.standard.removeObject(forKey: Self.wakeCheckCountKey(numericId))
+        }
 
         Task {
             do {
@@ -232,11 +255,30 @@ public class WakelyAlarmKitManager: NSObject, FlutterStreamHandler {
     /// Stop button is tapped. If the stopped alarm required a Wake Check,
     /// schedules the follow-up re-alert alarm natively — see the comment
     /// above wakeCheckRequiredKey for why this matters.
+    ///
+    /// Re-alerts on a short, fixed interval (not a multi-minute gap, which
+    /// reads as a snooze) and reuses the same alarm slot every cycle, up to
+    /// maxWakeCheckReAlerts — deliberately relentless, matching the product
+    /// requirement that silencing the alarm without completing the mission
+    /// must not actually make it stop, while still being bounded rather
+    /// than literal unbounded spam.
     fileprivate func scheduleWakeCheckIfNeeded(forStoppedAlarmId alarmId: String) async {
         guard UserDefaults.standard.bool(forKey: Self.wakeCheckRequiredKey(alarmId)) else { return }
+
+        let originalId = Self.originalAlarmId(for: alarmId)
+        let countKey = Self.wakeCheckCountKey(originalId)
+        let cycleCount = UserDefaults.standard.integer(forKey: countKey) + 1
+        guard cycleCount <= Self.maxWakeCheckReAlerts else { return }
+        UserDefaults.standard.set(cycleCount, forKey: countKey)
+
         let soundName = UserDefaults.standard.string(forKey: Self.soundKey(alarmId)) ?? "misogi77.wav"
         let wakeCheckId = Self.wakeCheckAlarmId(for: alarmId)
-        let fireDate = Date().addingTimeInterval(5 * 60)
+        // The re-alert alarm's own requiresWakeCheck flag: cascading is
+        // controlled by the cycle counter above, not by whether this is
+        // already a Wake Check id, so the next cycle can be scheduled too.
+        UserDefaults.standard.set(true, forKey: Self.wakeCheckRequiredKey(wakeCheckId))
+        UserDefaults.standard.set(soundName, forKey: Self.soundKey(wakeCheckId))
+        let fireDate = Date().addingTimeInterval(Self.wakeCheckIntervalSeconds)
         do {
             try await scheduleAlarmInternal(id: wakeCheckId, date: fireDate, soundName: soundName)
         } catch {

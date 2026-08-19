@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/alarm_model.dart';
 import '../domain/alarm_event.dart';
+import '../domain/mission_config.dart';
 import '../domain/recurrence.dart';
 import '../domain/wake_check_id.dart';
 import '../data/alarm_repository.dart';
@@ -29,12 +30,14 @@ class WakeSessionController extends ChangeNotifier {
   WakeSessionController._();
 
   static const String _activeSessionKey = 'wakely_active_session_alarm_id';
+  static String _wakeCheckCountKey(int originalAlarmId) => 'wakely_wake_check_count_$originalAlarmId';
 
   /// Deterministic ID for the Wake Check fallback alarm derived from its
   /// parent alarm's ID. Using a fixed offset (rather than an allocated ID)
   /// lets us reliably cancel the fallback later without round-tripping
-  /// through persistence to look it up.
-  static int wakeCheckAlarmId(int parentAlarmId) => kWakeCheckIdOffset + parentAlarmId;
+  /// through persistence to look it up. Normalizes first, so calling this
+  /// with an already-offset Wake Check ID still resolves to the same slot.
+  static int wakeCheckAlarmId(int parentAlarmId) => wakeCheckAlarmIdFor(parentAlarmId);
 
   /// Get the ID of a session that was active before the app crashed/closed.
   Future<int?> getDurableActiveSessionId() async {
@@ -64,8 +67,19 @@ class WakeSessionController extends ChangeNotifier {
       debugPrint('WakeSessionController: Native stop received for alarm ${event.alarmId}.');
       final alarm = await AlarmController.instance.getAlarm(event.alarmId);
       if (alarm != null) {
-        if (alarm.type == AlarmType.standard) {
-          debugPrint('WakeSessionController: Standard alarm stopped natively. Completing session.');
+        // MUST check whether a mission is actually configured
+        // (mission.type != none), not alarm.type == AlarmType.standard.
+        // EditAlarmScreen lets a mission be attached to ANY alarm type —
+        // the "Alarm Mission" section is explicitly available regardless of
+        // whether the alarm is a Wake Routine — so a "standard" alarm can
+        // still have a real mission. The old check let native Stop
+        // silently complete any alarm typed AlarmType.standard even when
+        // it had a mission configured, defeating the entire point of
+        // setting one: confirmed live — an alarm rang backgrounded+locked
+        // and was fully silenced via the native Stop action with no
+        // mission enforced at all.
+        if (alarm.mission.type == MissionType.none) {
+          debugPrint('WakeSessionController: No-mission alarm stopped natively. Completing session.');
           _activeAlarm = alarm; // temporarily set for completeSession
           await completeSession();
           return;
@@ -97,13 +111,26 @@ class WakeSessionController extends ChangeNotifier {
   }
 
   Future<void> _scheduleWakeCheckFallback(WakelyAlarm alarm) async {
-    // Schedule a secondary one-shot alarm 5 minutes from now
-    // Since we rely on AlarmController which uses PlatformAlarmScheduler,
-    // we can schedule a temporary quick alarm to act as the wake check.
-    debugPrint('WakeSessionController: Scheduling WakeCheck fallback alarm in 5 minutes.');
-    final checkTime = DateTime.now().add(const Duration(minutes: 5));
+    // Re-alerts must feel relentless, not like a snooze: short, fixed
+    // interval, reusing the SAME native alarm slot every cycle (so the ID
+    // space doesn't grow), bounded by a max cycle count so this can't
+    // literally spam forever if something goes wrong.
+    final originalId = originalAlarmIdFor(alarm.id);
+    final prefs = await SharedPreferences.getInstance();
+    final cycleCount = (prefs.getInt(_wakeCheckCountKey(originalId)) ?? 0) + 1;
+
+    if (cycleCount > kMaxWakeCheckReAlerts) {
+      debugPrint('WakeSessionController: Wake Check re-alert cap ($kMaxWakeCheckReAlerts) reached for $originalId. '
+          'Mission remains unresolved but no further automatic re-alert will be scheduled.');
+      return;
+    }
+    await prefs.setInt(_wakeCheckCountKey(originalId), cycleCount);
+
+    debugPrint('WakeSessionController: Scheduling WakeCheck re-alert #$cycleCount/$kMaxWakeCheckReAlerts '
+        'in ${kWakeCheckIntervalSeconds}s for $originalId.');
+    final checkTime = DateTime.now().add(const Duration(seconds: kWakeCheckIntervalSeconds));
     final checkAlarm = WakelyAlarm(
-      id: wakeCheckAlarmId(alarm.id),
+      id: wakeCheckAlarmIdFor(originalId),
       time: checkTime,
       type: AlarmType.quickAlarm,
       recurrence: Recurrence.none(),
@@ -115,8 +142,9 @@ class WakeSessionController extends ChangeNotifier {
       updatedAt: DateTime.now(),
     );
     // Use the explicit-id path so the fallback alarm's ID stays exactly
-    // `wakeCheckAlarmId(alarm.id)` and can be reliably cancelled later —
-    // createAlarm() would otherwise overwrite it via AlarmIdAllocator.
+    // `wakeCheckAlarmIdFor(originalId)` and can be reliably rescheduled /
+    // cancelled later — createAlarm() would otherwise overwrite it via
+    // AlarmIdAllocator.
     await AlarmController.instance.createAlarmWithExplicitId(checkAlarm);
   }
 
@@ -149,13 +177,17 @@ class WakeSessionController extends ChangeNotifier {
 
       // 3. Initialize Session if brand new
       _activeAlarm = alarm;
+      final prefs = await SharedPreferences.getInstance();
       if (_sessionState == WakeSessionState.completed || _sessionState == WakeSessionState.emergencyEscaped) {
         _sessionState = WakeSessionState.active;
+        // Genuinely fresh start (not a Wake Check re-alert continuation) —
+        // reset the re-alert cycle count so today's chain doesn't inherit
+        // a stale count from a previous morning.
+        await prefs.remove(_wakeCheckCountKey(originalAlarmIdFor(alarmId)));
       }
       notifyListeners();
-      
+
       // Persist the active session ID
-      final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(_activeSessionKey, alarmId);
       
       // UI navigation is handled reactively via the ChangeNotifier's notifyListeners()
@@ -195,29 +227,41 @@ class WakeSessionController extends ChangeNotifier {
   /// This officially completes the logical alarm lifecycle.
   Future<void> completeSession() async {
     if (!isActive) return;
-    
-    final alarmId = _activeAlarm!.id;
-    
+
+    // The active session's alarm might itself be a Wake Check re-alert
+    // (the user could complete the mission on cycle #3, not the original
+    // firing) — completion must always resolve back to the ORIGINAL
+    // alarm's own record, or a recurring alarm would never reschedule and
+    // a one-shot would never disable; only the ephemeral Wake Check record
+    // would get cleaned up.
+    final originalId = originalAlarmIdFor(_activeAlarm!.id);
+
     // 1. Mark state and stop audio/UI session
     _sessionState = WakeSessionState.completed;
     await stopSession();
-    
+
     // 2. Defer to AlarmController for persistence and recurrence handling
-    await AlarmController.instance.completeAlarm(alarmId);
+    await AlarmController.instance.completeAlarm(originalId);
 
-    // Also cancel any wake check alarm that was scheduled
-    await AlarmController.instance.deleteAlarm(wakeCheckAlarmId(alarmId));
+    // Also cancel the Wake Check alarm slot (reused across every re-alert
+    // cycle, so this single delete cleans up regardless of which cycle we
+    // were on) and reset the cycle counter.
+    await AlarmController.instance.deleteAlarm(wakeCheckAlarmIdFor(originalId));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_wakeCheckCountKey(originalId));
 
-    debugPrint('WakeSessionController: Mission successful. Session completed for $alarmId.');
+    debugPrint('WakeSessionController: Mission successful. Session completed for $originalId.');
   }
 
   Future<void> emergencyEscape() async {
     if (!isActive) return;
-    final alarmId = _activeAlarm!.id;
-    debugPrint('WakeSessionController: EMERGENCY ESCAPE triggered for $alarmId.');
+    final originalId = originalAlarmIdFor(_activeAlarm!.id);
+    debugPrint('WakeSessionController: EMERGENCY ESCAPE triggered for $originalId.');
     _sessionState = WakeSessionState.emergencyEscaped;
     await stopSession();
-    await AlarmController.instance.completeAlarm(alarmId);
-    await AlarmController.instance.deleteAlarm(wakeCheckAlarmId(alarmId));
+    await AlarmController.instance.completeAlarm(originalId);
+    await AlarmController.instance.deleteAlarm(wakeCheckAlarmIdFor(originalId));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_wakeCheckCountKey(originalId));
   }
 }
