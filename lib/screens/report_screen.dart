@@ -118,7 +118,13 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Widget _buildWakeReport() {
-    int totalPuzzles = _stats['totalPuzzlesSolved'] ?? 0;
+    // 'morningsWon' (not 'puzzlesSolved') is the correct counter here: it's
+    // incremented by EloService.recordMorningSuccess, which is what
+    // RingingScreen calls on a real wake-mission success. puzzlesSolved
+    // tracks a separate, unrelated practice-mode feature (see
+    // recordPracticeSuccess / practice_screen.dart) and would always read 0
+    // for anyone who has only ever completed real alarms.
+    int totalPuzzles = _stats['morningsWon'] ?? 0;
 
     return SingleChildScrollView(
       child: Column(
