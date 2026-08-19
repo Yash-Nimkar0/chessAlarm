@@ -146,14 +146,25 @@ class _SoundPickerScreenState extends State<SoundPickerScreen> {
                         children: categorySounds.map((sound) {
                           final isSelected = _selectedSoundId == sound.id;
                           final isPlaying = _currentlyPlayingId == sound.id;
-                          return Material(
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            decoration: BoxDecoration(
+                              color: isPlaying ? AppTokens.signal.withValues(alpha: 0.10) : Colors.transparent,
+                              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                            ),
+                            child: Material(
                             color: Colors.transparent,
                             child: ListTile(
                               leading: IconButton(
-                                icon: Icon(
-                                  isPlaying ? Icons.stop_circle : Icons.play_circle_fill,
-                                  color: isPlaying ? AppTokens.signal : colorScheme.onSurfaceVariant,
-                                  size: 32,
+                                icon: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 200),
+                                  transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+                                  child: Icon(
+                                    isPlaying ? Icons.stop_circle : Icons.play_circle_fill,
+                                    key: ValueKey(isPlaying),
+                                    color: isPlaying ? AppTokens.signal : colorScheme.onSurfaceVariant,
+                                    size: 32,
+                                  ),
                                 ),
                                 onPressed: () => _selectSound(sound),
                               ),
@@ -181,6 +192,7 @@ class _SoundPickerScreenState extends State<SoundPickerScreen> {
                                   ? const Icon(Icons.check, color: AppTokens.signal)
                                   : null,
                               onTap: () => _selectSound(sound),
+                            ),
                             ),
                           );
                         }).toList(),
