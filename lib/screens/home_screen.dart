@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:alarm/alarm.dart';
@@ -528,7 +529,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 children: [
                   Flexible(
                     child: GestureDetector(
-                      onLongPress: _showDeveloperHarness,
+                      onLongPress: kDebugMode ? _showDeveloperHarness : null,
                       child: Text(
                         'Alarms', 
                         style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
