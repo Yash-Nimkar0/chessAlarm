@@ -141,9 +141,56 @@ public class WakelyAlarmKitManager: NSObject, FlutterStreamHandler {
         return UUID(uuidString: uuidString) ?? UUID()
     }
     
-    public func scheduleAlarm(id: String, date: Date, soundName: String, completion: @escaping (Error?) -> Void) {
+    // MARK: - Wake Check bookkeeping
+    //
+    // A Wake Check is a follow-up alarm that re-alerts the user if a mission
+    // alarm's native Stop button is tapped without the mission actually being
+    // completed in Wakely. The Dart side already schedules this fallback
+    // (WakeSessionController._scheduleWakeCheckFallback), but that requires
+    // the Flutter engine + EventChannel listener to be fully alive by the
+    // time the native "stop" interaction is delivered. Scheduling it here,
+    // directly inside StopAlarmIntent.perform(), is strictly more reliable:
+    // AlarmKit's `.foreground(.immediate)` intent mode guarantees this code
+    // runs in-process (launching the app if needed), with no dependency on
+    // Dart/Flutter having finished booting. Both paths target the identical
+    // deterministic UUID (see wakeCheckAlarmId below), so whichever runs
+    // first "wins" and the other is a harmless no-op reschedule.
+    //
+    // These keys are plain UserDefaults.standard entries — StopAlarmIntent
+    // and OpenWakelyIntent are declared in this same app target (no separate
+    // extension), so they share the exact same sandboxed container/process
+    // as the running Flutter app; no App Group is needed.
+    private static func wakeCheckRequiredKey(_ id: String) -> String { "wakely_requires_wake_check_\(id)" }
+    private static func soundKey(_ id: String) -> String { "wakely_sound_\(id)" }
+
+    /// Mirrors WakeSessionController.wakeCheckAlarmId(int) on the Dart side
+    /// exactly: parentId + 99999, as a plain decimal string.
+    private static func wakeCheckAlarmId(for id: String) -> String {
+        let parentId = Int(id.filter { $0.isNumber }) ?? 0
+        return String(parentId + 99999)
+    }
+
+    public func scheduleAlarm(id: String, date: Date, soundName: String, requiresWakeCheck: Bool, completion: @escaping (Error?) -> Void) {
+        UserDefaults.standard.set(requiresWakeCheck, forKey: Self.wakeCheckRequiredKey(id))
+        UserDefaults.standard.set(soundName, forKey: Self.soundKey(id))
+
+        Task {
+            do {
+                try await scheduleAlarmInternal(id: id, date: date, soundName: soundName)
+                DispatchQueue.main.async { completion(nil) }
+            } catch {
+                DispatchQueue.main.async { completion(error) }
+            }
+        }
+    }
+
+    /// Core AlarmKit scheduling call, shared by the public scheduleAlarm
+    /// entry point and the native Wake Check re-alert scheduled from
+    /// StopAlarmIntent.perform().
+    @discardableResult
+    fileprivate func scheduleAlarmInternal(id: String, date: Date, soundName: String) async throws -> Alarm {
         struct EmptyMetadata: AlarmMetadata {}
-        
+
         let stopIntent = StopAlarmIntent(alarmId: id)
         let openIntent = OpenWakelyIntent(alarmId: id)
         let openWakelyButton = AlarmButton(
@@ -171,21 +218,30 @@ public class WakelyAlarmKitManager: NSObject, FlutterStreamHandler {
             secondaryIntent: openIntent,
             sound: .named(soundName)
         )
-        
+
         let uuid = getUUID(for: id)
-        
-        Task {
-            do {
-                if AlarmManager.shared.authorizationState == .notDetermined {
-                    let _ = try await AlarmManager.shared.requestAuthorization()
-                }
-                
-                try await AlarmManager.shared.schedule(id: uuid, configuration: config)
-                
-                DispatchQueue.main.async { completion(nil) }
-            } catch {
-                DispatchQueue.main.async { completion(error) }
-            }
+
+        if AlarmManager.shared.authorizationState == .notDetermined {
+            let _ = try await AlarmManager.shared.requestAuthorization()
+        }
+
+        return try await AlarmManager.shared.schedule(id: uuid, configuration: config)
+    }
+
+    /// Called from StopAlarmIntent.perform() when a mission alarm's native
+    /// Stop button is tapped. If the stopped alarm required a Wake Check,
+    /// schedules the follow-up re-alert alarm natively — see the comment
+    /// above wakeCheckRequiredKey for why this matters.
+    fileprivate func scheduleWakeCheckIfNeeded(forStoppedAlarmId alarmId: String) async {
+        guard UserDefaults.standard.bool(forKey: Self.wakeCheckRequiredKey(alarmId)) else { return }
+        let soundName = UserDefaults.standard.string(forKey: Self.soundKey(alarmId)) ?? "misogi77.wav"
+        let wakeCheckId = Self.wakeCheckAlarmId(for: alarmId)
+        let fireDate = Date().addingTimeInterval(5 * 60)
+        do {
+            try await scheduleAlarmInternal(id: wakeCheckId, date: fireDate, soundName: soundName)
+        } catch {
+            // Best-effort: the Dart-side fallback (if Flutter is alive) is
+            // still in play even if this native attempt fails.
         }
     }
     
@@ -233,6 +289,11 @@ public struct StopAlarmIntent: LiveActivityIntent {
     
     public func perform() async throws -> some IntentResult {
         WakelyAlarmKitManager.shared.notifyAlarmStopped(alarmId: alarmId)
+        // Native stop does NOT complete the mission — it only silences this
+        // alarm's presentation/audio. If this alarm required a Wake Check,
+        // schedule the re-alert natively so it survives even if Flutter
+        // never finishes booting before this intent returns.
+        await WakelyAlarmKitManager.shared.scheduleWakeCheckIfNeeded(forStoppedAlarmId: alarmId)
         return .result()
     }
 }

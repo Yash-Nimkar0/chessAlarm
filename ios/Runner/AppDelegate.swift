@@ -29,7 +29,8 @@ import alarm
                    let fireTime = args["fireTime"] as? Double,
                    let soundName = args["soundName"] as? String {
                     let date = Date(timeIntervalSince1970: fireTime / 1000.0)
-                    manager.scheduleAlarm(id: id, date: date, soundName: soundName) { error in
+                    let requiresWakeCheck = args["requiresWakeCheck"] as? Bool ?? false
+                    manager.scheduleAlarm(id: id, date: date, soundName: soundName, requiresWakeCheck: requiresWakeCheck) { error in
                         if let error = error {
                             result(FlutterError(code: "SCHEDULE_ERROR", message: error.localizedDescription, details: nil))
                         } else {

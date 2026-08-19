@@ -237,12 +237,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
-  Future<WakelyAlarm> _createFakeAlarm(String soundId, {bool fadeIn = false, int fadeDuration = 0}) async {
+  Future<WakelyAlarm> _createFakeAlarm(
+    String soundId, {
+    bool fadeIn = false,
+    int fadeDuration = 0,
+    AlarmType type = AlarmType.standard,
+    DateTime? time,
+  }) async {
     final fakeAlarm = WakelyAlarm(
-      id: 9999, 
-      time: DateTime.now(),
+      id: 9999,
+      time: time ?? DateTime.now(),
       enabled: true,
-      type: AlarmType.standard,
+      type: type,
       soundId: soundId,
       fadeIn: fadeIn,
       fadeDuration: fadeDuration,
@@ -263,7 +269,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           builder: (context, setState) {
             return AlertDialog(
               title: const Text('Developer Harness'),
-              content: Column(
+              content: SizedBox(
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text('Trigger a synthetic wake session in 3 seconds.'),
@@ -442,7 +451,32 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     },
                     child: const Text('Mode J (Wake Check Simulation)'),
                   ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      // Real AlarmKit alarm, real mission type, fired ~90s out
+                      // via the actual native scheduler — not a synthetic
+                      // in-process event. Use this to watch a live AlarmKit
+                      // alert appear, then tap its real native Stop button to
+                      // verify StopAlarmIntent.perform() natively schedules a
+                      // Wake Check re-alert (check getScheduledAlarms/logs).
+                      final savedAlarm = await _createFakeAlarm(
+                        selectedSound,
+                        type: AlarmType.wakeRoutine,
+                        time: DateTime.now().add(const Duration(seconds: 90)),
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('Mode K: REAL AlarmKit alarm #${savedAlarm.id} fires in 90s. Wait for the native alert, then tap its native Stop button.'),
+                          duration: const Duration(seconds: 8),
+                        ));
+                      }
+                    },
+                    child: const Text('Mode K (Real AlarmKit Wake Check Test)'),
+                  ),
                 ],
+                  ),
+                ),
               ),
               actions: [
                 TextButton(

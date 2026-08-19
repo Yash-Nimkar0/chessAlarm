@@ -3,6 +3,7 @@ import '../domain/alarm_model.dart';
 import '../domain/platform_alarm_state.dart';
 import 'platform_alarm_scheduler.dart';
 import 'alarm_kit_uuid.dart';
+import '../domain/wake_check_id.dart';
 import '../../sounds/data/sound_repository.dart';
 
 /// AlarmKit implementation for iOS 26+ devices.
@@ -13,10 +14,17 @@ class AlarmKitIOSAlarmScheduler implements PlatformAlarmScheduler {
   Future<void> schedule(WakelyAlarm alarm, DateTime fireTime) async {
     final nativeSound = SoundRepository.instance.getNativeIOSSoundFilename(alarm.soundId);
 
+    // Standard (no-mission) alarms never need a Wake Check. Wake Check
+    // fallback alarms themselves (id >= kWakeCheckIdOffset) are excluded too,
+    // so a native Stop on a Wake Check alarm doesn't cascade into scheduling
+    // another one indefinitely.
+    final requiresWakeCheck = alarm.type != AlarmType.standard && !isWakeCheckAlarmId(alarm.id);
+
     await _channel.invokeMethod('scheduleAlarm', {
       'id': alarm.id.toString(),
       'fireTime': fireTime.millisecondsSinceEpoch,
       'soundName': nativeSound,
+      'requiresWakeCheck': requiresWakeCheck,
     });
   }
 

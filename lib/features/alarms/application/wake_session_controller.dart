@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/alarm_model.dart';
 import '../domain/alarm_event.dart';
 import '../domain/recurrence.dart';
+import '../domain/wake_check_id.dart';
 import '../data/alarm_repository.dart';
 import 'alarm_controller.dart';
 import 'wake_audio_session_controller.dart';
@@ -33,7 +34,7 @@ class WakeSessionController extends ChangeNotifier {
   /// parent alarm's ID. Using a fixed offset (rather than an allocated ID)
   /// lets us reliably cancel the fallback later without round-tripping
   /// through persistence to look it up.
-  static int wakeCheckAlarmId(int parentAlarmId) => 99999 + parentAlarmId;
+  static int wakeCheckAlarmId(int parentAlarmId) => kWakeCheckIdOffset + parentAlarmId;
 
   /// Get the ID of a session that was active before the app crashed/closed.
   Future<int?> getDurableActiveSessionId() async {
