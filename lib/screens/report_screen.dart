@@ -81,15 +81,8 @@ class _ReportScreenState extends State<ReportScreen> {
               const SizedBox(height: 16),
               Text('Report', style: AppTokens.display.copyWith(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.chevron_left, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  const SizedBox(width: 8),
-                  Text('This week', style: AppTokens.body.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
-                  const SizedBox(width: 8),
-                  Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                ],
+              Center(
+                child: Text('This week', style: AppTokens.body.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
               ),
               const SizedBox(height: 24),
               SingleChildScrollView(

@@ -112,16 +112,28 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
     Haptics.vibrate(HapticsType.heavy);
     await prefs.setInt(monthKey, currentEscapes + 1);
     AnalyticsService.logEvent('emergency_escape_used');
-    
+
     if (mounted) {
       setState(() => _isProcessing = true);
     }
-    
-    await WakeSessionController.instance.emergencyEscape();
-    
+
+    try {
+      await WakeSessionController.instance.emergencyEscape();
+    } catch (e) {
+      debugPrint('WakeSessionController.emergencyEscape failed: $e');
+    }
+
     if (mounted) {
       int elapsed = DateTime.now().difference(_startTime).inSeconds;
-      await SleepService.recordWakePerformance(elapsed, true);
+      // Scoring is best-effort here - if it fails, the user must still be
+      // able to dismiss the alarm rather than getting stuck on a frozen
+      // "processing" screen during the app's single highest-stakes moment.
+      try {
+        await SleepService.recordWakePerformance(elapsed, true);
+      } catch (e) {
+        debugPrint('SleepService.recordWakePerformance failed: $e');
+      }
+      if (!mounted) return;
       if (_missionSettings.type == 'quickAlarm' || _missionSettings.type == 'alarm') {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
@@ -155,18 +167,31 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
     Haptics.vibrate(HapticsType.heavy);
 
     await Future.delayed(const Duration(seconds: 2));
-    
-    await WakeSessionController.instance.completeSession();
-    
+
+    try {
+      await WakeSessionController.instance.completeSession();
+    } catch (e) {
+      debugPrint('WakeSessionController.completeSession failed: $e');
+    }
+
     if (mounted) {
       int elapsed = DateTime.now().difference(_startTime).inSeconds;
       AnalyticsService.logEvent('mission_completed', {
         'solve_time': elapsed,
       });
-      await SleepService.recordWakePerformance(elapsed, false);
-      await EloService.recordMorningSuccess(solveTimeSeconds: elapsed);
-      final stats = await EloService.getStats();
-      unawaited(ReviewPromptService.maybeRequestReview(stats['currentStreak'] ?? 0));
+      // Scoring/streak/review-prompt side effects are best-effort - if any
+      // of them fail, the user must still be able to leave this screen
+      // rather than getting stuck here during the app's single
+      // highest-stakes moment (dismissing an active alarm).
+      try {
+        await SleepService.recordWakePerformance(elapsed, false);
+        await EloService.recordMorningSuccess(solveTimeSeconds: elapsed);
+        final stats = await EloService.getStats();
+        unawaited(ReviewPromptService.maybeRequestReview(stats['currentStreak'] ?? 0));
+      } catch (e) {
+        debugPrint('Post-success scoring failed: $e');
+      }
+      if (!mounted) return;
       if (_missionSettings.type == 'quickAlarm' || _missionSettings.type == 'alarm') {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(

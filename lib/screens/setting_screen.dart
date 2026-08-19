@@ -10,6 +10,7 @@ import '../theme/design_tokens.dart';
 import '../services/elo_service.dart';
 import '../services/invite_service.dart';
 import '../services/wallpaper_service.dart';
+import 'wakle_pro_screen.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -306,7 +307,9 @@ class _SettingScreenState extends State<SettingScreen> {
                   onTap: () => InviteService.shareInvite(currentStreak: _stats['currentStreak']),
                 ),
                 Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), height: 1),
-                _buildListTile(Icons.workspace_premium, 'Wakle Pro', 'Upgrade', color: AppTokens.signal),
+                _buildListTile(Icons.workspace_premium, 'Wakle Pro', 'Coming Soon', color: AppTokens.signal, onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const WakleProScreen()));
+                }),
               ])),
               const SizedBox(height: 32),
               Text('Sleep Settings', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
@@ -327,11 +330,11 @@ class _SettingScreenState extends State<SettingScreen> {
                         children: [
                           const ListTile(title: Text("Sleep Sound Capture")),
 
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16.0),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
                             child: Text(
                               "Save interesting sounds from your night.\n\n✓ Short moments only\n✓ Stored on your device\n✓ Delete anytime",
-                              style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.5),
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5),
                             ),
                           ),
                           const SizedBox(height: 16),

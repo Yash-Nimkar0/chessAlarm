@@ -103,9 +103,18 @@ class _SleepScreenState extends State<SleepScreen> {
         ));
       }
     } else {
-      await SleepService.startTracking();
-      WakelockPlus.enable();
-      setState(() => _isTracking = true);
+      try {
+        await SleepService.startTracking();
+        WakelockPlus.enable();
+        if (mounted) setState(() => _isTracking = true);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: const Text('Could not start sleep tracking. Check microphone permission and try again.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ));
+        }
+      }
     }
   }
 
@@ -373,7 +382,7 @@ class _SleepScreenState extends State<SleepScreen> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          _isTracking ? 'Hardcore Wake Active' : 'Start Sleep Mode',
+                          _isTracking ? 'Sleep Mode Active' : 'Start Sleep Mode',
                           style: TextStyle(
                             color: _isTracking ? AppTokens.signal : (Theme.of(context).brightness == Brightness.light ? AppTokens.signalDeep : AppTokens.nightBg), 
                             fontSize: 20, 
