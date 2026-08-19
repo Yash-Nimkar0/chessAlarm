@@ -17,6 +17,7 @@ import 'missions/steps_config_screen.dart';
 import 'sound_picker_screen.dart';
 import '../features/sounds/data/sound_repository.dart';
 import '../theme/design_tokens.dart';
+import '../widgets/fade_slide_in.dart';
 
 class QuickAlarmScreen extends StatefulWidget {
   const QuickAlarmScreen({Key? key}) : super(key: key);
@@ -25,9 +26,9 @@ class QuickAlarmScreen extends StatefulWidget {
   State<QuickAlarmScreen> createState() => _QuickAlarmScreenState();
 }
 
-class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
+class _QuickAlarmScreenState extends State<QuickAlarmScreen> with SingleTickerProviderStateMixin {
   DateTime? _targetTime;
-  
+
   late MissionSettings _missionSettings;
   double _volume = 0.8;
   bool _vibrate = true;
@@ -35,6 +36,9 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
   bool _fadeIn = false;
   int _fadeDuration = 30;
   Timer? _timer;
+
+  late final AnimationController _popController;
+  late final Animation<double> _popScale;
 
   @override
   void initState() {
@@ -45,11 +49,18 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
         setState(() {});
       }
     });
+    // A quick overshoot pop on the time card whenever the target time
+    // changes - the per-second countdown re-render must NOT retrigger this,
+    // so it's only ever started explicitly from _addTime/_resetTime/
+    // _pickExactTime rather than tied to displayTime via a keyed switcher.
+    _popController = AnimationController(vsync: this, duration: const Duration(milliseconds: 350));
+    _popScale = Tween<double>(begin: 0.94, end: 1.0).animate(CurvedAnimation(parent: _popController, curve: Curves.elasticOut));
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _popController.dispose();
     super.dispose();
   }
 
@@ -64,6 +75,7 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
         _targetTime = _targetTime!.add(duration);
       }
     });
+    _popController.forward(from: 0);
   }
 
   void _resetTime() {
@@ -71,6 +83,7 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
     setState(() {
       _targetTime = null;
     });
+    _popController.forward(from: 0);
   }
 
   Future<void> _pickExactTime() async {
@@ -101,6 +114,7 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
       setState(() {
         _targetTime = selectedDateTime;
       });
+      _popController.forward(from: 0);
     }
   }
 
@@ -406,40 +420,43 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                 // AppTokens.signal is a deliberate contrast-safe indigo,
                 // not the brand's amber, so primaryContainer renders as an
                 // unrelated purple card next to everything else's amber.
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 32),
-                  decoration: BoxDecoration(
-                    color: colorScheme.brightness == Brightness.light ? AppTokens.signal.withValues(alpha: 0.15) : AppTokens.signal,
-                    borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        displayTime,
-                        style: TextStyle(
-                          fontSize: 64,
-                          fontWeight: FontWeight.w900,
-                          color: colorScheme.brightness == Brightness.light ? AppTokens.signalDeep : AppTokens.nightBg,
-                          letterSpacing: -2.0,
+                ScaleTransition(
+                  scale: _popScale,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    decoration: BoxDecoration(
+                      color: colorScheme.brightness == Brightness.light ? AppTokens.signal.withValues(alpha: 0.15) : AppTokens.signal,
+                      borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          displayTime,
+                          style: TextStyle(
+                            fontSize: 64,
+                            fontWeight: FontWeight.w900,
+                            color: colorScheme.brightness == Brightness.light ? AppTokens.signalDeep : AppTokens.nightBg,
+                            letterSpacing: -2.0,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        ringsAt,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: (colorScheme.brightness == Brightness.light ? AppTokens.signalDeep : AppTokens.nightBg).withValues(alpha: 0.7),
+                        const SizedBox(height: 8),
+                        Text(
+                          ringsAt,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: (colorScheme.brightness == Brightness.light ? AppTokens.signalDeep : AppTokens.nightBg).withValues(alpha: 0.7),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Add Time Buttons
-                GridView.count(
+                FadeSlideIn(delay: const Duration(milliseconds: 60), child: GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisCount: 3,
@@ -454,12 +471,12 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                     _buildTimeButton("+30m", const Duration(minutes: 30)),
                     _buildTimeButton("+1h", const Duration(hours: 1)),
                   ],
-                ),
-                
+                )),
+
                 const SizedBox(height: 16),
-                
+
                 // Exact Time Button
-                OutlinedButton.icon(
+                FadeSlideIn(delay: const Duration(milliseconds: 100), child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm)),
@@ -467,12 +484,12 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                   icon: const Icon(Icons.access_time),
                   label: const Text("Set Exact Time"),
                   onPressed: _pickExactTime,
-                ),
-                
+                )),
+
                 const SizedBox(height: 32),
-                
+
                 // Mission Selection
-                PlatformCard(
+                FadeSlideIn(delay: const Duration(milliseconds: 140), child: PlatformCard(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -498,12 +515,12 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                       ),
                     ],
                   ),
-                ),
-                
+                )),
+
                 const SizedBox(height: 16),
-                
+
                 // Sound & Vibrate
-                PlatformCard(
+                FadeSlideIn(delay: const Duration(milliseconds: 180), child: PlatformCard(
                   child: Column(
                     children: [
                       ListTile(
@@ -570,12 +587,12 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                       ),
                     ],
                   ),
-                ),
-                
+                )),
+
                 const SizedBox(height: 32),
-                
+
                 // Start Button
-                ElevatedButton(
+                FadeSlideIn(delay: const Duration(milliseconds: 220), child: ElevatedButton(
                   onPressed: _saveQuickAlarm,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colorScheme.brightness == Brightness.light ? AppTokens.signal.withValues(alpha: 0.15) : AppTokens.signal,
@@ -588,8 +605,8 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                     ),
                   ),
                   child: const Text('START QUICK ALARM', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-                ),
-                
+                )),
+
                 const SizedBox(height: 40),
               ],
             ),
