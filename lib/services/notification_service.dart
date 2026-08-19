@@ -6,9 +6,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/alarms/application/alarm_controller.dart';
 import '../features/alarms/domain/alarm_model.dart';
+import 'elo_service.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
+
+  // Fixed ID far outside the alarm-ID-derived range bedtime reminders use
+  // (alarmId + 10000), so the two features never collide on the same slot.
+  static const int _reEngagementNotificationId = 999999;
 
   static Future<void> initialize() async {
     tz.initializeTimeZones();
@@ -75,6 +80,37 @@ class NotificationService {
       }
     }
     return due;
+  }
+
+  /// Pushes a "come back" reminder out to 3 days from now. Called on every
+  /// app open, so an active user's reminder keeps getting rescheduled
+  /// further into the future and never actually fires - only a user who
+  /// stops opening the app for 3 days will see it, nudging them back before
+  /// they've fully lapsed.
+  static Future<void> scheduleReEngagementReminder() async {
+    await _notificationsPlugin.cancel(id: _reEngagementNotificationId);
+
+    final stats = await EloService.getStats();
+    final currentStreak = stats['currentStreak'] ?? 0;
+
+    final String body = currentStreak > 0
+        ? "Your $currentStreak day streak is about to reset. Set an alarm before you lose it."
+        : "Heavy sleepers stay heavy sleepers without a system. Set an alarm and get back on track.";
+
+    await _notificationsPlugin.zonedSchedule(
+      id: _reEngagementNotificationId,
+      title: 'Still there?',
+      body: body,
+      scheduledDate: tz.TZDateTime.now(tz.local).add(const Duration(days: 3)),
+      notificationDetails: const NotificationDetails(
+        iOS: DarwinNotificationDetails(
+           presentAlert: true,
+           presentBadge: true,
+           presentSound: true,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    );
   }
 
   static Future<void> _scheduleBedtimeReminder(int id, DateTime reminderTime, DateTime wakeTime) async {

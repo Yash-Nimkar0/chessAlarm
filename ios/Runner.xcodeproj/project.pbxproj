@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
+		2133C354235218BAB3B21936 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ABBD7ACC601550E545B252AC /* Foundation.framework */; };
 		30238104F0D8858162E44824 /* celestial.wav in Resources */ = {isa = PBXBuildFile; fileRef = F1098C53DC5A784D822F8A4C /* celestial.wav */; };
 		31B974DF63EA29C593A58ADD /* tropical.wav in Resources */ = {isa = PBXBuildFile; fileRef = BD55B9CFF0FFA99DC970AA1A /* tropical.wav */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
@@ -16,6 +17,7 @@
 		48A54E2845FBB8C25DF84991 /* misogi77.wav in Resources */ = {isa = PBXBuildFile; fileRef = 11639FC607BFBEBE3F97FA2A /* misogi77.wav */; };
 		4FA2FBFBDA54040273D6E0F5 /* eas.wav in Resources */ = {isa = PBXBuildFile; fileRef = 57223B0C64427D5AFDEC721C /* eas.wav */; };
 		503D80F5CBC6B670A379FF79 /* jingle.wav in Resources */ = {isa = PBXBuildFile; fileRef = 399D4DA2968D286E5C1F942F /* jingle.wav */; };
+		693AABC52AC415B228D66695 /* WakleWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A53C3B18EF4A7536CF1FF4E0 /* WakleWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		6BCE30F683345A60DB134852 /* AlarmKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 212270B649757934C7F8D655 /* AlarmKitManager.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */; };
@@ -26,11 +28,14 @@
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		9A78E365C7525D9852D00F5D /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BFE06597804129FE431C89CD /* SwiftUI.framework */; };
+		AA3C365EB07EBED598C376CB /* WakleWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 248CDA3678B30F1251391D5A /* WakleWidget.swift */; };
 		B9A038B8367B3ED4E2882520 /* kirby.wav in Resources */ = {isa = PBXBuildFile; fileRef = 4057A2A429AC736E3A90C5D2 /* kirby.wav */; };
 		C3A5DA15E9D6D13EE15B6E74 /* soft_morning.wav in Resources */ = {isa = PBXBuildFile; fileRef = C9070B0F188E8A91737D1190 /* soft_morning.wav */; };
 		C774A694832DC61621FBBBFF /* gentle_guitar.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0EB1971B48C862B230A8327D /* gentle_guitar.wav */; };
 		CBD04DDB6A10A12FD60AAD40 /* chiptune.wav in Resources */ = {isa = PBXBuildFile; fileRef = 6FFE87390111FFE6E39604E0 /* chiptune.wav */; };
 		E1A9799A90C60C6A400536D2 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EBCA9F8F9A71FB282201F3FE /* Pods_RunnerTests.framework */; };
+		F1324A594604245454404781 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A9FFCAA47FFCFCE71363B66 /* WidgetKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,9 +46,27 @@
 			remoteGlobalIDString = 97C146ED1CF9000F007C117D;
 			remoteInfo = Runner;
 		};
+		589EA6364316463275E6ACA5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9D1CBFB0D3FC1200718BEEF2;
+			remoteInfo = WakleWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		37FB8EF78A94191FDBEB2264 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				693AABC52AC415B228D66695 /* WakleWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9705A1C41CF9048500538489 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -63,13 +86,16 @@
 		12CE266659F051565BACA076 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
+		1E68D276836C19A29DDFA10B /* WakleWidget.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = WakleWidget.entitlements; sourceTree = "<group>"; };
 		212270B649757934C7F8D655 /* AlarmKitManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AlarmKitManager.swift; sourceTree = "<group>"; };
+		248CDA3678B30F1251391D5A /* WakleWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WakleWidget.swift; sourceTree = "<group>"; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		399D4DA2968D286E5C1F942F /* jingle.wav */ = {isa = PBXFileReference; includeInIndex = 1; path = jingle.wav; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		4057A2A429AC736E3A90C5D2 /* kirby.wav */ = {isa = PBXFileReference; includeInIndex = 1; path = kirby.wav; sourceTree = "<group>"; };
 		57223B0C64427D5AFDEC721C /* eas.wav */ = {isa = PBXFileReference; includeInIndex = 1; path = eas.wav; sourceTree = "<group>"; };
+		5A9FFCAA47FFCFCE71363B66 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		6FFE87390111FFE6E39604E0 /* chiptune.wav */ = {isa = PBXFileReference; includeInIndex = 1; path = chiptune.wav; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -88,7 +114,11 @@
 		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A20695B661055701EE398BB8 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A53C3B18EF4A7536CF1FF4E0 /* WakleWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WakleWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		ABBD7ACC601550E545B252AC /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		BD55B9CFF0FFA99DC970AA1A /* tropical.wav */ = {isa = PBXFileReference; includeInIndex = 1; path = tropical.wav; sourceTree = "<group>"; };
+		BFE06597804129FE431C89CD /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		C84D03CBC06719DEB1B201C2 /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
 		C9070B0F188E8A91737D1190 /* soft_morning.wav */ = {isa = PBXFileReference; includeInIndex = 1; path = soft_morning.wav; sourceTree = "<group>"; };
 		E35FEAF25C8CD7F2CF1FE552 /* morning_sun.wav */ = {isa = PBXFileReference; includeInIndex = 1; path = morning_sun.wav; sourceTree = "<group>"; };
@@ -115,6 +145,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F2014B4FE7FF1A49D39B515D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2133C354235218BAB3B21936 /* Foundation.framework in Frameworks */,
+				F1324A594604245454404781 /* WidgetKit.framework in Frameworks */,
+				9A78E365C7525D9852D00F5D /* SwiftUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -123,8 +163,22 @@
 			children = (
 				882EA7DD5D18B19781F4C7A2 /* Pods_Runner.framework */,
 				EBCA9F8F9A71FB282201F3FE /* Pods_RunnerTests.framework */,
+				9AF8C794D3EB1B3AFE267D2B /* iOS */,
+				5A9FFCAA47FFCFCE71363B66 /* WidgetKit.framework */,
+				BFE06597804129FE431C89CD /* SwiftUI.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		309F3166A308AA70FF64A123 /* WakleWidget */ = {
+			isa = PBXGroup;
+			children = (
+				248CDA3678B30F1251391D5A /* WakleWidget.swift */,
+				A20695B661055701EE398BB8 /* Info.plist */,
+				1E68D276836C19A29DDFA10B /* WakleWidget.entitlements */,
+			);
+			name = WakleWidget;
+			path = WakleWidget;
 			sourceTree = "<group>";
 		};
 		331C8082294A63A400263BE5 /* RunnerTests */ = {
@@ -156,6 +210,7 @@
 				331C8082294A63A400263BE5 /* RunnerTests */,
 				E4548B52E609676286B6DDC5 /* Pods */,
 				0F6D09D0D3042798EE8BD77A /* Frameworks */,
+				309F3166A308AA70FF64A123 /* WakleWidget */,
 			);
 			sourceTree = "<group>";
 		};
@@ -164,6 +219,7 @@
 			children = (
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
+				A53C3B18EF4A7536CF1FF4E0 /* WakleWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -196,6 +252,14 @@
 				399D4DA2968D286E5C1F942F /* jingle.wav */,
 			);
 			path = Runner;
+			sourceTree = "<group>";
+		};
+		9AF8C794D3EB1B3AFE267D2B /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				ABBD7ACC601550E545B252AC /* Foundation.framework */,
+			);
+			name = iOS;
 			sourceTree = "<group>";
 		};
 		E4548B52E609676286B6DDC5 /* Pods */ = {
@@ -251,12 +315,14 @@
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				97C146EC1CF9000F007C117D /* Resources */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
+				37FB8EF78A94191FDBEB2264 /* Embed Foundation Extensions */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				23B2063CC1CA363D8D29FAFF /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A5814959750A991B3E45F757 /* PBXTargetDependency */,
 			);
 			name = Runner;
 			packageProductDependencies = (
@@ -265,6 +331,23 @@
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
 			productType = "com.apple.product-type.application";
+		};
+		9D1CBFB0D3FC1200718BEEF2 /* WakleWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8EFCA4B377FBA5FC0B14A818 /* Build configuration list for PBXNativeTarget "WakleWidgetExtension" */;
+			buildPhases = (
+				0C13C3050664537AA6A602DF /* Sources */,
+				F2014B4FE7FF1A49D39B515D /* Frameworks */,
+				2C2201D8B80D53269665FD6B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = WakleWidgetExtension;
+			productName = WakleWidgetExtension;
+			productReference = A53C3B18EF4A7536CF1FF4E0 /* WakleWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -304,11 +387,19 @@
 			targets = (
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
+				9D1CBFB0D3FC1200718BEEF2 /* WakleWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		2C2201D8B80D53269665FD6B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		331C807F294A63A400263BE5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -437,6 +528,14 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		0C13C3050664537AA6A602DF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA3C365EB07EBED598C376CB /* WakleWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		331C807D294A63A400263BE5 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -463,6 +562,12 @@
 			isa = PBXTargetDependency;
 			target = 97C146ED1CF9000F007C117D /* Runner */;
 			targetProxy = 331C8085294A63A400263BE5 /* PBXContainerItemProxy */;
+		};
+		A5814959750A991B3E45F757 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = WakleWidgetExtension;
+			target = 9D1CBFB0D3FC1200718BEEF2 /* WakleWidgetExtension */;
+			targetProxy = 589EA6364316463275E6ACA5 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -544,6 +649,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -612,6 +718,50 @@
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
 			};
 			name = Profile;
+		};
+		77248982929E56BA015D68E1 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = WakleWidget/WakleWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6PPTATEW8N;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = WakleWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yashnimkar.chessAlarm.WakleWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Profile;
+		};
+		815124720DDE8F36065A4690 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = WakleWidget/WakleWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6PPTATEW8N;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = WakleWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yashnimkar.chessAlarm.WakleWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
 		};
 		97C147031CF9000F007C117D /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -730,6 +880,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -756,6 +907,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -775,6 +927,27 @@
 			};
 			name = Release;
 		};
+		9D633DE68D3F4374D6CF82E1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = WakleWidget/WakleWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6PPTATEW8N;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = WakleWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yashnimkar.chessAlarm.WakleWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -784,6 +957,16 @@
 				331C8088294A63A400263BE5 /* Debug */,
 				331C8089294A63A400263BE5 /* Release */,
 				331C808A294A63A400263BE5 /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8EFCA4B377FBA5FC0B14A818 /* Build configuration list for PBXNativeTarget "WakleWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				815124720DDE8F36065A4690 /* Release */,
+				9D633DE68D3F4374D6CF82E1 /* Debug */,
+				77248982929E56BA015D68E1 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

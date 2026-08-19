@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:alarm/alarm.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
@@ -18,6 +19,7 @@ import '../widgets/platform_theme.dart';
 import '../widgets/animated_pressable.dart';
 import '../services/analytics_service.dart';
 import '../services/elo_service.dart';
+import '../services/review_prompt_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/sleep_service.dart';
 import '../services/wallpaper_service.dart';
@@ -184,6 +186,8 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
       });
       await SleepService.recordWakePerformance(elapsed, false);
       await EloService.recordMorningSuccess(solveTimeSeconds: elapsed);
+      final stats = await EloService.getStats();
+      unawaited(ReviewPromptService.maybeRequestReview(stats['currentStreak'] ?? 0));
       if (_missionSettings.type == 'quickAlarm' || _missionSettings.type == 'alarm') {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(

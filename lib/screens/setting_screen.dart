@@ -8,6 +8,7 @@ import '../widgets/platform_theme.dart';
 import '../widgets/fade_slide_in.dart';
 import '../theme/design_tokens.dart';
 import '../services/elo_service.dart';
+import '../services/invite_service.dart';
 import '../services/wallpaper_service.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
@@ -296,6 +297,13 @@ class _SettingScreenState extends State<SettingScreen> {
                       ),
                     );
                   },
+                ),
+                Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), height: 1),
+                ListTile(
+                  leading: Icon(Icons.ios_share, color: Theme.of(context).colorScheme.onSurface),
+                  title: Text('Invite Friends', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                  trailing: Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  onTap: () => InviteService.shareInvite(currentStreak: _stats['currentStreak']),
                 ),
                 Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), height: 1),
                 _buildListTile(Icons.workspace_premium, 'Wakle Pro', 'Upgrade', color: AppTokens.signal),

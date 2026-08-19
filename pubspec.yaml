@@ -36,6 +36,8 @@ dependencies:
   google_fonts: ^8.2.1
   sentry_flutter: ^9.0.0
   volume_controller: ^3.6.0
+  in_app_review: ^2.0.12
+  home_widget: ^0.9.3
 dev_dependencies:
   flutter_test:
     sdk: flutter

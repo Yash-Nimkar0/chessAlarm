@@ -16,6 +16,8 @@ import '../features/alarms/domain/recurrence.dart';
 import 'edit_alarm_screen.dart';
 import 'quick_alarm_screen.dart';
 import '../features/sounds/data/sound_repository.dart';
+import '../services/elo_service.dart';
+import '../services/home_widget_service.dart';
 import '../theme/design_tokens.dart';
 import '../theme/mission_colors.dart';
 import '../widgets/fade_slide_in.dart';
@@ -83,6 +85,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _updateNextAlarmText();
       });
     }
+
+    final stats = await EloService.getStats();
+    unawaited(HomeWidgetService.update(
+      nextAlarmTime: next?.nextOccurrence,
+      currentStreak: stats['currentStreak'] ?? 0,
+    ));
   }
 
   void _updateNextAlarmText() {
