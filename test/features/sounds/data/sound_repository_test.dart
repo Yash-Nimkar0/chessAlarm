@@ -24,6 +24,13 @@ void main() {
 
     test('resolveLegacyPath maps old paths to new IDs', () {
       expect(SoundRepository.instance.resolveLegacyPath('assets/audio/alarms/marmixer-soft-morning-484625.mp3'), 'wakely_soft_morning');
+      // Regression: resolveLegacyPath used to unconditionally return
+      // 'wakely_soft_morning' for every input, silently resetting every
+      // migrated user's sound choice to the default regardless of what
+      // they'd actually configured. These two must resolve to their own
+      // distinct IDs, not both collapse to the default.
+      expect(SoundRepository.instance.resolveLegacyPath('assets/audio/alarms/lesiakower-celestial-alarm-clock-386401.mp3'), 'wakely_celestial');
+      expect(SoundRepository.instance.resolveLegacyPath('assets/audio/alarms/misogi77-ringphone-191692.mp3'), 'wakely_ringphone');
     });
 
     test('resolveLegacyPath falls back to soft_morning for unknown paths', () {

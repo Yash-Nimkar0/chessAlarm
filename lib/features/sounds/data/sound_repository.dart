@@ -122,9 +122,22 @@ class SoundRepository {
     return null;
   }
 
-  /// Resolves legacy asset paths to the new sound ID architecture.
+  /// Resolves legacy asset paths (from a pre-migration WakelyAlarm's
+  /// `assetAudioPath`) to the new sound ID architecture.
+  ///
+  /// Matches by filename against each bundled sound's own `path`, since
+  /// those paths still point at the original legacy .mp3 filenames (e.g.
+  /// `wakely_celestial`'s path is still
+  /// `assets/audio/alarms/lesiakower-celestial-alarm-clock-386401.mp3`).
+  /// Falls back to the default sound only for a legacy path with no
+  /// matching bundled sound (e.g. one retired from the catalog entirely).
   String resolveLegacyPath(String path) {
-    // Fallback for all unknown and legacy sounds
+    final legacyFilename = path.split('/').last;
+    for (final sound in _bundledSounds) {
+      if (sound.path.split('/').last == legacyFilename) {
+        return sound.id;
+      }
+    }
     return 'wakely_soft_morning';
   }
 
