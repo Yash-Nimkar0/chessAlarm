@@ -440,14 +440,14 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                     const SizedBox(height: 8),
                     Text(
                       '${_missionSettings.sleepGoal % 1 == 0 ? _missionSettings.sleepGoal.toInt() : _missionSettings.sleepGoal} Hours',
-                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: colorScheme.primary),
+                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTokens.signal),
                     ),
                     Slider(
                       value: _missionSettings.sleepGoal,
                       min: 4,
                       max: 12,
                       divisions: 16,
-                      activeColor: colorScheme.primary,
+                      activeColor: AppTokens.signal,
                       onChanged: (val) {
                         Haptics.vibrate(HapticsType.selection);
                         setSheetState(() {});
@@ -490,7 +490,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                   ),
                   TextButton(
                     onPressed: saveAlarm,
-                    child: Text('Save', style: TextStyle(color: colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: Text('Save', style: TextStyle(color: AppTokens.signal, fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -513,7 +513,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                       child: CupertinoTheme(
                         data: CupertinoThemeData(
                           brightness: Brightness.dark,
-                          primaryColor: colorScheme.primary,
+                          primaryColor: AppTokens.signal,
                           textTheme: CupertinoTextThemeData(
                             dateTimePickerTextStyle: TextStyle(
                               color: colorScheme.onSurface,
@@ -564,7 +564,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                           icon: Icon(Icons.label_outline, color: colorScheme.onSurfaceVariant),
                         ),
                         style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
-                        cursorColor: colorScheme.primary,
+                        cursorColor: AppTokens.signal,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -583,17 +583,17 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                                    children: [
                                       AnimatedPressable(
                                          onTap: () => setState(() => _selectedDays.fillRange(0, 7, true)),
-                                         child: Text('Everyday', style: TextStyle(color: colorScheme.primary, fontSize: 12)),
+                                         child: Text('Everyday', style: TextStyle(color: AppTokens.signal, fontSize: 12)),
                                       ),
                                       const SizedBox(width: 8),
                                       AnimatedPressable(
                                          onTap: () => setState(() { _selectedDays.fillRange(0, 5, true); _selectedDays.fillRange(5, 7, false); }),
-                                         child: Text('Weekdays', style: TextStyle(color: colorScheme.primary, fontSize: 12)),
+                                         child: Text('Weekdays', style: TextStyle(color: AppTokens.signal, fontSize: 12)),
                                       ),
                                       const SizedBox(width: 8),
                                       AnimatedPressable(
                                          onTap: () => setState(() { _selectedDays.fillRange(0, 5, false); _selectedDays.fillRange(5, 7, true); }),
-                                         child: Text('Weekends', style: TextStyle(color: colorScheme.primary, fontSize: 12)),
+                                         child: Text('Weekends', style: TextStyle(color: AppTokens.signal, fontSize: 12)),
                                       ),
                                    ]
                                 )
@@ -616,13 +616,13 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                                   height: 40,
                                   alignment: Alignment.center,
                                   decoration: BoxDecoration(
-                                    color: isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
+                                    color: isSelected ? AppTokens.signal : colorScheme.surfaceContainerHighest,
                                     shape: BoxShape.circle,
                                   ),
                                   child: Text(
                                     _dayLabels[index],
                                     style: TextStyle(
-                                      color: isSelected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+                                      color: isSelected ? AppTokens.nightBg : colorScheme.onSurfaceVariant,
                                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                     ),
                                   ),
@@ -639,7 +639,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                     // Sound settings (Primary)
                     PlatformCard(
                       child: ListTile(
-                        leading: Icon(Icons.music_note, color: colorScheme.primary),
+                        leading: Icon(Icons.music_note, color: AppTokens.signal),
                         title: const Text('Sound'),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -706,7 +706,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                                   children: [
                                     Text(
                                       '${_missionSettings.sleepGoal % 1 == 0 ? _missionSettings.sleepGoal.toInt() : _missionSettings.sleepGoal} Hours',
-                                      style: TextStyle(color: colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold),
+                                      style: TextStyle(color: AppTokens.signal, fontSize: 16, fontWeight: FontWeight.bold),
                                     ),
                                     const SizedBox(width: 4),
                                     Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant, size: 20),
@@ -739,7 +739,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                                 children: [
                                   Text(
                                     _getMissionDisplayName(_missionSettings.mission),
-                                    style: TextStyle(color: colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold),
+                                    style: TextStyle(color: AppTokens.signal, fontSize: 16, fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(width: 4),
                                   Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant, size: 20),
@@ -767,7 +767,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                                     value: volume,
                                     min: 0.0,
                                     max: 1.0,
-                                    activeColor: colorScheme.primary,
+                                    activeColor: AppTokens.signal,
                                     onChanged: (val) => setState(() => volume = val),
                                   ),
                                 ),
@@ -776,9 +776,9 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                           ),
                           const Divider(height: 1, indent: 56),
                           SwitchListTile(
-                            secondary: Icon(Icons.vibration, color: colorScheme.primary),
+                            secondary: Icon(Icons.vibration, color: AppTokens.signal),
                             title: const Text('Vibrate'),
-                            activeThumbColor: colorScheme.primary,
+                            activeThumbColor: AppTokens.signal,
                             value: vibrate,
                             onChanged: (val) {
                               Haptics.vibrate(HapticsType.selection);
@@ -796,11 +796,11 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                       height: 56,
                       child: OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: _isPreviewing ? colorScheme.error : colorScheme.primary),
+                          side: BorderSide(color: _isPreviewing ? colorScheme.error : AppTokens.signal),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusLg)),
                         ),
-                        icon: Icon(_isPreviewing ? Icons.stop_circle : Icons.play_circle_fill, color: _isPreviewing ? colorScheme.error : colorScheme.primary),
-                        label: Text(_isPreviewing ? 'Stop Preview' : 'Preview Alarm', style: TextStyle(color: _isPreviewing ? colorScheme.error : colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold)),
+                        icon: Icon(_isPreviewing ? Icons.stop_circle : Icons.play_circle_fill, color: _isPreviewing ? colorScheme.error : AppTokens.signal),
+                        label: Text(_isPreviewing ? 'Stop Preview' : 'Preview Alarm', style: TextStyle(color: _isPreviewing ? colorScheme.error : AppTokens.signal, fontSize: 16, fontWeight: FontWeight.bold)),
                         onPressed: _previewAlarm,
                       ),
                     ),

@@ -80,7 +80,7 @@ class _StepsConfigScreenState extends State<StepsConfigScreen> {
                     } : null,
                     icon: const Icon(Icons.remove_circle_outline),
                     iconSize: 48,
-                    color: colorScheme.primary,
+                    color: AppTokens.signal,
                   ),
                   const SizedBox(width: 24),
                   Text(
@@ -88,7 +88,7 @@ class _StepsConfigScreenState extends State<StepsConfigScreen> {
                     style: TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
+                      color: AppTokens.signal,
                     ),
                   ),
                   const SizedBox(width: 24),
@@ -99,7 +99,7 @@ class _StepsConfigScreenState extends State<StepsConfigScreen> {
                     } : null,
                     icon: const Icon(Icons.add_circle_outline),
                     iconSize: 48,
-                    color: colorScheme.primary,
+                    color: AppTokens.signal,
                   ),
                 ],
               ),

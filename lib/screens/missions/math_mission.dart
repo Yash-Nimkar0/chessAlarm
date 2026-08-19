@@ -4,6 +4,7 @@ import 'package:haptic_feedback/haptic_feedback.dart';
 import '../../models/mission_settings.dart';
 import 'mission_interface.dart';
 import '../../widgets/platform_theme.dart';
+import '../../theme/design_tokens.dart';
 
 class MathMission extends MissionWidget {
   final MissionSettings settings;
@@ -101,7 +102,7 @@ class _MathMissionState extends State<MathMission> {
       children: [
         Text(
           "Round ${_currentRound + 1} of $_totalRounds",
-          style: TextStyle(color: colorScheme.primary.withOpacity(0.8), fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(color: AppTokens.signal.withOpacity(0.8), fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         Text(
@@ -122,7 +123,7 @@ class _MathMissionState extends State<MathMission> {
               style: TextStyle(
                 fontSize: 40,
                 fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
+                color: AppTokens.signal,
               ),
             ),
           ),

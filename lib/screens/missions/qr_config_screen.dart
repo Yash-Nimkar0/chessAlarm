@@ -125,7 +125,7 @@ class _QRConfigScreenState extends State<QRConfigScreen> {
               width: 250,
               height: 250,
               decoration: BoxDecoration(
-                border: Border.all(color: colorScheme.primary, width: 4),
+                border: Border.all(color: AppTokens.signal, width: 4),
                 borderRadius: BorderRadius.circular(AppTokens.radiusLg),
               ),
             ),

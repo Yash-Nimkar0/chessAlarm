@@ -3,6 +3,7 @@ import 'package:haptic_feedback/haptic_feedback.dart';
 import '../../models/mission_settings.dart';
 import '../../services/preferences_service.dart';
 import '../../models/default_quotes.dart';
+import '../../theme/design_tokens.dart';
 
 class TypingConfigScreen extends StatefulWidget {
   final MissionSettings initialSettings;
@@ -131,7 +132,7 @@ class _TypingConfigScreenState extends State<TypingConfigScreen> {
                     max: 10,
                     divisions: 9,
                     label: '$_rounds',
-                    activeColor: colorScheme.primary,
+                    activeColor: AppTokens.signal,
                     onChanged: (val) => setState(() => _rounds = val.toInt()),
                   ),
                 ],
@@ -161,7 +162,7 @@ class _TypingConfigScreenState extends State<TypingConfigScreen> {
                   ..._defaultQuotes.map((q) => CheckboxListTile(
                     title: Text(q, style: const TextStyle(fontSize: 14)),
                     value: _enabledQuotes.contains(q),
-                    activeColor: colorScheme.primary,
+                    activeColor: AppTokens.signal,
                     onChanged: (val) {
                       setState(() {
                         if (val == true) _enabledQuotes.add(q);
@@ -176,7 +177,7 @@ class _TypingConfigScreenState extends State<TypingConfigScreen> {
                   ..._customQuotes.map((q) => CheckboxListTile(
                     title: Text(q, style: const TextStyle(fontSize: 14)),
                     value: _enabledQuotes.contains(q),
-                    activeColor: colorScheme.primary,
+                    activeColor: AppTokens.signal,
                     secondary: IconButton(
                       icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
                       onPressed: () => _deleteCustomQuote(q),

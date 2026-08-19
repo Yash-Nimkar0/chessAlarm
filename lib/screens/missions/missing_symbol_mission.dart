@@ -121,10 +121,10 @@ class _MissingSymbolMissionState extends State<MissingSymbolMission> {
                 decoration: BoxDecoration(
                   color: colorScheme.onSurface.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                  border: Border.all(color: colorScheme.primary, width: 2),
+                  border: Border.all(color: AppTokens.signal, width: 2),
                 ),
                 child: Center(
-                  child: Text("?", style: TextStyle(color: colorScheme.primary, fontSize: 32, fontWeight: FontWeight.bold)),
+                  child: Text("?", style: TextStyle(color: AppTokens.signal, fontSize: 32, fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(width: 16),
@@ -160,9 +160,9 @@ class _MissingSymbolMissionState extends State<MissingSymbolMission> {
         width: 64,
         height: 64,
         decoration: BoxDecoration(
-          color: colorScheme.primary.withOpacity(0.2),
+          color: AppTokens.signal.withOpacity(0.2),
           shape: BoxShape.circle,
-          border: Border.all(color: colorScheme.primary),
+          border: Border.all(color: AppTokens.signal),
         ),
         child: Center(
           child: Text(

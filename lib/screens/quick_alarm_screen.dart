@@ -403,7 +403,7 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                 // Top Display — explicit amber tones rather than
                 // colorScheme.primaryContainer, matching this same screen's
                 // own START QUICK ALARM button below: light mode's
-                // colorScheme.primary is a deliberate contrast-safe indigo,
+                // AppTokens.signal is a deliberate contrast-safe indigo,
                 // not the brand's amber, so primaryContainer renders as an
                 // unrelated purple card next to everything else's amber.
                 Container(
@@ -488,7 +488,7 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                           children: [
                             Text(
                               _getMissionDisplayName(_missionSettings.mission),
-                              style: TextStyle(color: colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: AppTokens.signal, fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(width: 4),
                             Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant, size: 20),
@@ -507,7 +507,7 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                   child: Column(
                     children: [
                       ListTile(
-                        leading: Icon(Icons.music_note, color: colorScheme.primary),
+                        leading: Icon(Icons.music_note, color: AppTokens.signal),
                         title: const Text('Sound'),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -550,7 +550,7 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                                 value: _volume,
                                 min: 0.0,
                                 max: 1.0,
-                                activeColor: colorScheme.primary,
+                                activeColor: AppTokens.signal,
                                 onChanged: (val) => setState(() => _volume = val),
                               ),
                             ),
@@ -559,9 +559,9 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                       ),
                       const Divider(height: 1, indent: 56),
                       SwitchListTile(
-                        secondary: Icon(Icons.vibration, color: colorScheme.primary),
+                        secondary: Icon(Icons.vibration, color: AppTokens.signal),
                         title: const Text('Vibrate'),
-                        activeThumbColor: colorScheme.primary,
+                        activeThumbColor: AppTokens.signal,
                         value: _vibrate,
                         onChanged: (val) {
                           Haptics.vibrate(HapticsType.selection);

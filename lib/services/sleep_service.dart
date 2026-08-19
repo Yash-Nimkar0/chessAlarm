@@ -606,7 +606,19 @@ class SleepService {
     final List<String>? jsonList = prefs.getStringList(_historyKey);
     if (jsonList == null) return [];
 
-    return jsonList.map((str) => SleepSession.fromJson(jsonDecode(str))).toList();
+    // One unparseable entry (a corrupt write, a future schema change) used
+    // to take down the whole history — every screen that shows sleep data
+    // would hang on its loading spinner forever, since none of them expect
+    // this call to ever throw. Skip just the bad entry instead.
+    final sessions = <SleepSession>[];
+    for (final str in jsonList) {
+      try {
+        sessions.add(SleepSession.fromJson(jsonDecode(str)));
+      } catch (e) {
+        if (kDebugMode) print('Skipping corrupt sleep history entry: $e');
+      }
+    }
+    return sessions;
   }
   
   static Future<void> cleanupOldClips() async {

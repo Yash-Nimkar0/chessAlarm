@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:alarm/alarm.dart';
+import 'package:haptic_feedback/haptic_feedback.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,6 +17,7 @@ import 'edit_alarm_screen.dart';
 import 'quick_alarm_screen.dart';
 import '../features/sounds/data/sound_repository.dart';
 import '../theme/design_tokens.dart';
+import '../theme/mission_colors.dart';
 import '../widgets/fade_slide_in.dart';
 import '../widgets/breathing_icon.dart';
 import '../widgets/animated_pressable.dart';
@@ -115,6 +117,29 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
+  IconData _missionIcon(MissionType type) {
+    switch (type) {
+      case MissionType.math:
+        return Icons.calculate_rounded;
+      case MissionType.memory:
+        return Icons.psychology_rounded;
+      case MissionType.typing:
+        return Icons.keyboard_rounded;
+      case MissionType.colorTiles:
+        return Icons.grid_view_rounded;
+      case MissionType.missingSymbol:
+        return Icons.extension_rounded;
+      case MissionType.shake:
+        return Icons.vibration_rounded;
+      case MissionType.qr:
+        return Icons.qr_code_scanner_rounded;
+      case MissionType.steps:
+        return Icons.directions_walk_rounded;
+      case MissionType.none:
+        return Icons.alarm_rounded;
+    }
+  }
+
   Widget _buildMockSharedWakeCard() {
     // Explicit amber tones rather than colorScheme.primaryContainer/primary
     // — those correctly follow Material's own conventions, but this app's
@@ -150,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           Switch(
             value: true,
             onChanged: (val) {},
-            activeColor: onDark,
+            activeThumbColor: onDark,
             activeTrackColor: onDark.withValues(alpha: 0.3),
           ),
         ],
@@ -665,7 +690,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             ),
                             child: Icon(Icons.delete_outline_rounded, color: colorScheme.onError, size: 28),
                           ),
-                          child: PlatformCard(
+                          child: Builder(builder: (context) {
+                            final isNext = alarm.enabled && !locked && _nextScheduled?.alarm.id == alarm.id;
+                            final missionIcon = _missionIcon(alarm.mission.type);
+                            final accentColor = locked ? colorScheme.error : missionColor(alarm.mission.type);
+                            return PlatformCard(
                           margin: const EdgeInsets.symmetric(vertical: 8),
                           onTap: locked ? () {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -676,29 +705,58 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               ),
                             );
                           } : () => navigateToAlarmScreen(alarm),
-                          child: Opacity(
+                          child: Container(
+                            decoration: isNext
+                                ? BoxDecoration(
+                                    borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                                    border: Border.all(color: AppTokens.signal.withValues(alpha: 0.5), width: 1.5),
+                                  )
+                                : null,
+                            child: Opacity(
                             opacity: (!alarm.enabled && !locked) ? 0.5 : 1.0,
                             child: Padding(
-                                padding: const EdgeInsets.all(24.0),
+                                padding: const EdgeInsets.all(20.0),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Column(
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      margin: const EdgeInsets.only(top: 2, right: 12),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: accentColor.withValues(alpha: locked ? 0.15 : (alarm.enabled ? 0.18 : 0.08)),
+                                      ),
+                                      child: Icon(locked ? Icons.lock_rounded : missionIcon, color: accentColor, size: 20),
+                                    ),
+                                    Expanded(
+                                      child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
+                                        if (isNext) ...[
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                            margin: const EdgeInsets.only(bottom: 6),
+                                            decoration: BoxDecoration(
+                                              color: AppTokens.signal.withValues(alpha: 0.18),
+                                              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                                            ),
+                                            child: const Text('NEXT UP', style: TextStyle(color: AppTokens.signal, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+                                          ),
+                                        ],
                                         Text(
                                           DateFormat('h:mm a').format(alarm.time),
                                           style: AppTokens.display.copyWith(
-                                            fontSize: 36,
+                                            fontSize: 32,
                                             fontWeight: FontWeight.w900,
                                             color: locked ? colorScheme.onSurface.withValues(alpha: 0.5) : colorScheme.onSurface,
-                                            letterSpacing: 1.5,
+                                            letterSpacing: 1.2,
                                             decoration: alarm.enabled ? TextDecoration.none : TextDecoration.lineThrough,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          alarm.recurrence.isOneShot 
+                                          alarm.recurrence.isOneShot
                                             ? DateFormat('EEEE, MMM d').format(alarm.time)
                                             : alarm.recurrence.displayText,
                                           style: TextStyle(
@@ -718,32 +776,46 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                         const SizedBox(height: 8),
                                         Row(
                                           children: [
-                                            Icon(Icons.music_note, size: 14, color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.3) : colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              SoundRepository.instance.getSoundById(alarm.soundId)?.name ?? 'Unknown',
-                                              style: TextStyle(fontSize: 12, color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : colorScheme.onSurfaceVariant.withValues(alpha: 0.8)),
+                                            Icon(Icons.music_note, size: 13, color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.3) : colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
+                                            const SizedBox(width: 3),
+                                            Flexible(
+                                              flex: 3,
+                                              child: Text(
+                                                SoundRepository.instance.getSoundById(alarm.soundId)?.name ?? 'Unknown',
+                                                style: TextStyle(fontSize: 12, color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : colorScheme.onSurfaceVariant.withValues(alpha: 0.8)),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
                                             ),
-                                            const SizedBox(width: 12),
-                                            Icon(Icons.psychology, size: 14, color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.3) : colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              alarm.mission.type.displayName,
-                                              style: TextStyle(fontSize: 12, color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : colorScheme.onSurfaceVariant.withValues(alpha: 0.8)),
+                                            const SizedBox(width: 8),
+                                            Icon(missionIcon, size: 13, color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.3) : colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
+                                            const SizedBox(width: 3),
+                                            Flexible(
+                                              flex: 2,
+                                              child: Text(
+                                                alarm.mission.type.displayName,
+                                                style: TextStyle(fontSize: 12, color: locked ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5) : colorScheme.onSurfaceVariant.withValues(alpha: 0.8)),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
                                             ),
                                           ],
                                         ),
                                       ],
                                     ),
+                                    ),
                                   if (locked)
-                                    Icon(Icons.lock_rounded, color: colorScheme.error, size: 28)
+                                    const SizedBox(width: 4)
                                   else
                                     Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Switch(
                                           value: alarm.enabled,
+                                          activeThumbColor: AppTokens.signal,
+                                          activeTrackColor: AppTokens.signal.withValues(alpha: 0.35),
                                           onChanged: (val) async {
+                                            Haptics.vibrate(HapticsType.selection);
                                             if (val) {
                                               await AlarmController.instance.enableAlarm(alarm.id);
                                             } else {
@@ -785,10 +857,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 ),
                               ),
                             ),
-                          ),
-                          ),
-                        );
-                      },
+                            ),
+                          );
+                          }),
+                        ),
+                      );
+                        },
                     ),
             ),
           ],

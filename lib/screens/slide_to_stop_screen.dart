@@ -135,8 +135,8 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
                   ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      backgroundColor: AppTokens.signal,
+                      foregroundColor: AppTokens.nightBg,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm))
                     ),
                     child: const Text("Done", style: TextStyle(fontSize: 18)),

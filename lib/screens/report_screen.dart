@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import '../widgets/audio_clip_tile.dart';
 import '../widgets/animated_counter.dart';
 import '../widgets/animated_pressable.dart';
@@ -35,10 +36,28 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Future<void> _loadData() async {
-    final insight = await PerformanceInsightService.getInsights();
-    final sleepHistory = await SleepService.getHistory();
-    final stats = await EloService.getStats();
-    
+    // A failure loading any one of these used to leave _isLoading stuck
+    // true forever with no way for the screen to recover — degrade to
+    // whatever did load successfully instead of hanging on the spinner.
+    Map<String, dynamic> insight = const {};
+    List<SleepSession> sleepHistory = const [];
+    Map<String, dynamic> stats = const {};
+    try {
+      insight = await PerformanceInsightService.getInsights();
+    } catch (e) {
+      if (kDebugMode) print('ReportScreen: failed to load insights: $e');
+    }
+    try {
+      sleepHistory = await SleepService.getHistory();
+    } catch (e) {
+      if (kDebugMode) print('ReportScreen: failed to load sleep history: $e');
+    }
+    try {
+      stats = await EloService.getStats();
+    } catch (e) {
+      if (kDebugMode) print('ReportScreen: failed to load stats: $e');
+    }
+
     if (mounted) {
       setState(() {
         _stats = stats;

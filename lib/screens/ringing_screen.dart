@@ -136,8 +136,8 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
                     ElevatedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary, 
-                        foregroundColor: Theme.of(context).colorScheme.onPrimary, 
+                        backgroundColor: AppTokens.signal, 
+                        foregroundColor: AppTokens.nightBg, 
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm))
                       ),
                       child: const Text("Done", style: TextStyle(fontSize: 18)),
@@ -201,8 +201,8 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
                     ElevatedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                        backgroundColor: AppTokens.signal,
+                        foregroundColor: AppTokens.nightBg,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSm))
                       ),
                       child: const Text("Done", style: TextStyle(fontSize: 18)),
@@ -282,13 +282,13 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
         child: ElevatedButton(
           onPressed: _handleSuccess,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.primary,
+            backgroundColor: AppTokens.signal,
             padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusLg)),
           ),
           child: Text(
             'Stop Alarm',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimary),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTokens.nightBg),
           ),
         ),
       );

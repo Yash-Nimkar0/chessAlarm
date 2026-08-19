@@ -128,14 +128,14 @@ class _MemoryMissionState extends State<MemoryMission> {
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w900,
-            color: _isPlayingSequence ? colorScheme.primary : colorScheme.onSurface,
+            color: _isPlayingSequence ? AppTokens.signal : colorScheme.onSurface,
             letterSpacing: 2.0,
           ),
         ),
         const SizedBox(height: 10),
         Text(
           "Round ${_currentRound + 1} of $_totalRounds",
-          style: TextStyle(color: colorScheme.primary.withValues(alpha: 0.8), fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(color: AppTokens.signal.withValues(alpha: 0.8), fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
         Text(

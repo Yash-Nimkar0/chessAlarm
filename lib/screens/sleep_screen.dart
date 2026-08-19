@@ -510,19 +510,19 @@ class _SleepScreenState extends State<SleepScreen> {
               width: 70,
               height: 70,
               decoration: BoxDecoration(
-                color: isPlaying ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2) : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                color: isPlaying ? AppTokens.signal.withValues(alpha: 0.2) : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isPlaying ? Theme.of(context).colorScheme.primary : Colors.transparent,
+                  color: isPlaying ? AppTokens.signal : Colors.transparent,
                   width: 2,
                 ),
                 boxShadow: isPlaying
-                    ? [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.35), blurRadius: 14, offset: const Offset(0, 4))]
+                    ? [BoxShadow(color: AppTokens.signal.withValues(alpha: 0.35), blurRadius: 14, offset: const Offset(0, 4))]
                     : null,
               ),
               child: Center(
                 child: isPlaying
-                    ? _PlayingPulseIcon(icon: icon, color: Theme.of(context).colorScheme.primary)
+                    ? _PlayingPulseIcon(icon: icon, color: AppTokens.signal)
                     : Icon(icon, size: 32, color: Theme.of(context).colorScheme.onSurface),
               ),
             ),
@@ -533,7 +533,7 @@ class _SleepScreenState extends State<SleepScreen> {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 12,
-                color: isPlaying ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
+                color: isPlaying ? AppTokens.signal : Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: isPlaying ? FontWeight.bold : FontWeight.normal,
               ),
             ),

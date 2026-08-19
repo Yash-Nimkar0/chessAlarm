@@ -1,5 +1,6 @@
 import 'report_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import '../services/preferences_service.dart';
 import '../utils/greeting_utils.dart';
 import '../widgets/weather_widget.dart';
@@ -43,8 +44,21 @@ class _MorningScreenState extends State<MorningScreen> {
   }
 
   Future<void> _loadData() async {
-    final stats = await EloService.getStats();
-    final sleepHistory = await SleepService.getHistory();
+    // A failure partway through (a bad read, a corrupt stored value) used
+    // to leave _isLoading stuck true forever — the screen just sat on its
+    // spinner with no way out. Degrade to whatever stats did load instead.
+    Map<String, int> stats = const {};
+    List<SleepSession> sleepHistory = const [];
+    try {
+      stats = await EloService.getStats();
+    } catch (e) {
+      if (kDebugMode) print('MorningScreen: failed to load stats: $e');
+    }
+    try {
+      sleepHistory = await SleepService.getHistory();
+    } catch (e) {
+      if (kDebugMode) print('MorningScreen: failed to load sleep history: $e');
+    }
 
     if (mounted) {
       setState(() {
