@@ -3,6 +3,7 @@ import 'package:alarm/alarm.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import '../features/alarms/application/alarm_controller.dart';
 import '../features/alarms/application/wake_session_controller.dart';
+import '../features/alarms/application/wake_audio_session_controller.dart';
 
 import 'dart:io';
 import '../models/mission_settings.dart';
@@ -101,27 +102,27 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
     }
   }
 
-  void _skipPuzzle() async {
+  void _emergencyEscape() async {
     if (_isProcessing) return;
     
     final prefs = await SharedPreferences.getInstance();
-    final monthKey = 'skips_${DateTime.now().year}_${DateTime.now().month}';
-    final currentSkips = prefs.getInt(monthKey) ?? 0;
+    final monthKey = 'emergency_escapes_${DateTime.now().year}_${DateTime.now().month}';
+    final currentEscapes = prefs.getInt(monthKey) ?? 0;
     
-    if (currentSkips >= 3) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No Backup Unlocks remaining this month.')));
+    if (currentEscapes >= 3) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No Emergency Escapes remaining this month.')));
       return;
     }
     
     Haptics.vibrate(HapticsType.heavy);
-    await prefs.setInt(monthKey, currentSkips + 1);
-    AnalyticsService.logEvent('backup_unlock_used');
+    await prefs.setInt(monthKey, currentEscapes + 1);
+    AnalyticsService.logEvent('emergency_escape_used');
     
     if (mounted) {
       setState(() => _isProcessing = true);
     }
     
-    await WakeSessionController.instance.completeSession();
+    await WakeSessionController.instance.emergencyEscape();
     
     if (mounted) {
       int elapsed = DateTime.now().difference(_startTime).inSeconds;
@@ -256,21 +257,21 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
     int difficulty = _missionSettings.difficultyOverride ?? 400;
     
     if (_missionSettings.mission == 'math') {
-      content = MathMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, settings: _missionSettings);
+      content = MathMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _missionSettings);
     } else if (_missionSettings.mission == 'memory') {
-      content = MemoryMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, settings: _missionSettings);
+      content = MemoryMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _missionSettings);
     } else if (_missionSettings.mission == 'typing') {
-      content = TypingMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, settings: _missionSettings);
+      content = TypingMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _missionSettings);
     } else if (_missionSettings.mission == 'color_tiles') {
-      content = ColorTilesMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, settings: _missionSettings);
+      content = ColorTilesMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _missionSettings);
     } else if (_missionSettings.mission == 'missing_symbol') {
-      content = MissingSymbolMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, settings: _missionSettings);
+      content = MissingSymbolMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _missionSettings);
     } else if (_missionSettings.mission == 'shake') {
-      content = ShakeMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, settings: _missionSettings);
+      content = ShakeMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _missionSettings);
     } else if (_missionSettings.mission == 'qr') {
-      content = QRMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, missionData: _missionSettings.missionData ?? {});
+      content = QRMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, missionData: _missionSettings.missionData ?? {});
     } else if (_missionSettings.mission == 'steps') {
-      content = StepsMission(onSuccess: _handleSuccess, onSkip: _skipPuzzle, missionData: _missionSettings.missionData ?? {});
+      content = StepsMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, missionData: _missionSettings.missionData ?? {});
     } else {
       content = Center(
         child: ElevatedButton(
@@ -327,21 +328,43 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
                             ),
                           ),
                         ),
+                      ListenableBuilder(
+                        listenable: WakeAudioSessionController.instance,
+                        builder: (context, _) {
+                          final audio = WakeAudioSessionController.instance;
+                          if (!audio.isFading && !audio.isTestMode) return const SizedBox.shrink();
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'DEV MODE - Volume: ${(audio.currentVolume * 100).toInt()}%',
+                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          );
+                        },
+                      ),
                       Expanded(child: content),
                       Padding(
                         padding: const EdgeInsets.only(top: 16.0),
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Snooze deferred to future phase.')),
-                            );
-                          },
-                          icon: Icon(Icons.snooze, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                          label: Text('Snooze', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        child: GestureDetector(
+                          onLongPress: _emergencyEscape,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Long press for Emergency Escape (Limits apply).')),
+                              );
+                            },
+                            icon: Icon(Icons.warning, color: Theme.of(context).colorScheme.error),
+                            label: Text('Emergency Escape', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            ),
                           ),
                         ),
                       ),

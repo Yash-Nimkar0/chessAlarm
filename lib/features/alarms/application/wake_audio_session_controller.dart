@@ -23,11 +23,16 @@ class WakeAudioSessionController extends ChangeNotifier {
   double _systemOutputVolume = 0.0;
   double get systemOutputVolume => _systemOutputVolume;
 
+  bool get isFading => _fadeTimer != null && _fadeTimer!.isActive;
+
   static final WakeAudioSessionController instance = WakeAudioSessionController._();
   WakeAudioSessionController._();
 
+  @visibleForTesting
+  bool isTestMode = false;
+
   /// Starts the audio session and playback for the given alarm.
-  Future<void> startAudio(WakelyAlarm alarm) async {
+  Future<void> startAudio(WakelyAlarm alarm, {bool isHandoff = false}) async {
     if (_isActive) {
       debugPrint('WakeAudioSession already active, ignoring start request.');
       return;
@@ -35,6 +40,25 @@ class WakeAudioSessionController extends ChangeNotifier {
 
     _isActive = true;
     _currentVolume = 0.0;
+    
+    // User configuration
+    final bool userFadeIn = alarm.fadeIn;
+    final int userFadeDuration = alarm.fadeDuration;
+    
+    // Technical transition
+    // If handoff and user fade is OFF, apply a short 2s transition to avoid abrupt restart
+    final bool shouldFade = userFadeIn || isHandoff;
+    final int effectiveFadeDuration = userFadeIn ? userFadeDuration : (isHandoff ? 2 : 0);
+
+    if (isTestMode) {
+      if (shouldFade && effectiveFadeDuration > 0) {
+        _startFade(effectiveFadeDuration);
+      } else {
+        _currentVolume = 1.0;
+        notifyListeners();
+      }
+      return;
+    }
 
     await _initAudioContext();
     _startVolumeObservation();
@@ -43,13 +67,17 @@ class WakeAudioSessionController extends ChangeNotifier {
     final soundModel = SoundRepository.instance.getSoundById(soundId);
     final assetPath = soundModel?.path.replaceFirst('assets/', '') ?? 'audio/alarms/misogi77-ringphone-191692.mp3';
 
-    await _audioPlayer.setVolume(alarm.fadeIn ? 0.0 : 1.0);
     await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+    
+    // 1. Play first at volume 0 (implicitly or explicitly soon)
     await _audioPlayer.play(AssetSource(assetPath));
 
-    if (alarm.fadeIn && alarm.fadeDuration > 0) {
-      _startFade(alarm.fadeDuration);
+    // 2. Set volume immediately after play to avoid iOS race condition
+    if (shouldFade && effectiveFadeDuration > 0) {
+      await _audioPlayer.setVolume(0.0);
+      _startFade(effectiveFadeDuration);
     } else {
+      await _audioPlayer.setVolume(1.0);
       _currentVolume = 1.0;
       notifyListeners();
     }
@@ -95,7 +123,11 @@ class WakeAudioSessionController extends ChangeNotifier {
     _fadeTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       elapsed++;
       _currentVolume = (elapsed / durationSeconds).clamp(0.0, 1.0);
-      _audioPlayer.setVolume(_currentVolume);
+      
+      if (!isTestMode) {
+        _audioPlayer.setVolume(_currentVolume);
+      }
+      
       notifyListeners();
 
       if (elapsed >= durationSeconds) {
@@ -111,9 +143,12 @@ class WakeAudioSessionController extends ChangeNotifier {
     _isActive = false;
     _fadeTimer?.cancel();
     _volumeSubscription?.cancel();
-    VolumeController.instance.removeListener();
     
-    await _audioPlayer.stop();
+    if (!isTestMode) {
+      VolumeController.instance.removeListener();
+      await _audioPlayer.stop();
+    }
+    
     notifyListeners();
   }
 }

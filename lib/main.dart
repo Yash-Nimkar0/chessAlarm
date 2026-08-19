@@ -133,16 +133,36 @@ class _WakelyAppState extends State<WakelyApp> {
       }
     });
 
-    // Listen for WakeSession triggers (from AlarmKit or internal)
-    WakeSessionController.instance.sessionStream.listen((alarm) {
-      // For native notifications, the user already 'swiped' the notification to open the app.
-      // So we skip the SlideToStopScreen and go straight to the missions (RingingScreen).
-      navigatorKey.currentState?.push(
-        MaterialPageRoute(
-          builder: (context) => RingingScreen(alarmSettings: alarm.toAlarmSettings()),
-        ),
-      );
+    // Listen for state changes instead of flaky ephemeral events
+    WakeSessionController.instance.addListener(_onWakeSessionChanged);
+    
+    // Check if we booted up with an active session already queued
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _onWakeSessionChanged();
     });
+  }
+
+  bool _isShowingWakeUI = false;
+
+  void _onWakeSessionChanged() {
+    final session = WakeSessionController.instance;
+    final nav = navigatorKey.currentState;
+    
+    if (nav == null) return;
+
+    if (session.isActive && !_isShowingWakeUI && session.activeAlarm != null) {
+      _isShowingWakeUI = true;
+      nav.push(
+        MaterialPageRoute(
+          builder: (context) => RingingScreen(alarmSettings: session.activeAlarm!.toAlarmSettings()),
+        ),
+      ).then((_) {
+        _isShowingWakeUI = false;
+      });
+    } else if (!session.isActive && _isShowingWakeUI) {
+      // If the session was closed programmatically (e.g. stopped externally)
+      // we might want to pop, but typically RingingScreen handles its own pop.
+    }
   }
 
   void navigateToRingScreen(AlarmSettings alarmSettings) {
@@ -156,6 +176,7 @@ class _WakelyAppState extends State<WakelyApp> {
   @override
   void dispose() {
     _ringSubscription?.cancel();
+    WakeSessionController.instance.removeListener(_onWakeSessionChanged);
     super.dispose();
   }
 

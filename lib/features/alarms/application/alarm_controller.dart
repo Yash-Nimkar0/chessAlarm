@@ -5,6 +5,8 @@ import '../data/alarm_repository.dart';
 import '../data/alarm_scheduler.dart';
 import '../data/alarm_id_allocator.dart';
 import '../domain/alarm_event.dart';
+import '../domain/platform_alarm_state.dart';
+import '../data/alarm_kit_uuid.dart';
 import 'wake_session_controller.dart';
 
 import 'package:flutter/foundation.dart';
@@ -49,69 +51,163 @@ class AlarmController extends ChangeNotifier {
 
     // 2. Setup native bridge for AlarmKit (iOS 26+)
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      final channel = MethodChannel('wakely.alarmkit');
+      final channel = const MethodChannel('wakely.alarmkit');
 
-      // Check for any interactions that happened while Flutter was dead
+      // 3. Establish native `alarmUpdates` subscription early so we don't miss anything
+      _eventSubscription = _eventChannel.receiveBroadcastStream().listen(_handleNativeEvent, onError: (e) {
+        debugPrint('AlarmKit event channel error: $e');
+      });
+
+      // 4. Fetch pending cold-start interactions
+      int? pendingInteractionId;
       try {
         final pendingId = await channel.invokeMethod<String>('getPendingAlarmInteraction');
         if (pendingId != null) {
-          final id = int.tryParse(pendingId);
-          if (id != null) {
-            _routeNativeEvent(id, AlarmNativeState.unknown, AlarmInteractionType.stop);
-          }
+          pendingInteractionId = int.tryParse(pendingId);
         }
       } catch (e) {
         debugPrint('Error getting pending interaction: $e');
       }
 
-      // Listen for canonical events while Flutter is running
-      _eventSubscription = _eventChannel.receiveBroadcastStream().listen((event) {
-        if (event is Map) {
-          final type = event['type'];
-          
-          if (type == 'interaction') {
-            final id = int.tryParse(event['alarmId'] as String? ?? '');
-            if (id != null) {
-              _routeNativeEvent(id, AlarmNativeState.unknown, AlarmInteractionType.stop);
-            }
-          } else if (type == 'update') {
-            final alarms = event['alarms'] as List<dynamic>?;
-            if (alarms != null) {
-              for (final alarmData in alarms) {
-                if (alarmData is Map) {
-                  final idStr = alarmData['id'] as String?;
-                  final stateStr = alarmData['state'] as String?;
-                  
-                  // Only map valid IDs (the iOS UUID mapping assumes string parsing fallback or matching)
-                  // In AlarmKitManager.swift we map UUID.uuidString but Flutter expects integer IDs.
-                  // We must parse the UUID back to an integer ID.
-                  final id = _parseUUIDToId(idStr);
-                  
-                  if (id != null && stateStr != null) {
-                    final state = _parseState(stateStr);
-                    // Only route actionable states
-                    if (state == AlarmNativeState.firing) {
-                      _routeNativeEvent(id, state, AlarmInteractionType.none);
-                    }
-                  }
+      // 5. Query native AlarmKit state
+      final nativeAlarms = await _scheduler.getScheduledAlarms();
+
+      // 6. & 7. Perform DB vs Native Reconciliation and WakeSession Recovery
+      await _reconcile(nativeAlarms);
+
+      // 8. Route pending interaction if any
+      if (pendingInteractionId != null) {
+        _routeNativeEvent(pendingInteractionId, AlarmNativeState.unknown, AlarmInteractionType.stop);
+      }
+    } else {
+      // Legacy Android/iOS behavior: still reconcile local vs native based on plugin state
+      final nativeAlarms = await _scheduler.getScheduledAlarms();
+      await _reconcile(nativeAlarms);
+    }
+  }
+
+  void _handleNativeEvent(dynamic event) {
+    if (event is Map) {
+      final type = event['type'];
+      
+      if (type == 'interaction') {
+        final id = int.tryParse(event['alarmId'] as String? ?? '');
+        if (id != null) {
+          _routeNativeEvent(id, AlarmNativeState.unknown, AlarmInteractionType.stop);
+        }
+      } else if (type == 'interactionOpenWakely') {
+        final id = int.tryParse(event['alarmId'] as String? ?? '');
+        if (id != null) {
+          _routeNativeEvent(id, AlarmNativeState.unknown, AlarmInteractionType.openWakely);
+        }
+      } else if (type == 'update') {
+        final alarms = event['alarms'] as List<dynamic>?;
+        if (alarms != null) {
+          for (final alarmData in alarms) {
+            if (alarmData is Map) {
+              final idStr = alarmData['id'] as String?;
+              final stateStr = alarmData['state'] as String?;
+              
+              final id = parseAlarmKitUUID(idStr);
+              if (id != null && stateStr != null) {
+                final state = _parseState(stateStr);
+                if (state == AlarmNativeState.firing) {
+                  _routeNativeEvent(id, state, AlarmInteractionType.none);
                 }
               }
             }
           }
         }
-      }, onError: (e) {
-        debugPrint('AlarmKit event channel error: $e');
-      });
+      }
     }
   }
 
-  int? _parseUUIDToId(String? uuidStr) {
-    if (uuidStr == null) return null;
-    // Remove all non-numeric characters that might have been mapped to UUID
-    final numericOnly = uuidStr.replaceAll(RegExp(r'[^0-9]'), '');
-    if (numericOnly.isEmpty) return null;
-    // The original ID is at the start or stripped of leading zeros
-    return int.tryParse(numericOnly.replaceFirst(RegExp(r'^0+'), ''));
+  /// Reconciles local DB state against the native platform state.
+  /// Applies rules for recovering interrupted missions or canceling stale ones.
+  Future<void> _reconcile(List<PlatformAlarmState> nativeAlarms) async {
+    final alarms = await getAlarms();
+    final now = DateTime.now();
+    
+    final nativeIds = nativeAlarms.map((na) => na.alarmId).toSet();
+    final activeSessionId = await WakeSessionController.instance.getDurableActiveSessionId();
+    
+    for (final alarm in alarms) {
+      final isInNative = nativeIds.contains(alarm.id);
+      
+      if (!alarm.enabled) {
+        // Disabled but exists in native -> Cancel
+        if (isInNative) {
+          debugPrint('Reconcile: Alarm ${alarm.id} is disabled but scheduled natively. Canceling native.');
+          await _scheduler.cancel(alarm.id);
+        }
+        continue;
+      }
+      
+      // It is Enabled. Let's check its time relevance.
+      DateTime? resolvedTime;
+      if (alarm.recurrence.isOneShot) {
+        resolvedTime = alarm.time;
+      } else {
+        // For recurring alarms, the original `time` might be past, but we look at nextOccurrence
+        resolvedTime = AlarmScheduler.nextOccurrence(alarm, now);
+      }
+      
+      if (resolvedTime == null) {
+        // A one-shot that is past, or a recurrence that couldn't yield a next time
+        // Wait, what if it's an interrupted WakeSession?
+        if (activeSessionId == alarm.id) {
+          // This was the active session during a crash. Recover it.
+          debugPrint('Reconcile: Alarm ${alarm.id} crashed during mission. Recovering WakeSession.');
+          _routeNativeEvent(alarm.id, AlarmNativeState.firing, AlarmInteractionType.none);
+        } else {
+          // Normal stale one-shot
+          debugPrint('Reconcile: Alarm ${alarm.id} is stale and was not active. Disabling.');
+          final updatedAlarm = alarm.copyWith(enabled: false, updatedAt: now);
+          await _repository.save(updatedAlarm);
+          if (isInNative) await _scheduler.cancel(alarm.id);
+        }
+      } else if (resolvedTime.isBefore(now) || resolvedTime.isAtSameMomentAs(now)) {
+        // Still stale even after resolution (should only happen for one-shot past alarms)
+        if (activeSessionId == alarm.id) {
+          debugPrint('Reconcile: Alarm ${alarm.id} crashed during mission. Recovering WakeSession.');
+          _routeNativeEvent(alarm.id, AlarmNativeState.firing, AlarmInteractionType.none);
+        } else {
+          debugPrint('Reconcile: Alarm ${alarm.id} is stale and was not active. Disabling.');
+          final updatedAlarm = alarm.copyWith(enabled: false, updatedAt: now);
+          await _repository.save(updatedAlarm);
+          if (isInNative) await _scheduler.cancel(alarm.id);
+        }
+      } else {
+        // It's in the future.
+        if (!isInNative) {
+          // Enabled + future + native missing -> Schedule it
+          debugPrint('Reconcile: Alarm ${alarm.id} is enabled for future but missing natively. Rescheduling.');
+          final updatedAlarm = alarm.copyWith(time: resolvedTime, updatedAt: now);
+          await _scheduler.schedule(updatedAlarm);
+          if (resolvedTime != alarm.time) {
+             await _repository.save(updatedAlarm);
+          }
+        } else {
+          // Enabled + future + native exists -> Keep
+          // But update the local time if it's a recurring alarm whose base time is past
+          if (resolvedTime != alarm.time) {
+            debugPrint('Reconcile: Alarm ${alarm.id} is recurring and base time is past. Advancing to nextOccurrence.');
+            final updatedAlarm = alarm.copyWith(time: resolvedTime, updatedAt: now);
+            await _scheduler.schedule(updatedAlarm);
+            await _repository.save(updatedAlarm);
+          }
+        }
+      }
+    }
+    
+    // Pass 2: Find orphaned native alarms (deleted locally)
+    final localIds = alarms.map((a) => a.id).toSet();
+    for (final nativeAlarm in nativeAlarms) {
+      if (!localIds.contains(nativeAlarm.alarmId)) {
+        debugPrint('Reconcile: Alarm ${nativeAlarm.alarmId} exists natively but is deleted locally. Canceling native.');
+        await _scheduler.cancel(nativeAlarm.alarmId);
+      }
+    }
   }
 
   AlarmNativeState _parseState(String stateStr) {
@@ -126,10 +222,17 @@ class AlarmController extends ChangeNotifier {
   }
 
   void _routeNativeEvent(int alarmId, AlarmNativeState state, AlarmInteractionType interaction) {
+    // If the user interacted, we assume they stopped the native alarm, so Wakely takes over audio.
+    // Otherwise, assume native AlarmKit owns the audio (e.g. standard firing event).
+    final ownership = (interaction == AlarmInteractionType.stop || interaction == AlarmInteractionType.openWakely) 
+        ? AudioOwnership.wakely 
+        : AudioOwnership.nativeAlarmKit;
+
     final event = AlarmEvent(
       alarmId: alarmId,
       state: state,
       interaction: interaction,
+      audioOwnership: ownership,
       timestamp: DateTime.now(),
     );
     WakeSessionController.instance.handleAlarmEvent(event);
@@ -211,19 +314,29 @@ class AlarmController extends ChangeNotifier {
   /// Allocates a new ID, schedules it if enabled, and persists it.
   Future<WakelyAlarm> createAlarm(WakelyAlarm alarm) async {
     final newId = await AlarmIdAllocator.allocate();
-    
-    // Set ID and enforce future time for creation
-    final alarmWithId = alarm.copyWith(id: newId);
-    final timeWithFuture = _ensureFutureOneShot(alarmWithId, DateTime.now());
-    final alarmWithFuture = alarmWithId.copyWith(time: timeWithFuture);
-    
+    return _scheduleAndPersist(alarm.copyWith(id: newId));
+  }
+
+  /// Create or replace an alarm using the ID already set on [alarm], bypassing
+  /// [AlarmIdAllocator]. Used for alarms whose ID must be deterministic and
+  /// known ahead of time (e.g. the Wake Check fallback, which is derived from
+  /// its parent alarm's ID so it can be reliably cancelled later).
+  Future<WakelyAlarm> createAlarmWithExplicitId(WakelyAlarm alarm) {
+    return _scheduleAndPersist(alarm);
+  }
+
+  Future<WakelyAlarm> _scheduleAndPersist(WakelyAlarm alarm) async {
+    // Enforce future time for creation
+    final timeWithFuture = _ensureFutureOneShot(alarm, DateTime.now());
+    final alarmWithFuture = alarm.copyWith(time: timeWithFuture);
+
     final fireTime = AlarmScheduler.calculateFireTime(alarmWithFuture, DateTime.now());
     final finalAlarm = alarmWithFuture.copyWith(time: fireTime);
 
     if (finalAlarm.enabled) {
       await _scheduler.schedule(finalAlarm);
     }
-    
+
     final saved = await _repository.save(finalAlarm);
     notifyListeners();
     return saved;

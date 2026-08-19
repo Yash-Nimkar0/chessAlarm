@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:alarm/alarm.dart';
 import 'dart:async';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/alarms/application/alarm_controller.dart';
 import '../features/alarms/application/wake_session_controller.dart';
@@ -236,6 +237,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
+  Future<WakelyAlarm> _createFakeAlarm(String soundId, {bool fadeIn = false, int fadeDuration = 0}) async {
+    final fakeAlarm = WakelyAlarm(
+      id: 9999, 
+      time: DateTime.now(),
+      enabled: true,
+      type: AlarmType.standard,
+      soundId: soundId,
+      fadeIn: fadeIn,
+      fadeDuration: fadeDuration,
+      mission: MissionConfig(type: MissionType.typing),
+      recurrence: Recurrence.none(),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    return await AlarmController.instance.createAlarm(fakeAlarm);
+  }
+
   void _showDeveloperHarness() {
     showDialog(
       context: context,
@@ -260,47 +278,176 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       if (val != null) setState(() => selectedSound = val);
                     },
                   ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      final savedAlarm = await _createFakeAlarm(selectedSound);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mode A: Native Firing in 3s...')));
+                      
+                      Future.delayed(const Duration(seconds: 3), () {
+                        WakeSessionController.instance.handleAlarmEvent(AlarmEvent(
+                          alarmId: savedAlarm.id,
+                          state: AlarmNativeState.firing,
+                          audioOwnership: AudioOwnership.nativeAlarmKit,
+                          timestamp: DateTime.now(),
+                        ));
+                      });
+                    },
+                    child: const Text('Mode A (Native Firing)'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      final savedAlarm = await _createFakeAlarm(selectedSound);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mode B: Wakely Firing in 3s...')));
+                      
+                      Future.delayed(const Duration(seconds: 3), () {
+                        WakeSessionController.instance.handleAlarmEvent(AlarmEvent(
+                          alarmId: savedAlarm.id,
+                          state: AlarmNativeState.firing,
+                          audioOwnership: AudioOwnership.wakely,
+                          timestamp: DateTime.now(),
+                        ));
+                      });
+                    },
+                    child: const Text('Mode B (Wakely Firing)'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      final savedAlarm = await _createFakeAlarm(selectedSound);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mode C: Handoff Simulation in 3s...')));
+                      
+                      Future.delayed(const Duration(seconds: 3), () {
+                        // 1. Initial native firing
+                        WakeSessionController.instance.handleAlarmEvent(AlarmEvent(
+                          alarmId: savedAlarm.id,
+                          state: AlarmNativeState.firing,
+                          audioOwnership: AudioOwnership.nativeAlarmKit,
+                          timestamp: DateTime.now(),
+                        ));
+                        
+                        // 2. Simulated interaction 2 seconds later
+                        Future.delayed(const Duration(seconds: 2), () {
+                          WakeSessionController.instance.handleAlarmEvent(AlarmEvent(
+                            alarmId: savedAlarm.id,
+                            state: AlarmNativeState.unknown,
+                            interaction: AlarmInteractionType.stop,
+                            audioOwnership: AudioOwnership.wakely,
+                            timestamp: DateTime.now(),
+                          ));
+                        });
+                      });
+                    },
+                    child: const Text('Mode C (Production Handoff)'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      final savedAlarm = await _createFakeAlarm(selectedSound);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mode E: Cold Start Simulation in 3s...')));
+                      
+                      Future.delayed(const Duration(seconds: 3), () {
+                        // Simulate AlarmController receiving pending interaction BEFORE UI mounts
+                        WakeSessionController.instance.handleAlarmEvent(AlarmEvent(
+                          alarmId: savedAlarm.id,
+                          state: AlarmNativeState.firing,
+                          audioOwnership: AudioOwnership.wakely,
+                          timestamp: DateTime.now(),
+                        ));
+                      });
+                    },
+                    child: const Text('Mode E (Cold Start/Recovery)'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      final savedAlarm = await _createFakeAlarm(selectedSound, fadeIn: true, fadeDuration: 5);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mode F: Fade Diagnostic in 3s...')));
+                      
+                      Future.delayed(const Duration(seconds: 3), () {
+                        WakeSessionController.instance.handleAlarmEvent(AlarmEvent(
+                          alarmId: savedAlarm.id,
+                          state: AlarmNativeState.firing,
+                          audioOwnership: AudioOwnership.wakely,
+                          timestamp: DateTime.now(),
+                        ));
+                      });
+                    },
+                    child: const Text('Mode F (Fade ON 5s Diagnostic)'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      final savedAlarm = await _createFakeAlarm(selectedSound);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mode G: Force-Quit Recovery...')));
+                      
+                      Future.delayed(const Duration(seconds: 1), () async {
+                        // Start session
+                        await WakeSessionController.instance.startSession(savedAlarm.id, startAudio: false);
+                        // Simulate force-quit by clearing active UI state but leaving SharedPreferences ID
+                        await WakeSessionController.instance.stopSession();
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setInt('wakely_active_session_alarm_id', savedAlarm.id);
+                        
+                        // Simulate cold restart
+                        Future.delayed(const Duration(seconds: 2), () {
+                          // This would normally be called by main.dart or AlarmController.reconcile
+                          WakeSessionController.instance.handleAlarmEvent(AlarmEvent(
+                            alarmId: savedAlarm.id,
+                            state: AlarmNativeState.firing,
+                            audioOwnership: AudioOwnership.wakely,
+                            timestamp: DateTime.now(),
+                          ));
+                        });
+                      });
+                    },
+                    child: const Text('Mode G (Force-Quit Recovery)'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      final savedAlarm = await _createFakeAlarm(selectedSound);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mode H: Native Dismissal -> WakeCheck...')));
+                      
+                      Future.delayed(const Duration(seconds: 2), () {
+                        // Simulate user stopping natively
+                        WakeSessionController.instance.handleAlarmEvent(AlarmEvent(
+                          alarmId: savedAlarm.id,
+                          state: AlarmNativeState.stopped,
+                          interaction: AlarmInteractionType.stop,
+                          audioOwnership: AudioOwnership.nativeAlarmKit,
+                          timestamp: DateTime.now(),
+                        ));
+                      });
+                    },
+                    child: const Text('Mode H (Native Dismissal)'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      final savedAlarm = await _createFakeAlarm(selectedSound);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mode J: Wake Check Re-alert Simulation...')));
+                      
+                      Future.delayed(const Duration(seconds: 2), () {
+                        // Simulate Wake Check Quick Alarm firing
+                        WakeSessionController.instance.handleAlarmEvent(AlarmEvent(
+                          alarmId: 99999 + savedAlarm.id, // The wake check offset
+                          state: AlarmNativeState.firing,
+                          audioOwnership: AudioOwnership.wakely,
+                          timestamp: DateTime.now(),
+                        ));
+                      });
+                    },
+                    child: const Text('Mode J (Wake Check Simulation)'),
+                  ),
                 ],
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    Navigator.pop(context);
-                    
-                    // Create a fake alarm in the DB to represent this test
-                    final fakeAlarm = WakelyAlarm(
-                      id: 9999, // Developer ID
-                      time: DateTime.now(),
-                      enabled: true,
-                      type: AlarmType.standard,
-                      soundId: selectedSound,
-                      mission: MissionConfig(type: MissionType.typing),
-                      recurrence: Recurrence.none(),
-                      createdAt: DateTime.now(),
-                      updatedAt: DateTime.now(),
-                    );
-                    
-                    // Save it directly without scheduling
-                    await AlarmController.instance.createAlarm(fakeAlarm);
-                    
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Triggering in 3 seconds...')));
-                    
-                    Future.delayed(const Duration(seconds: 3), () {
-                      // Inject canonical event
-                      final event = AlarmEvent(
-                        alarmId: 9999,
-                        state: AlarmNativeState.firing,
-                        interaction: AlarmInteractionType.none,
-                        timestamp: DateTime.now(),
-                      );
-                      WakeSessionController.instance.handleAlarmEvent(event);
-                    });
-                  },
-                  child: const Text('Trigger'),
                 ),
               ],
             );

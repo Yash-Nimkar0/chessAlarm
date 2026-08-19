@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import '../domain/alarm_model.dart';
 import '../domain/platform_alarm_state.dart';
 import 'platform_alarm_scheduler.dart';
+import 'alarm_kit_uuid.dart';
 import '../../sounds/data/sound_repository.dart';
 
 /// AlarmKit implementation for iOS 26+ devices.
@@ -38,7 +39,10 @@ class AlarmKitIOSAlarmScheduler implements PlatformAlarmScheduler {
     return alarms.map((data) {
       final map = data as Map<dynamic, dynamic>;
       return PlatformAlarmState(
-        alarmId: int.tryParse(map['id'] as String ?? '') ?? -1,
+        // `id` here is the native UUID string, not a plain integer — it must
+        // be decoded with parseAlarmKitUUID, mirroring getUUID(for:) on the
+        // Swift side, not parsed directly.
+        alarmId: parseAlarmKitUUID(map['id'] as String?) ?? -1,
         nativeState: map['state'] as String ?? 'unknown',
         scheduledAt: map['scheduledAt'] != null 
             ? DateTime.fromMillisecondsSinceEpoch(map['scheduledAt'] as int)

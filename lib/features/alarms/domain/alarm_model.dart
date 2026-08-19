@@ -42,6 +42,27 @@ enum AlarmType {
   }
 }
 
+/// Represents the state of the Wake Check (re-alert enforcement mechanism).
+enum WakeCheckState {
+  disabled,
+  waiting,
+  checking,
+  confirmed,
+  failed,
+  reAlertPending
+}
+
+/// Represents the logical state of an active wake session.
+enum WakeSessionState {
+  active,
+  missionInProgress,
+  awaitingWakeCheck,
+  reAlertPending,
+  recovering,
+  completed,
+  emergencyEscaped
+}
+
 /// The core alarm domain model.
 ///
 /// This is the single source of truth for an alarm's configuration.
