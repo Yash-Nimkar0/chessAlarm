@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme/design_tokens.dart';
+import '../services/wallpaper_service.dart';
 
 class PlatformScaffold extends StatelessWidget {
   final Widget body;
@@ -19,6 +20,30 @@ class PlatformScaffold extends StatelessWidget {
     this.bottomNavigationBar,
   }) : super(key: key);
 
+  /// Renders the user's chosen background photo full-bleed behind
+  /// everything, dimmed by their chosen amount so text and cards (already
+  /// semi-transparent/frosted) stay legible over any photo. A single
+  /// shared implementation here means every screen gets this for free
+  /// through PlatformScaffold rather than needing its own wiring.
+  Widget _backgroundLayer() {
+    return ListenableBuilder(
+      listenable: WallpaperService(),
+      builder: (context, _) {
+        final path = WallpaperService().wallpaperPath;
+        if (path == null) return const SizedBox.shrink();
+        return Positioned.fill(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.file(File(path), fit: BoxFit.cover),
+              Container(color: Colors.black.withValues(alpha: WallpaperService().dimAmount)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (Platform.isIOS) {
@@ -30,6 +55,7 @@ class PlatformScaffold extends StatelessWidget {
         floatingActionButtonLocation: floatingActionButtonLocation,
         body: Stack(
           children: [
+            _backgroundLayer(),
             SafeArea(child: body),
           ],
         ),
@@ -43,7 +69,12 @@ class PlatformScaffold extends StatelessWidget {
         floatingActionButtonLocation: floatingActionButtonLocation,
         bottomNavigationBar: bottomNavigationBar,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: SafeArea(child: body),
+        body: Stack(
+          children: [
+            _backgroundLayer(),
+            SafeArea(child: body),
+          ],
+        ),
       );
     }
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/audio_clip_tile.dart';
+import '../widgets/animated_counter.dart';
 import '../services/sleep_service.dart';
 import '../services/performance_insight_service.dart';
 import '../services/elo_service.dart';
@@ -139,7 +140,7 @@ class _ReportScreenState extends State<ReportScreen> {
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
-                      Text('$totalPuzzles', style: AppTokens.display.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 36, fontWeight: FontWeight.bold)),
+                      AnimatedCounter(value: totalPuzzles, style: AppTokens.display.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 36, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   Text('Missions Beaten', style: AppTokens.body.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),

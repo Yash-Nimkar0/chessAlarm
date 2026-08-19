@@ -16,6 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'services/theme_service.dart';
 import 'theme/design_tokens.dart';
 import 'widgets/splash_screen.dart';
+import 'services/wallpaper_service.dart';
 
 import 'features/alarms/data/alarm_migration.dart';
 import 'features/alarms/data/alarm_repository.dart';
@@ -58,6 +59,16 @@ class _WakelyAppLoaderState extends State<WakelyAppLoader> {
   }
 
   Future<bool> _initApp() async {
+    // ThemeService().init() was never called anywhere in the app — the
+    // persisted theme mode (light/dark/system) and board theme were saved
+    // correctly whenever changed, but never actually loaded back on a
+    // fresh cold start, which always used the hardcoded ThemeMode.dark
+    // default instead regardless of what was saved. Confirmed live:
+    // switching to Light mode, then fully restarting the app, silently
+    // reverted to Dark every time.
+    await ThemeService().init();
+    await WallpaperService().init();
+
     // Timeout Alarm.init in case of audio session deadlocks on iOS
     try {
       // Restore Alarm.init() since we resolved the crash

@@ -11,6 +11,10 @@ import '../experiments/pushup_detection.dart';
 import '../features/alarms/data/alarm_kit_plugin.dart' as wakely_alarm_kit;
 import 'experiment_screen.dart';
 import '../services/elo_service.dart';
+import '../services/wallpaper_service.dart';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({Key? key}) : super(key: key);
@@ -80,6 +84,98 @@ class _SettingScreenState extends State<SettingScreen> {
         _stats = stats;
       });
     }
+  }
+
+  Future<void> _pickWallpaperImage() async {
+    final result = await FilePicker.pickFiles(type: FileType.image, withData: false);
+    final pickedPath = result?.files.single.path;
+    if (pickedPath == null) return;
+
+    final docsDir = await getApplicationDocumentsDirectory();
+    final wallpapersDir = Directory('${docsDir.path}/wallpapers');
+    if (!await wallpapersDir.exists()) {
+      await wallpapersDir.create(recursive: true);
+    }
+    final ext = pickedPath.contains('.') ? pickedPath.split('.').last : 'jpg';
+    final destPath = '${wallpapersDir.path}/background.$ext';
+    await File(pickedPath).copy(destPath);
+
+    await WallpaperService().setWallpaper(destPath);
+  }
+
+  void _showWallpaperPicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            final hasWallpaper = WallpaperService().wallpaperPath != null;
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Background', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(sheetContext).colorScheme.onSurface)),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Choose a photo to show behind every screen.',
+                      style: TextStyle(color: Theme.of(sheetContext).colorScheme.onSurfaceVariant, fontSize: 13),
+                    ),
+                    const SizedBox(height: 20),
+                    if (hasWallpaper) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                        child: Image.file(File(WallpaperService().wallpaperPath!), height: 140, width: double.infinity, fit: BoxFit.cover),
+                      ),
+                      const SizedBox(height: 16),
+                      Text('Dim amount', style: TextStyle(color: Theme.of(sheetContext).colorScheme.onSurface, fontWeight: FontWeight.w600)),
+                      Slider(
+                        value: WallpaperService().dimAmount,
+                        min: 0.0,
+                        max: 0.9,
+                        activeColor: AppTokens.signal,
+                        onChanged: (val) {
+                          WallpaperService().setDimAmount(val);
+                          setSheetState(() {});
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () async {
+                          await _pickWallpaperImage();
+                          setSheetState(() {});
+                        },
+                        icon: const Icon(Icons.photo_library_outlined),
+                        label: Text(hasWallpaper ? 'Choose a Different Photo' : 'Choose Photo'),
+                      ),
+                    ),
+                    if (hasWallpaper) ...[
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextButton(
+                          onPressed: () async {
+                            await WallpaperService().setWallpaper(null);
+                            setSheetState(() {});
+                          },
+                          child: Text('Remove Background', style: TextStyle(color: Theme.of(sheetContext).colorScheme.error)),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   /// One or two initials from a display name, for the profile avatar —
@@ -366,9 +462,21 @@ class _SettingScreenState extends State<SettingScreen> {
                     );
                   },
                 ),
+                ListenableBuilder(
+                  listenable: WallpaperService(),
+                  builder: (context, _) => ListTile(
+                    leading: Icon(Icons.wallpaper, color: Theme.of(context).colorScheme.onSurface),
+                    title: Text('Background', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                    trailing: Text(
+                      WallpaperService().wallpaperPath != null ? 'Custom' : 'Default',
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ),
+                    onTap: _showWallpaperPicker,
+                  ),
+                ),
 
               ]),
-              
+
               const SizedBox(height: 32),
               Text('Data & Community', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 16),
