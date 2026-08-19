@@ -420,7 +420,9 @@ class SleepService {
     String confidence = 'High';
     if (durationHours < 3) {
       confidence = 'Low';
-    } else if (_movementEvents > 30) confidence = 'Medium';
+    } else if (_movementEvents > 30) {
+      confidence = 'Medium';
+    }
     
     final session = SleepSession(
       startTime: _startTime!,
@@ -449,8 +451,11 @@ class SleepService {
         
         if (hintsRemaining == 3) {
           wakeBonus += 5;
-        } else if (hintsRemaining == 2) wakeBonus += 3;
-        else if (hintsRemaining == 1) wakeBonus += 1;
+        } else if (hintsRemaining == 2) {
+          wakeBonus += 3;
+        } else if (hintsRemaining == 1) {
+          wakeBonus += 1;
+        }
         
         // Compare with personal average
         final prefs = await SharedPreferences.getInstance();
@@ -577,7 +582,9 @@ class SleepService {
       String confidence = 'High';
       if (durationHours < 3) {
         confidence = 'Low';
-      } else if (session.totalMovementEvents > 30) confidence = 'Medium';
+      } else if (session.totalMovementEvents > 30) {
+        confidence = 'Medium';
+      }
       
       session = session.copyWith(
         score: score.clamp(0, 80),
