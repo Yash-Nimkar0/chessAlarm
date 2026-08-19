@@ -24,31 +24,39 @@ class TypingMission extends StatefulWidget {
 class _TypingMissionState extends State<TypingMission> {
   final TextEditingController _controller = TextEditingController();
   late String _targetPhrase;
-  
+
   int _currentRound = 0;
   late int _totalRounds;
   late List<String> _phrases;
+
+  // Whether what's typed so far still matches the start of the target
+  // phrase — without this, a typo just sat there silently until the user
+  // noticed the whole string never lit up green, easy to miss half asleep.
+  bool _isWrongSoFar = false;
 
   @override
   void initState() {
     super.initState();
     _totalRounds = widget.settings.missionRounds;
-    
+
     final data = widget.settings.missionData;
     if (data != null && data['enabled_quotes'] != null && (data['enabled_quotes'] as List).isNotEmpty) {
       _phrases = List<String>.from(data['enabled_quotes']);
     } else {
       _phrases = List<String>.from(DefaultQuotes.quotes);
     }
-    
+
     _phrases.shuffle();
     _targetPhrase = _phrases.first;
-    
+
     _controller.addListener(_checkCompletion);
   }
 
   void _checkCompletion() {
-    if (_controller.text.trim().toLowerCase() == _targetPhrase.trim().toLowerCase()) {
+    final typed = _controller.text.trim().toLowerCase();
+    final target = _targetPhrase.trim().toLowerCase();
+
+    if (typed == target) {
       Haptics.vibrate(HapticsType.success);
       if (_currentRound + 1 >= _totalRounds) {
         // Last round: leave _currentRound as-is so any rebuild during the
@@ -60,8 +68,16 @@ class _TypingMissionState extends State<TypingMission> {
           _controller.clear();
           _phrases.shuffle();
           _targetPhrase = _phrases.first;
+          _isWrongSoFar = false;
         });
       }
+      return;
+    }
+
+    final wrongNow = !target.startsWith(typed);
+    if (wrongNow != _isWrongSoFar) {
+      if (wrongNow) Haptics.vibrate(HapticsType.light);
+      setState(() => _isWrongSoFar = wrongNow);
     }
   }
 
@@ -109,23 +125,32 @@ class _TypingMissionState extends State<TypingMission> {
           ),
         ),
         const SizedBox(height: 40),
-        TextField(
-          controller: _controller,
-          autofocus: true,
-          textAlign: TextAlign.center,
-          style: TextStyle(color: colorScheme.onSurface, fontSize: 20),
-          decoration: InputDecoration(
-            hintText: 'Start typing...',
-            hintStyle: TextStyle(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
-            filled: true,
-            fillColor: colorScheme.surfaceContainerHighest,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-              borderSide: const BorderSide(color: Colors.indigoAccent, width: 2),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+            boxShadow: _isWrongSoFar
+                ? [BoxShadow(color: colorScheme.error.withValues(alpha: 0.3), blurRadius: 12, spreadRadius: 1)]
+                : null,
+          ),
+          child: TextField(
+            controller: _controller,
+            autofocus: true,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: _isWrongSoFar ? colorScheme.error : colorScheme.onSurface, fontSize: 20),
+            decoration: InputDecoration(
+              hintText: 'Start typing...',
+              hintStyle: TextStyle(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
+              filled: true,
+              fillColor: _isWrongSoFar ? colorScheme.error.withValues(alpha: 0.1) : colorScheme.surfaceContainerHighest,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                borderSide: BorderSide(color: _isWrongSoFar ? colorScheme.error : Colors.indigoAccent, width: 2),
+              ),
             ),
           ),
         ),
