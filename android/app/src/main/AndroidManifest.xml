@@ -53,6 +53,13 @@
             android:foregroundServiceType="microphone"
             android:stopWithTask="false"
             android:exported="false" />
+        <!-- Required by the `alarm` plugin (Android's LegacyPluginAlarmScheduler
+             path): shows a notification if the app process is killed while an
+             alarm is armed. Without this declaration the service silently fails
+             to start (confirmed via `adb logcat`: "Unable to start service ...
+             NotificationOnKillService ... not found"), silently losing this
+             force-quit safety net. -->
+        <service android:name="com.gdelataillade.alarm.services.NotificationOnKillService" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
