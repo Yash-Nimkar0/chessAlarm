@@ -190,8 +190,8 @@ class _ColorTilesMissionState extends State<ColorTilesMission> with SingleTicker
           ),
         ),
         const SizedBox(height: 40),
-        TextButton(
-          onPressed: widget.onSkip,
+        AnimatedPressable(
+          onTap: widget.onSkip,
           child: Text('Skip (-10 Points)', style: TextStyle(color: colorScheme.error, fontSize: 16)),
         ),
       ],

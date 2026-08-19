@@ -163,8 +163,8 @@ class _MissingSymbolMissionState extends State<MissingSymbolMission> with Single
           ),
         ),
         const SizedBox(height: 40),
-        TextButton(
-          onPressed: widget.onSkip,
+        AnimatedPressable(
+          onTap: widget.onSkip,
           child: Text('Skip (-10 Points)', style: TextStyle(color: colorScheme.error, fontSize: 16)),
         ),
       ],

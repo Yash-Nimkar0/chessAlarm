@@ -5,6 +5,7 @@ import '../../models/mission_settings.dart';
 import 'mission_interface.dart';
 import '../../widgets/platform_theme.dart';
 import '../../theme/design_tokens.dart';
+import '../../widgets/animated_pressable.dart';
 
 class MathMission extends MissionWidget {
   final MissionSettings settings;
@@ -170,8 +171,8 @@ class _MathMissionState extends State<MathMission> with SingleTickerProviderStat
           ),
         ),
         const SizedBox(height: 40),
-        TextButton(
-          onPressed: widget.onSkip,
+        AnimatedPressable(
+          onTap: widget.onSkip,
           child: Text('Skip (-10 Points)', style: TextStyle(color: colorScheme.error, fontSize: 16)),
         ),
       ],

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import 'package:pedometer/pedometer.dart';
 import '../../features/alarms/application/wake_session_controller.dart';
+import '../../widgets/animated_pressable.dart';
 
 class StepsMission extends StatefulWidget {
   final Map<String, dynamic> missionData;
@@ -164,8 +165,8 @@ class _StepsMissionState extends State<StepsMission> {
           ),
         ),
         const SizedBox(height: 24),
-        TextButton(
-          onPressed: widget.onSkip,
+        AnimatedPressable(
+          onTap: widget.onSkip,
           child: Text('Skip (-10 Points)', style: TextStyle(color: colorScheme.error, fontSize: 16)),
         ),
       ],
