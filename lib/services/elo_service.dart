@@ -6,6 +6,7 @@ class EloService {
   static const String _keyCurrentStreak = 'wakely_stats_streak';
   static const String _keyLastSuccessDate = 'wakely_stats_last_date';
   static const String _keyMorningsWon = 'wakely_stats_mornings_won';
+  static const String _keyMorningsWonThisWeek = 'wakely_stats_mornings_week';
   static const String _keyPuzzlesSolved = 'wakely_stats_puzzles';
   static const String _keyPuzzlesSolvedThisWeek = 'wakely_stats_puzzles_week';
   static const String _keyWeekStart = 'wakely_stats_week_start';
@@ -39,20 +40,24 @@ class EloService {
     }
 
     int puzzlesWeek = prefs.getInt(_keyPuzzlesSolvedThisWeek) ?? 0;
+    int morningsWeek = prefs.getInt(_keyMorningsWonThisWeek) ?? 0;
     final weekStartStr = prefs.getString(_keyWeekStart);
     final currentWeekStart = DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
     if (weekStartStr != null) {
       final weekStart = DateTime.parse(weekStartStr);
       if (weekStart.isBefore(currentWeekStart)) {
         puzzlesWeek = 0;
+        morningsWeek = 0;
       }
     } else {
       puzzlesWeek = 0;
+      morningsWeek = 0;
     }
 
     return {
       'currentStreak': currentStreak,
       'morningsWon': prefs.getInt(_keyMorningsWon) ?? 0,
+      'morningsWonThisWeek': morningsWeek,
       'puzzlesSolved': prefs.getInt(_keyPuzzlesSolved) ?? 0,
       'puzzlesSolvedThisWeek': puzzlesWeek,
       'fastestSolve': prefs.getInt(_keyFastestSolve) ?? 0,
@@ -98,7 +103,28 @@ class EloService {
     // Update mornings won
     int morningsWon = prefs.getInt(_keyMorningsWon) ?? 0;
     await prefs.setInt(_keyMorningsWon, morningsWon + 1);
-    
+
+    // Update this-week mornings won — mirrors the weekly rollover logic in
+    // recordPracticeSuccess below, on the same shared week-start boundary.
+    // The Morning tab's weekly recap used to read puzzlesSolvedThisWeek
+    // here instead, a counter this method never touches at all (only
+    // recordPracticeSuccess does, and that path is unreachable — no UI
+    // ever navigates to PracticeScreen), so "missions completed this week"
+    // silently stayed 0 forever regardless of real usage.
+    int morningsWeek = prefs.getInt(_keyMorningsWonThisWeek) ?? 0;
+    final weekStartStr = prefs.getString(_keyWeekStart);
+    final currentWeekStart = DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
+    if (weekStartStr != null) {
+      final weekStart = DateTime.parse(weekStartStr);
+      if (weekStart.isBefore(currentWeekStart)) {
+        morningsWeek = 0;
+      }
+    } else {
+      morningsWeek = 0;
+    }
+    await prefs.setInt(_keyMorningsWonThisWeek, morningsWeek + 1);
+    await prefs.setString(_keyWeekStart, currentWeekStart.toIso8601String());
+
     // Update fastest solve
     int fastestSolve = prefs.getInt(_keyFastestSolve) ?? 0;
     if (fastestSolve == 0 || solveTimeSeconds < fastestSolve) {

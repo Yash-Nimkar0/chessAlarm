@@ -403,11 +403,16 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Top Display
+                // Top Display — explicit amber tones rather than
+                // colorScheme.primaryContainer, matching this same screen's
+                // own START QUICK ALARM button below: light mode's
+                // colorScheme.primary is a deliberate contrast-safe indigo,
+                // not the brand's amber, so primaryContainer renders as an
+                // unrelated purple card next to everything else's amber.
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 32),
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
+                    color: colorScheme.brightness == Brightness.light ? AppTokens.signal.withValues(alpha: 0.15) : AppTokens.signal,
                     borderRadius: BorderRadius.circular(AppTokens.radiusLg),
                   ),
                   child: Column(
@@ -417,7 +422,7 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                         style: TextStyle(
                           fontSize: 64,
                           fontWeight: FontWeight.w900,
-                          color: colorScheme.onPrimaryContainer,
+                          color: colorScheme.brightness == Brightness.light ? AppTokens.signalDeep : AppTokens.nightBg,
                           letterSpacing: -2.0,
                         ),
                       ),
@@ -427,7 +432,7 @@ class _QuickAlarmScreenState extends State<QuickAlarmScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                          color: (colorScheme.brightness == Brightness.light ? AppTokens.signalDeep : AppTokens.nightBg).withValues(alpha: 0.7),
                         ),
                       ),
                     ],

@@ -24,10 +24,9 @@ class _MorningScreenState extends State<MorningScreen> {
 
   int _userElo = 1000;
   int _currentStreak = 0;
-  int _puzzlesSolved = 0;
   int _morningsWon = 0;
   String _companionLevel = "Novice";
-  int _puzzlesSolvedThisWeek = 0;
+  int _morningsWonThisWeek = 0;
   int _fastestSolve = 0;
   int _sleepMomentsCaptured = 0;
   bool _isLoading = true;
@@ -53,9 +52,8 @@ class _MorningScreenState extends State<MorningScreen> {
       setState(() {
         _userElo = elo;
         _currentStreak = stats['currentStreak'] ?? 0;
-        _puzzlesSolved = stats['puzzlesSolved'] ?? 0;
         _morningsWon = stats['morningsWon'] ?? 0;
-        _puzzlesSolvedThisWeek = stats['puzzlesSolvedThisWeek'] ?? 0;
+        _morningsWonThisWeek = stats['morningsWonThisWeek'] ?? 0;
         _fastestSolve = stats['fastestSolve'] ?? 0;
         if (sleepHistory.isNotEmpty) {
           _sleepMomentsCaptured = sleepHistory.last.audioEvents.length;
@@ -250,7 +248,7 @@ class _MorningScreenState extends State<MorningScreen> {
             const SizedBox(height: 32),
             Text('Since joining:', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
             const SizedBox(height: 12),
-            _buildWowStat('You completed', '$_puzzlesSolved missions'),
+            _buildWowStat('You completed', '$_morningsWon missions'),
             _buildWowStat('Current streak', '$_currentStreak days'),
             const SizedBox(height: 24),
           ],
@@ -770,9 +768,9 @@ class _MorningScreenState extends State<MorningScreen> {
           children: [
             Text('Your Brain Week', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 32),
-            _buildRecapStat('Missions completed', '$_puzzlesSolvedThisWeek', AppTokens.signal),
+            _buildRecapStat('Missions completed', '$_morningsWonThisWeek', AppTokens.signal),
             _buildRecapStat('Streak extended', '$_currentStreak days', Colors.amberAccent),
-            _buildRecapStat('Total missions', '$_puzzlesSolved', AppTokens.signal),
+            _buildRecapStat('Total missions', '$_morningsWon', AppTokens.signal),
             if (_fastestSolve > 0 && _fastestSolve < 999)
                 _buildRecapStat('Fastest solve', '$_fastestSolve seconds', AppTokens.signal),
             const SizedBox(height: 32),

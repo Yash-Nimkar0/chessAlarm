@@ -87,7 +87,16 @@ class _MainScreenState extends State<MainScreen> {
     // Wrap everything in one PlatformScaffold for the background.
     // The inner screens will just use standard transparent Scaffolds.
     return PlatformScaffold(
-      body: _screens[_currentIndex],
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+        child: KeyedSubtree(
+          key: ValueKey(_currentIndex),
+          child: _screens[_currentIndex],
+        ),
+      ),
       bottomNavigationBar: bottomNavBar,
     );
   }

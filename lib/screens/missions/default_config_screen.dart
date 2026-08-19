@@ -42,8 +42,6 @@ class _DefaultMissionConfigScreenState extends State<DefaultMissionConfigScreen>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.title} Settings'),
