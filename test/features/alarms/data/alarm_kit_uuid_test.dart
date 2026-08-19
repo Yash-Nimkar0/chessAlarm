@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wakely/features/alarms/data/alarm_kit_uuid.dart';
+import 'package:wakle/features/alarms/data/alarm_kit_uuid.dart';
 
 /// Mirrors WakelyAlarmKitManager.getUUID(for:) on the Swift side exactly,
 /// so these tests catch drift between the two implementations.

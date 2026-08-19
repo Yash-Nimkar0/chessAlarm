@@ -2,8 +2,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:alarm/alarm.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wakely/features/alarms/application/alarm_controller.dart';
-import 'package:wakely/features/alarms/application/wake_audio_session_controller.dart';
+import 'package:wakle/features/alarms/application/alarm_controller.dart';
+import 'package:wakle/features/alarms/application/wake_audio_session_controller.dart';
 
 /// Sets up the full mock platform-channel environment required for any test
 /// that touches AlarmController.instance.init() / AlarmScheduler.init() /

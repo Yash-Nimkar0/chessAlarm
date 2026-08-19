@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wakely/features/sounds/data/sound_repository.dart';
+import 'package:wakle/features/sounds/data/sound_repository.dart';
 import 'dart:io';
 
 void main() {

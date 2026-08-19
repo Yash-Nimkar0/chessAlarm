@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wakely/services/sleep_service.dart';
+import 'package:wakle/services/sleep_service.dart';
 
 void main() {
   group('Sleep Data Models Serialization', () {

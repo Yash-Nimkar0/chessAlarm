@@ -210,7 +210,7 @@ class _WakelyAppState extends State<WakelyApp> {
 
         return MaterialApp(
           navigatorKey: navigatorKey,
-          title: 'Wakely',
+          title: 'Wakle',
           debugShowCheckedModeBanner: false,
           themeMode: ThemeService().themeMode,
           theme: ThemeData(

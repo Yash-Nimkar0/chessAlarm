@@ -346,7 +346,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     onPressed: () async {
                       Navigator.pop(context);
                       final savedAlarm = await _createFakeAlarm(selectedSound);
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mode B: Wakely Firing in 3s...')));
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mode B: Wakle Firing in 3s...')));
                       
                       Future.delayed(const Duration(seconds: 3), () {
                         WakeSessionController.instance.handleAlarmEvent(AlarmEvent(
@@ -357,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         ));
                       });
                     },
-                    child: const Text('Mode B (Wakely Firing)'),
+                    child: const Text('Mode B (Wakle Firing)'),
                   ),
                   ElevatedButton(
                     onPressed: () async {

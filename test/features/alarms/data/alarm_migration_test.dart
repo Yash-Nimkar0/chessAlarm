@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wakely/features/alarms/data/alarm_migration.dart';
-import 'package:wakely/features/alarms/data/alarm_repository.dart';
-import 'package:wakely/features/alarms/data/alarm_id_allocator.dart';
-import 'package:wakely/features/alarms/application/alarm_controller.dart';
+import 'package:wakle/features/alarms/data/alarm_migration.dart';
+import 'package:wakle/features/alarms/data/alarm_repository.dart';
+import 'package:wakle/features/alarms/data/alarm_id_allocator.dart';
+import 'package:wakle/features/alarms/application/alarm_controller.dart';
 import 'package:alarm/alarm.dart';
-import 'package:wakely/features/alarms/domain/alarm_model.dart';
-import 'package:wakely/features/alarms/data/alarm_scheduler.dart';
+import 'package:wakle/features/alarms/domain/alarm_model.dart';
+import 'package:wakle/features/alarms/data/alarm_scheduler.dart';
 
 // Note: To truly unit test the migration without a real device, we would need 
 // to mock the static `Alarm.getAlarms()` method which is not possible without

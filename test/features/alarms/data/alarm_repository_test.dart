@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wakely/features/alarms/data/alarm_repository.dart';
-import 'package:wakely/features/alarms/domain/alarm_model.dart';
-import 'package:wakely/features/alarms/domain/recurrence.dart';
+import 'package:wakle/features/alarms/data/alarm_repository.dart';
+import 'package:wakle/features/alarms/domain/alarm_model.dart';
+import 'package:wakle/features/alarms/domain/recurrence.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -207,7 +207,7 @@ class SleepService {
       await FlutterForegroundTask.restartService();
     } else {
       await FlutterForegroundTask.startService(
-        notificationTitle: 'Wakely Sleep Tracking',
+        notificationTitle: 'Wakle Sleep Tracking',
         notificationText: 'Tracking your sleep...',
         callback: startCallback,
       );

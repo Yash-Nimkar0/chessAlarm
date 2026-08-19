@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wakely/features/alarms/domain/alarm_model.dart';
-import 'package:wakely/features/alarms/domain/mission_config.dart';
-import 'package:wakely/features/alarms/domain/recurrence.dart';
+import 'package:wakle/features/alarms/domain/alarm_model.dart';
+import 'package:wakle/features/alarms/domain/mission_config.dart';
+import 'package:wakle/features/alarms/domain/recurrence.dart';
 
 void main() {
   group('MissionType', () {

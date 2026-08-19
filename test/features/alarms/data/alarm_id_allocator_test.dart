@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wakely/features/alarms/data/alarm_id_allocator.dart';
+import 'package:wakle/features/alarms/data/alarm_id_allocator.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

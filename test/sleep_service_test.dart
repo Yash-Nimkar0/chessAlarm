@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wakely/services/sleep_service.dart';
+import 'package:wakle/services/sleep_service.dart';
 import 'dart:convert';
 
 void main() {

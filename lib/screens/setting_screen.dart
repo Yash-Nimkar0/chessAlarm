@@ -298,7 +298,7 @@ class _SettingScreenState extends State<SettingScreen> {
                   },
                 ),
                 Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), height: 1),
-                _buildListTile(Icons.workspace_premium, 'Wakely Pro', 'Upgrade', color: AppTokens.signal),
+                _buildListTile(Icons.workspace_premium, 'Wakle Pro', 'Upgrade', color: AppTokens.signal),
               ])),
               const SizedBox(height: 32),
               Text('Sleep Settings', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),

@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wakely/features/alarms/domain/alarm_model.dart';
-import 'package:wakely/features/alarms/domain/mission_config.dart';
-import 'package:wakely/features/alarms/domain/recurrence.dart';
-import 'package:wakely/features/alarms/domain/platform_alarm_state.dart';
-import 'package:wakely/features/alarms/data/alarm_repository.dart';
-import 'package:wakely/features/alarms/application/alarm_controller.dart';
-import 'package:wakely/features/alarms/application/wake_session_controller.dart';
+import 'package:wakle/features/alarms/domain/alarm_model.dart';
+import 'package:wakle/features/alarms/domain/mission_config.dart';
+import 'package:wakle/features/alarms/domain/recurrence.dart';
+import 'package:wakle/features/alarms/domain/platform_alarm_state.dart';
+import 'package:wakle/features/alarms/data/alarm_repository.dart';
+import 'package:wakle/features/alarms/application/alarm_controller.dart';
+import 'package:wakle/features/alarms/application/wake_session_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

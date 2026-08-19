@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wakely/features/alarms/application/wake_audio_session_controller.dart';
+import 'package:wakle/features/alarms/application/wake_audio_session_controller.dart';
 
 void main() {
   group('WakeAudioSessionController.evaluateVolumeChange', () {

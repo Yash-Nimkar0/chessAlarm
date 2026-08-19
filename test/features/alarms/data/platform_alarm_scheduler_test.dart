@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
-import 'package:wakely/features/alarms/data/alarm_scheduler.dart';
-import 'package:wakely/features/alarms/data/legacy_plugin_alarm_scheduler.dart';
-import 'package:wakely/features/alarms/domain/alarm_kit_capability.dart';
+import 'package:wakle/features/alarms/data/alarm_scheduler.dart';
+import 'package:wakle/features/alarms/data/legacy_plugin_alarm_scheduler.dart';
+import 'package:wakle/features/alarms/domain/alarm_kit_capability.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wakely/models/mission_settings.dart';
-import 'package:wakely/screens/missions/typing_mission.dart';
+import 'package:wakle/models/mission_settings.dart';
+import 'package:wakle/screens/missions/typing_mission.dart';
 
 void main() {
   Future<void> pumpMission(
