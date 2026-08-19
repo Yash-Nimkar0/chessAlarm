@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/platform_theme.dart';
-import '../../../theme/design_tokens.dart';
 import 'wake_together_setup_screen.dart';
 
 class FriendsScreen extends StatelessWidget {

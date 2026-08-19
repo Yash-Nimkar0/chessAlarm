@@ -1,7 +1,5 @@
-import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../models/mission_settings.dart' hide MissionType;
