@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../widgets/platform_theme.dart';
+import '../widgets/fade_slide_in.dart';
 import '../theme/design_tokens.dart';
 import '../features/social/presentation/friends_screen.dart';
 import '../experiments/pushup_detection.dart';
@@ -227,7 +228,7 @@ class _SettingScreenState extends State<SettingScreen> {
               const SizedBox(height: 24),
               
               // Top Profile
-              Row(
+              FadeSlideIn(child: Row(
                 children: [
                   Container(
                     width: 60,
@@ -265,12 +266,12 @@ class _SettingScreenState extends State<SettingScreen> {
                     ],
                   ),
                 ],
-              ),
-              
+              )),
+
               const SizedBox(height: 32),
               Text('Profile', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 16),
-              _buildSection(colorScheme, [
+              FadeSlideIn(delay: const Duration(milliseconds: 60), child: _buildSection(colorScheme, [
                 ListTile(
                   leading: Icon(Icons.person, color: Theme.of(context).colorScheme.onSurface),
                   title: Text('Display Name', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
@@ -302,11 +303,11 @@ class _SettingScreenState extends State<SettingScreen> {
                 ),
                 Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12), height: 1),
                 _buildListTile(Icons.workspace_premium, 'Wakely Pro', 'Upgrade', color: AppTokens.signal),
-              ]),
+              ])),
               const SizedBox(height: 32),
               Text('Sleep Settings', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 16),
-              _buildSection(colorScheme, [
+              FadeSlideIn(delay: const Duration(milliseconds: 120), child: _buildSection(colorScheme, [
                 ListTile(
                   leading: Icon(Icons.mic, color: Theme.of(context).colorScheme.onSurface),
                   title: Text('Sleep Sounds', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
@@ -411,12 +412,12 @@ class _SettingScreenState extends State<SettingScreen> {
                     );
                   },
                 ),
-              ]),
-              
+              ])),
+
               const SizedBox(height: 32),
               Text('Appearance', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 16),
-              _buildSection(colorScheme, [
+              FadeSlideIn(delay: const Duration(milliseconds: 180), child: _buildSection(colorScheme, [
                 ListTile(
                   leading: Icon(
                     ThemeService().themeMode == ThemeMode.light
@@ -478,12 +479,12 @@ class _SettingScreenState extends State<SettingScreen> {
                   ),
                 ),
 
-              ]),
+              ])),
 
               const SizedBox(height: 32),
               Text('Data & Community', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 16),
-              _buildSection(colorScheme, [
+              FadeSlideIn(delay: const Duration(milliseconds: 240), child: _buildSection(colorScheme, [
                 ListTile(
                   leading: const Icon(Icons.bug_report, color: AppTokens.signal),
                   title: Text('Experimental: Social Wake', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
@@ -542,8 +543,8 @@ class _SettingScreenState extends State<SettingScreen> {
                   trailing: Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   onTap: _openFeedback,
                 ),
-              ]),
-              
+              ])),
+
               const SizedBox(height: 48),
             ],
           ),
