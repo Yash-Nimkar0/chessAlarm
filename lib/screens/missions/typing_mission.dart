@@ -50,11 +50,13 @@ class _TypingMissionState extends State<TypingMission> {
   void _checkCompletion() {
     if (_controller.text.trim().toLowerCase() == _targetPhrase.trim().toLowerCase()) {
       Haptics.vibrate(HapticsType.success);
-      _currentRound++;
-      if (_currentRound >= _totalRounds) {
+      if (_currentRound + 1 >= _totalRounds) {
+        // Last round: leave _currentRound as-is so any rebuild during the
+        // success transition still shows "N of N", not "N+1 of N".
         widget.onSuccess();
       } else {
         setState(() {
+          _currentRound++;
           _controller.clear();
           _phrases.shuffle();
           _targetPhrase = _phrases.first;
