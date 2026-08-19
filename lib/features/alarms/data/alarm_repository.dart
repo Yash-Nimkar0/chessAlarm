@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/alarm_model.dart';
 
@@ -19,16 +20,25 @@ class AlarmRepository {
     final jsonStr = prefs.getString(_key);
     if (jsonStr == null) return [];
 
+    List<dynamic> decoded;
     try {
-      final List<dynamic> decoded = jsonDecode(jsonStr);
-      return decoded
-          .map((e) => WakelyAlarm.fromJson(e as Map<String, dynamic>))
-          .toList();
+      decoded = jsonDecode(jsonStr);
     } catch (e) {
-      // If data is corrupted, return empty rather than crashing.
-      // TODO: Log this error when logging abstraction exists.
+      // Whole payload is corrupted (not even valid JSON) - nothing to salvage.
+      if (kDebugMode) print('Failed to decode alarms JSON: $e');
       return [];
     }
+
+    final alarms = <WakelyAlarm>[];
+    for (final e in decoded) {
+      try {
+        alarms.add(WakelyAlarm.fromJson(e as Map<String, dynamic>));
+      } catch (err) {
+        // Skip just this one corrupt alarm rather than losing every alarm.
+        if (kDebugMode) print('Skipping corrupt alarm entry: $err');
+      }
+    }
+    return alarms;
   }
 
   /// Retrieve a single alarm by ID, or null if not found.
