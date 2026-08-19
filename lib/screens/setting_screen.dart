@@ -7,10 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../widgets/platform_theme.dart';
 import '../widgets/fade_slide_in.dart';
 import '../theme/design_tokens.dart';
-import '../features/social/presentation/friends_screen.dart';
-import '../experiments/pushup_detection.dart';
-import '../features/alarms/data/alarm_kit_plugin.dart' as wakely_alarm_kit;
-import 'experiment_screen.dart';
 import '../services/elo_service.dart';
 import '../services/wallpaper_service.dart';
 import 'dart:io';
@@ -482,64 +478,12 @@ class _SettingScreenState extends State<SettingScreen> {
               ])),
 
               const SizedBox(height: 32),
-              Text('Data & Community', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
+              Text('Support', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 16),
               FadeSlideIn(delay: const Duration(milliseconds: 240), child: _buildSection(colorScheme, [
                 ListTile(
-                  leading: const Icon(Icons.bug_report, color: AppTokens.signal),
-                  title: Text('Experimental: Social Wake', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const FriendsScreen()),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.science, color: AppTokens.signal),
-                  title: Text('Wake Audio Experiments', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                  subtitle: Text('Developer tool for Fade and Volume tests', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const ExperimentScreen()),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.alarm_on, color: Colors.blueAccent),
-                  title: Text('AlarmKit Test — 2 minutes', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                  subtitle: Text('Schedule a native iOS 26+ alarm spike', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                  onTap: () async {
-                    // Try to schedule via the plugin. 
-                    // Note: This relies on WakelyAlarmKitPlugin which we just created.
-                    // We must import it if we want to use it directly, but since this is just a quick test, we'll invoke the method channel directly if we don't import the plugin.
-                    // Let's import the plugin at the top of the file.
-                    final success = await wakely_alarm_kit.WakelyAlarmKitPlugin.instance.scheduleAlarm(
-                      id: "spike-test-999",
-                      time: DateTime.now().add(const Duration(minutes: 2)),
-                      soundName: "marmixer-soft-morning-484625", // existing sound
-                    );
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(success ? 'AlarmKit schedule initiated!' : 'AlarmKit failed (Not iOS 26+?)')),
-                      );
-                    }
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.fitness_center, color: AppTokens.signal),
-                  title: Text('Experimental: Push-up Detection', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => PushupDetectionExperiment()),
-                    );
-                  },
-                ),
-                ListTile(
                   leading: Icon(Icons.feedback, color: Theme.of(context).colorScheme.onSurface),
-                  title: Text('Send Beta Feedback', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                  title: Text('Send Feedback', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                   trailing: Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   onTap: _openFeedback,
                 ),

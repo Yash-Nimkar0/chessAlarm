@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:alarm/alarm.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import '../features/alarms/application/wake_session_controller.dart';
-import '../features/alarms/application/wake_audio_session_controller.dart';
 
 import '../models/mission_settings.dart';
 import 'missions/math_mission.dart';
@@ -351,25 +350,6 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
                             ),
                           ),
                         ),
-                      ListenableBuilder(
-                        listenable: WakeAudioSessionController.instance,
-                        builder: (context, _) {
-                          final audio = WakeAudioSessionController.instance;
-                          if (!audio.isFading && !audio.isTestMode) return const SizedBox.shrink();
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                            margin: const EdgeInsets.only(bottom: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'DEV MODE - Volume: ${(audio.currentVolume * 100).toInt()}%',
-                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                            ),
-                          );
-                        },
-                      ),
                       Expanded(
                         child: Listener(
                           behavior: HitTestBehavior.translucent,
