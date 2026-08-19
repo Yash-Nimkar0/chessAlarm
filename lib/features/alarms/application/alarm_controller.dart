@@ -32,7 +32,6 @@ class AlarmController extends ChangeNotifier {
 
   // Platform event channel for AlarmKit native interactions
   static const EventChannel _eventChannel = EventChannel('wakely.alarmkit.events');
-  StreamSubscription? _eventSubscription;
 
   // Singleton instance for easy access across the app
   static final AlarmController instance = AlarmController._(
@@ -55,7 +54,7 @@ class AlarmController extends ChangeNotifier {
       final channel = const MethodChannel('wakely.alarmkit');
 
       // 3. Establish native `alarmUpdates` subscription early so we don't miss anything
-      _eventSubscription = _eventChannel.receiveBroadcastStream().listen(_handleNativeEvent, onError: (e) {
+      _eventChannel.receiveBroadcastStream().listen(_handleNativeEvent, onError: (e) {
         debugPrint('AlarmKit event channel error: $e');
       });
 

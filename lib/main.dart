@@ -6,7 +6,6 @@ import 'screens/main_screen.dart';
 import 'screens/slide_to_stop_screen.dart';
 import 'screens/ringing_screen.dart';
 import 'screens/onboarding_screen.dart';
-import 'services/weather_service.dart';
 import 'services/analytics_service.dart';
 import 'services/sleep_service.dart';
 import 'services/notification_service.dart';
@@ -124,9 +123,6 @@ class WakelyApp extends StatefulWidget {
 class _WakelyAppState extends State<WakelyApp> {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   StreamSubscription? _ringSubscription;
-
-  // Default seed color for fallback (A modern Google-esque Green)
-  static const _defaultSeedColor = Color(0xFF00C853);
 
   @override
   void initState() {

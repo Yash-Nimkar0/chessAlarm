@@ -36,8 +36,6 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     Widget bottomNavBar = NavigationBar(
       selectedIndex: _currentIndex,
       onDestinationSelected: (index) {

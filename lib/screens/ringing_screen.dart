@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:alarm/alarm.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
-import '../features/alarms/application/alarm_controller.dart';
 import '../features/alarms/application/wake_session_controller.dart';
 import '../features/alarms/application/wake_audio_session_controller.dart';
 
-import 'dart:io';
 import '../models/mission_settings.dart';
 import 'missions/math_mission.dart';
 import 'missions/memory_mission.dart';
@@ -21,7 +19,6 @@ import '../widgets/platform_theme.dart';
 import '../services/analytics_service.dart';
 import '../services/elo_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import '../services/sleep_service.dart';
 import '../services/wallpaper_service.dart';
 
@@ -46,7 +43,6 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
 
   late MissionSettings _missionSettings;
   late DateTime _startTime;
-  int _skipsUsed = 0;
 
   @override
   void initState() {
@@ -89,8 +85,6 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
       }
     });
 
-    _loadSkips();
-
     if (widget.alarmSettings.payload != null) {
       _missionSettings = MissionSettings.fromJsonString(widget.alarmSettings.payload!);
     } else {
@@ -98,16 +92,6 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
     }
 
     _isLoading = false;
-  }
-
-  void _loadSkips() async {
-    final prefs = await SharedPreferences.getInstance();
-    final monthKey = 'skips_${DateTime.now().year}_${DateTime.now().month}';
-    if (mounted) {
-      setState(() {
-        _skipsUsed = prefs.getInt(monthKey) ?? 0;
-      });
-    }
   }
 
   void _emergencyEscape() async {
@@ -275,8 +259,7 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
     }
     
     Widget content;
-    int difficulty = _missionSettings.difficultyOverride ?? 400;
-    
+
     if (_missionSettings.mission == 'math') {
       content = MathMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _missionSettings);
     } else if (_missionSettings.mission == 'memory') {

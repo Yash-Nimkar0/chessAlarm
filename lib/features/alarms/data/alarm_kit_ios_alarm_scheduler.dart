@@ -45,7 +45,7 @@ class AlarmKitIOSAlarmScheduler implements PlatformAlarmScheduler {
       await _channel.invokeMethod('cancelAlarm', {
         'id': alarmId.toString(),
       });
-    } on PlatformException catch (e) {
+    } on PlatformException {
       // If the alarm is already deleted or not found natively, it throws an error.
       // We can safely ignore this because the goal of cancel is achieved (alarm is gone).
     }
@@ -57,7 +57,7 @@ class AlarmKitIOSAlarmScheduler implements PlatformAlarmScheduler {
       await _channel.invokeMethod('cancelWakeCheckChain', {
         'id': alarmId.toString(),
       });
-    } on PlatformException catch (e) {
+    } on PlatformException {
       // Best-effort cleanup — if the chain is already gone/never existed,
       // the goal (nothing left to cancel) is already achieved.
     }
@@ -69,7 +69,7 @@ class AlarmKitIOSAlarmScheduler implements PlatformAlarmScheduler {
       await _channel.invokeMethod('pauseWakeCheckChain', {
         'id': alarmId.toString(),
       });
-    } on PlatformException catch (e) {
+    } on PlatformException {
       // Best-effort — worst case the chain stays fully armed, which is safe.
     }
   }
@@ -80,7 +80,7 @@ class AlarmKitIOSAlarmScheduler implements PlatformAlarmScheduler {
       await _channel.invokeMethod('resumeWakeCheckChain', {
         'id': alarmId.toString(),
       });
-    } on PlatformException catch (e) {
+    } on PlatformException {
       // Best-effort.
     }
   }
@@ -96,7 +96,7 @@ class AlarmKitIOSAlarmScheduler implements PlatformAlarmScheduler {
         // be decoded with parseAlarmKitUUID, mirroring getUUID(for:) on the
         // Swift side, not parsed directly.
         alarmId: parseAlarmKitUUID(map['id'] as String?) ?? -1,
-        nativeState: map['state'] as String ?? 'unknown',
+        nativeState: map['state'] as String? ?? 'unknown',
         scheduledAt: map['scheduledAt'] != null 
             ? DateTime.fromMillisecondsSinceEpoch(map['scheduledAt'] as int)
             : null,
