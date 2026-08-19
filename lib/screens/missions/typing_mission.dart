@@ -4,6 +4,7 @@ import 'package:haptic_feedback/haptic_feedback.dart';
 import '../../models/mission_settings.dart';
 import '../../models/default_quotes.dart';
 import '../../theme/design_tokens.dart';
+import '../../widgets/animated_pressable.dart';
 
 class TypingMission extends StatefulWidget {
   final VoidCallback onSuccess;
@@ -155,8 +156,8 @@ class _TypingMissionState extends State<TypingMission> {
           ),
         ),
         const SizedBox(height: 40),
-        TextButton(
-          onPressed: widget.onSkip,
+        AnimatedPressable(
+          onTap: widget.onSkip,
           child: Text('Skip (-10 Points)', style: TextStyle(color: colorScheme.error, fontSize: 16)),
         ),
       ],

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:haptic_feedback/haptic_feedback.dart';
 import 'home_screen.dart';
 import 'sleep_screen.dart';
 import 'morning_screen.dart';
@@ -39,7 +40,10 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     Widget bottomNavBar = WakelyTabBar(
       currentIndex: _currentIndex,
-      onTap: (index) => setState(() => _currentIndex = index),
+      onTap: (index) {
+        Haptics.vibrate(HapticsType.selection);
+        setState(() => _currentIndex = index);
+      },
     );
 
     if (Platform.isIOS) {

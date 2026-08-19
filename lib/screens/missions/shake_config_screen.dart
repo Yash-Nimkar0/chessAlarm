@@ -85,7 +85,7 @@ class _ShakeConfigScreenState extends State<ShakeConfigScreen> {
                       style: TextStyle(
                         fontSize: _shakeCount == count ? 40 : 28,
                         fontWeight: _shakeCount == count ? FontWeight.bold : FontWeight.normal,
-                        color: _shakeCount == count ? Colors.orangeAccent : Colors.grey,
+                        color: _shakeCount == count ? Colors.orangeAccent : Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   );
@@ -96,7 +96,7 @@ class _ShakeConfigScreenState extends State<ShakeConfigScreen> {
             Text(
               'Shake your phone strongly $_shakeCount times to dismiss the alarm.',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey, fontSize: 16),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16),
             ),
           ],
         ),

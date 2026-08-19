@@ -80,7 +80,7 @@ class _DefaultMissionConfigScreenState extends State<DefaultMissionConfigScreen>
               Text(
                 'Complete $_rounds consecutive ${widget.title.toLowerCase()} puzzles to dismiss the alarm.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.grey, fontSize: 16),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16),
               ),
             ],
           ),

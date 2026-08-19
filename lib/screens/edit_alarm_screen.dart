@@ -19,6 +19,7 @@ import 'sound_picker_screen.dart';
 import '../features/sounds/data/sound_repository.dart';
 import '../theme/design_tokens.dart';
 import '../widgets/animated_pressable.dart';
+import '../widgets/fade_slide_in.dart';
 
 class EditAlarmScreen extends StatefulWidget {
   final WakelyAlarm? alarm;
@@ -178,11 +179,30 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
   }
 
   void deleteAlarm() async {
-    if (widget.alarm != null) {
-      Haptics.vibrate(HapticsType.heavy);
-      await AlarmController.instance.deleteAlarm(widget.alarm!.id);
-      if (mounted) Navigator.pop(context, true);
-    }
+    if (widget.alarm == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Alarm?'),
+        content: const Text('This alarm will be permanently removed. This can\'t be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text('Delete', style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    Haptics.vibrate(HapticsType.heavy);
+    await AlarmController.instance.deleteAlarm(widget.alarm!.id);
+    if (mounted) Navigator.pop(context, true);
   }
 
   Future<void> _previewAlarm() async {
@@ -499,7 +519,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Column(
+                child: FadeSlideIn(child: Column(
                   children: [
                     const SizedBox(height: 20),
 
@@ -582,17 +602,26 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                                 Row(
                                    children: [
                                       AnimatedPressable(
-                                         onTap: () => setState(() => _selectedDays.fillRange(0, 7, true)),
+                                         onTap: () {
+                                           Haptics.vibrate(HapticsType.selection);
+                                           setState(() => _selectedDays.fillRange(0, 7, true));
+                                         },
                                          child: Text('Everyday', style: TextStyle(color: AppTokens.signal, fontSize: 12)),
                                       ),
                                       const SizedBox(width: 8),
                                       AnimatedPressable(
-                                         onTap: () => setState(() { _selectedDays.fillRange(0, 5, true); _selectedDays.fillRange(5, 7, false); }),
+                                         onTap: () {
+                                           Haptics.vibrate(HapticsType.selection);
+                                           setState(() { _selectedDays.fillRange(0, 5, true); _selectedDays.fillRange(5, 7, false); });
+                                         },
                                          child: Text('Weekdays', style: TextStyle(color: AppTokens.signal, fontSize: 12)),
                                       ),
                                       const SizedBox(width: 8),
                                       AnimatedPressable(
-                                         onTap: () => setState(() { _selectedDays.fillRange(0, 5, false); _selectedDays.fillRange(5, 7, true); }),
+                                         onTap: () {
+                                           Haptics.vibrate(HapticsType.selection);
+                                           setState(() { _selectedDays.fillRange(0, 5, false); _selectedDays.fillRange(5, 7, true); });
+                                         },
                                          child: Text('Weekends', style: TextStyle(color: AppTokens.signal, fontSize: 12)),
                                       ),
                                    ]
@@ -816,7 +845,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                       
                     const SizedBox(height: 40),
                   ],
-                ),
+                )),
               ),
             ),
           ],

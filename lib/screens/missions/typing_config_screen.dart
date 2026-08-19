@@ -155,9 +155,9 @@ class _TypingConfigScreenState extends State<TypingConfigScreen> {
             Expanded(
               child: ListView(
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                    child: Text('Default Phrases', style: TextStyle(color: Colors.grey)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: Text('Default Phrases', style: TextStyle(color: colorScheme.onSurfaceVariant)),
                   ),
                   ..._defaultQuotes.map((q) => CheckboxListTile(
                     title: Text(q, style: const TextStyle(fontSize: 14)),
@@ -170,9 +170,9 @@ class _TypingConfigScreenState extends State<TypingConfigScreen> {
                       });
                     },
                   )).toList(),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                    child: Text('Custom Phrases', style: TextStyle(color: Colors.grey)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: Text('Custom Phrases', style: TextStyle(color: colorScheme.onSurfaceVariant)),
                   ),
                   ..._customQuotes.map((q) => CheckboxListTile(
                     title: Text(q, style: const TextStyle(fontSize: 14)),

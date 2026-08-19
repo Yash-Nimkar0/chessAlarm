@@ -6,6 +6,7 @@ import 'dart:math';
 
 import '../../models/mission_settings.dart';
 import '../../features/alarms/application/wake_session_controller.dart';
+import '../../widgets/animated_pressable.dart';
 
 class ShakeMission extends StatefulWidget {
   final VoidCallback onSuccess;
@@ -23,24 +24,26 @@ class ShakeMission extends StatefulWidget {
   State<ShakeMission> createState() => _ShakeMissionState();
 }
 
-class _ShakeMissionState extends State<ShakeMission> {
+class _ShakeMissionState extends State<ShakeMission> with SingleTickerProviderStateMixin {
   StreamSubscription? _accelSub;
   int _shakes = 0;
   late int _targetShakes;
-  
+  late final AnimationController _wiggleController;
+
   static const double shakeThreshold = 15.0; // Acceleration magnitude to count as a shake
   DateTime _lastShakeTime = DateTime.now();
 
   @override
   void initState() {
     super.initState();
+    _wiggleController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
     final data = widget.settings.missionData;
     if (data != null && data['shake_count'] != null) {
       _targetShakes = data['shake_count'];
     } else {
       _targetShakes = 30;
     }
-    
+
     _accelSub = userAccelerometerEventStream(samplingPeriod: SensorInterval.gameInterval).listen((event) {
       double magnitude = sqrt(event.x * event.x + event.y * event.y + event.z * event.z);
       if (magnitude > shakeThreshold) {
@@ -57,6 +60,7 @@ class _ShakeMissionState extends State<ShakeMission> {
           setState(() {
             _shakes++;
           });
+          _wiggleController.forward(from: 0);
           Haptics.vibrate(HapticsType.light);
           if (_shakes >= _targetShakes) {
             _accelSub?.cancel();
@@ -71,6 +75,7 @@ class _ShakeMissionState extends State<ShakeMission> {
   @override
   void dispose() {
     _accelSub?.cancel();
+    _wiggleController.dispose();
     super.dispose();
   }
 
@@ -105,7 +110,15 @@ class _ShakeMissionState extends State<ShakeMission> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.vibration, size: 80, color: progress > 0.5 ? Colors.black87 : Colors.orangeAccent),
+              AnimatedBuilder(
+                animation: _wiggleController,
+                builder: (context, child) {
+                  final t = _wiggleController.value;
+                  final angle = sin(t * pi * 4) * 0.25 * (1 - t);
+                  return Transform.rotate(angle: angle, child: child);
+                },
+                child: Icon(Icons.vibration, size: 80, color: progress > 0.5 ? Colors.black87 : Colors.orangeAccent),
+              ),
               const SizedBox(height: 24),
               Text(
                 "Shake to Wake!",
@@ -134,8 +147,8 @@ class _ShakeMissionState extends State<ShakeMission> {
                 ),
               ),
               const SizedBox(height: 40),
-              TextButton(
-                onPressed: widget.onSkip,
+              AnimatedPressable(
+                onTap: widget.onSkip,
                 child: Text(
                   'Skip (-10 Points)',
                   style: TextStyle(color: progress > 0.5 ? Theme.of(context).colorScheme.error : Colors.redAccent.shade100, fontSize: 16),

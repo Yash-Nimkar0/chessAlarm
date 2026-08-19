@@ -6,6 +6,8 @@ import 'mission_interface.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/animated_pressable.dart';
 
+double _shakeOffset(double t) => sin(t * pi * 6) * 10 * (1 - t);
+
 class MemoryMission extends MissionWidget {
   final MissionSettings settings;
 
@@ -20,7 +22,8 @@ class MemoryMission extends MissionWidget {
   State<MemoryMission> createState() => _MemoryMissionState();
 }
 
-class _MemoryMissionState extends State<MemoryMission> {
+class _MemoryMissionState extends State<MemoryMission> with SingleTickerProviderStateMixin {
+  late final AnimationController _shakeController;
   final List<Color> _baseColors = [
     Colors.redAccent,
     Colors.blueAccent,
@@ -42,7 +45,14 @@ class _MemoryMissionState extends State<MemoryMission> {
     super.initState();
     _difficulty = widget.settings.difficultyOverride ?? 400;
     _totalRounds = widget.settings.missionRounds;
+    _shakeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _startNewSequence();
+  }
+
+  @override
+  void dispose() {
+    _shakeController.dispose();
+    super.dispose();
   }
 
   Future<void> _startNewSequence() async {
@@ -91,6 +101,7 @@ class _MemoryMissionState extends State<MemoryMission> {
     for (int i = 0; i < _userSequence.length; i++) {
       if (_userSequence[i] != _sequence[i]) {
         Haptics.vibrate(HapticsType.error);
+        _shakeController.forward(from: 0);
         _startNewSequence(); // Restart on mistake
         return;
       }
@@ -143,39 +154,43 @@ class _MemoryMissionState extends State<MemoryMission> {
           style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
         ),
         const SizedBox(height: 60),
-        SizedBox(
-          width: 300,
-          height: 300,
-          child: GridView.builder(
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 20,
-              mainAxisSpacing: 20,
-            ),
-            itemCount: 4,
-            itemBuilder: (context, index) {
-              final isFlashing = _activeFlash == index;
-              return AnimatedPressable(
-                onTap: () => _onTileTapped(index),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  decoration: BoxDecoration(
-                    color: isFlashing ? _baseColors[index] : _baseColors[index].withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-                    border: Border.all(
-                      color: isFlashing ? colorScheme.onSurface : _baseColors[index].withValues(alpha: 0.3),
-                      width: isFlashing ? 4 : 2,
+        AnimatedBuilder(
+          animation: _shakeController,
+          builder: (context, child) => Transform.translate(offset: Offset(_shakeOffset(_shakeController.value), 0), child: child),
+          child: SizedBox(
+            width: 300,
+            height: 300,
+            child: GridView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 20,
+                mainAxisSpacing: 20,
+              ),
+              itemCount: 4,
+              itemBuilder: (context, index) {
+                final isFlashing = _activeFlash == index;
+                return AnimatedPressable(
+                  onTap: () => _onTileTapped(index),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    decoration: BoxDecoration(
+                      color: isFlashing ? _baseColors[index] : _baseColors[index].withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                      border: Border.all(
+                        color: isFlashing ? colorScheme.onSurface : _baseColors[index].withValues(alpha: 0.3),
+                        width: isFlashing ? 4 : 2,
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
             ),
           ),
+          ),
           const SizedBox(height: 60),
-          TextButton(
-            onPressed: widget.onSkip,
+          AnimatedPressable(
+            onTap: widget.onSkip,
             child: Text('Skip (-10 Points)', style: TextStyle(color: colorScheme.error, fontSize: 16)),
           ),
         ],
