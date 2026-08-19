@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/sound_model.dart';
@@ -77,13 +78,29 @@ class CustomSoundService {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_prefsKey);
     if (raw == null) return [];
-    final List<dynamic> list = jsonDecode(raw);
-    return list.map((m) => SoundModel(
-      id: m['id'],
-      name: m['name'],
-      source: SoundSource.custom,
-      path: m['path'],
-    )).toList();
+
+    List<dynamic> list;
+    try {
+      list = jsonDecode(raw);
+    } catch (e) {
+      if (kDebugMode) print('Failed to decode custom sounds JSON: $e');
+      return [];
+    }
+
+    final sounds = <SoundModel>[];
+    for (final m in list) {
+      try {
+        sounds.add(SoundModel(
+          id: m['id'],
+          name: m['name'],
+          source: SoundSource.custom,
+          path: m['path'],
+        ));
+      } catch (e) {
+        if (kDebugMode) print('Skipping corrupt custom sound entry: $e');
+      }
+    }
+    return sounds;
   }
 
   static Future<void> _save(List<SoundModel> sounds) async {
