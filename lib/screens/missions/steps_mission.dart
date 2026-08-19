@@ -124,30 +124,40 @@ class _StepsMissionState extends State<StepsMission> {
                     color: Colors.blueAccent,
                   ),
                 ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.directions_walk, size: 64, color: Colors.blueAccent),
-                    const SizedBox(height: 8),
-                    if (_hasError)
-                      Text(
-                        'Sensor Error',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.error,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(_hasError ? Icons.sensors_off : Icons.directions_walk, size: 64, color: _hasError ? colorScheme.error : Colors.blueAccent),
+                      const SizedBox(height: 8),
+                      if (_hasError) ...[
+                        Text(
+                          'Step sensor unavailable',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.error,
+                          ),
                         ),
-                      )
-                    else
-                      Text(
-                        '$_currentSteps / $_targetSteps',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
+                        const SizedBox(height: 6),
+                        Text(
+                          'This device or simulator can\'t count steps. Use Skip below to continue.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
                         ),
-                      ),
-                  ],
+                      ] else
+                        Text(
+                          '$_currentSteps / $_targetSteps',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ],
             ),
