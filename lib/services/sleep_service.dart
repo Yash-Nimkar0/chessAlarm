@@ -223,7 +223,9 @@ class SleepService {
       } else {
         try {
           _noiseMeter = NoiseMeter();
-          _noiseSub = _noiseMeter!.noise.listen(_onNoiseReading, onError: (e) => print(e));
+          _noiseSub = _noiseMeter!.noise.listen(_onNoiseReading, onError: (e) {
+            if (kDebugMode) print(e);
+          });
           
           if (privacyMode == 2) {
              await _startAudioBuffer();
