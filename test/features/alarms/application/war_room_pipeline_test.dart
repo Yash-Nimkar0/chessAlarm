@@ -4,60 +4,16 @@ import 'package:wakely/features/alarms/domain/alarm_model.dart';
 import 'package:wakely/features/alarms/domain/mission_config.dart';
 import 'package:wakely/features/alarms/domain/recurrence.dart';
 import 'package:wakely/features/alarms/data/alarm_repository.dart';
-import 'package:wakely/features/alarms/application/alarm_controller.dart';
 import 'package:wakely/features/alarms/application/wake_session_controller.dart';
 import 'package:wakely/features/alarms/application/wake_audio_session_controller.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:alarm/alarm.dart';
-import 'package:flutter/services.dart';
+import '../../../test_helpers/alarm_test_env.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('War Room Pipeline Tests', () {
     setUp(() async {
-      SharedPreferences.setMockInitialValues({});
-      
-      const MethodChannel('xyz.luan/audioplayers.global').setMockMethodCallHandler((MethodCall methodCall) async {
-        return 1;
-      });
-      const MethodChannel('xyz.luan/audioplayers').setMockMethodCallHandler((MethodCall methodCall) async {
-        return 1;
-      });
-      const MethodChannel('com.kurenai7968.volume_controller.method').setMockMethodCallHandler((MethodCall methodCall) async {
-        return 0.5;
-      });
-      const MethodChannel('plugins.flutter.io/path_provider').setMockMethodCallHandler((MethodCall methodCall) async {
-        return '/tmp';
-      });
-
-      const MethodChannel('wakely.alarmkit').setMockMethodCallHandler((MethodCall methodCall) async {
-        return null;
-      });
-      
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMessageHandler(
-        'dev.flutter.pigeon.alarm.AlarmApi.setAlarm',
-        (ByteData? message) async {
-          return const StandardMessageCodec().encodeMessage([null]);
-        },
-      );
-      
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMessageHandler(
-        'dev.flutter.pigeon.alarm.AlarmApi.stopAlarm',
-        (ByteData? message) async {
-          return const StandardMessageCodec().encodeMessage([null]);
-        },
-      );
-
-      await Alarm.init();
-      WakeAudioSessionController.instance.isTestMode = true;
-      
-      // We must initialize AlarmController so _scheduleWakeCheckFallback can use _scheduler
-      try {
-        await AlarmController.instance.init();
-      } catch (_) {}
+      await setUpAlarmTestEnvironment();
     });
 
     tearDown(() async {

@@ -2,10 +2,10 @@ import 'dart:math';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
-import 'package:alarm/alarm.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../models/mission_settings.dart';
+import '../features/alarms/application/alarm_controller.dart';
+import '../features/alarms/domain/alarm_model.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -42,20 +42,39 @@ class NotificationService {
     if (reminderOffset == '15m') offsetMinutes = 15;
     if (reminderOffset == '30m') offsetMinutes = 30;
 
-    final alarms = await Alarm.getAlarms();
-    for (var alarm in alarms) {
-      if (alarm.payload != null) {
-        final settings = MissionSettings.fromJsonString(alarm.payload!);
-        if (settings.type == 'wakeRoutine') {
-          DateTime bedtime = alarm.dateTime.subtract(Duration(minutes: (settings.sleepGoal * 60).toInt()));
-          DateTime reminderTime = bedtime.subtract(Duration(minutes: offsetMinutes));
-          
-          if (reminderTime.isAfter(DateTime.now())) {
-             _scheduleBedtimeReminder(alarm.id, reminderTime, alarm.dateTime);
-          }
-        }
+    // Must read from AlarmController (the unified WakelyAlarm repository),
+    // not the legacy `alarm` plugin's own Alarm.getAlarms(): on iOS 26.1+,
+    // AlarmKitIOSAlarmScheduler schedules alarms entirely through AlarmKit's
+    // own MethodChannel, never touching the `alarm` plugin's native store.
+    // Alarm.getAlarms() would silently return an empty list there, meaning
+    // bedtime reminders would never fire on the primary supported iOS path.
+    final alarms = await AlarmController.instance.getAlarms();
+    for (final reminder in remindersDue(alarms, offsetMinutes: offsetMinutes, now: DateTime.now())) {
+      _scheduleBedtimeReminder(reminder.alarmId, reminder.reminderTime, reminder.wakeTime);
+    }
+  }
+
+  /// Pure logic (no plugin calls) for which enabled wake-routine alarms need
+  /// a bedtime reminder scheduled, and when. Split out from
+  /// [setupSleepReminders] so it's testable without needing to mock the
+  /// notifications plugin's platform-specific internals.
+  static List<_BedtimeReminder> remindersDue(
+    List<WakelyAlarm> alarms, {
+    required int offsetMinutes,
+    required DateTime now,
+  }) {
+    final due = <_BedtimeReminder>[];
+    for (final alarm in alarms) {
+      if (!alarm.enabled || alarm.type != AlarmType.wakeRoutine) continue;
+
+      final bedtime = alarm.time.subtract(Duration(minutes: (alarm.sleepGoal * 60).toInt()));
+      final reminderTime = bedtime.subtract(Duration(minutes: offsetMinutes));
+
+      if (reminderTime.isAfter(now)) {
+        due.add(_BedtimeReminder(alarmId: alarm.id, reminderTime: reminderTime, wakeTime: alarm.time));
       }
     }
+    return due;
   }
 
   static Future<void> _scheduleBedtimeReminder(int id, DateTime reminderTime, DateTime wakeTime) async {
@@ -83,4 +102,11 @@ class NotificationService {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
   }
+}
+
+class _BedtimeReminder {
+  final int alarmId;
+  final DateTime reminderTime;
+  final DateTime wakeTime;
+  const _BedtimeReminder({required this.alarmId, required this.reminderTime, required this.wakeTime});
 }
