@@ -54,16 +54,17 @@ class PlatformScaffold extends StatelessWidget {
         if (path == null) return const SizedBox.shrink();
         final isDark = forceDarkWallpaperScrim || Theme.of(context).brightness == Brightness.dark;
         final scrimColor = isDark ? AppTokens.nightBg : AppTokens.daylightBg;
-        // A floor keeps text legible even if the user drags the dim slider
-        // to its minimum on a busy photo — the slider still meaningfully
-        // changes how much of the photo shows through above that floor.
-        final effectiveDim = 0.35 + (WallpaperService().dimAmount * 0.55);
+        // Text legibility mostly comes from PlatformCard's own tinted blur
+        // (and, on wake screens, an extra local gradient) — this scrim only
+        // needs a light floor so the photo stays clearly visible at the
+        // slider's minimum instead of looking barely-there.
+        final effectiveDim = 0.12 + (WallpaperService().dimAmount * 0.7);
         return Positioned.fill(
           child: Stack(
             fit: StackFit.expand,
             children: [
               ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                imageFilter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                 child: Image.file(File(path), fit: BoxFit.cover),
               ),
               Container(color: scrimColor.withValues(alpha: effectiveDim)),
