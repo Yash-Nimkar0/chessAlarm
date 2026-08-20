@@ -15,6 +15,13 @@ class WakelyTabBar extends StatelessWidget {
 
   const WakelyTabBar({super.key, required this.currentIndex, required this.onTap});
 
+  /// The bar's own content height, not counting the bottom safe-area inset
+  /// SafeArea adds beneath it. Screens whose body now extends behind this
+  /// bar (MainScreen's Scaffold uses extendBody so the bar's blur has real
+  /// content to show through) need this to keep floating buttons/content
+  /// clear of it — see home_screen.dart's FAB.
+  static const double height = 62;
+
   static const List<_TabItem> _items = [
     _TabItem(Icons.alarm_outlined, Icons.alarm_rounded, 'Alarm'),
     _TabItem(Icons.nights_stay_outlined, Icons.nights_stay_rounded, 'Sleep'),
@@ -35,7 +42,7 @@ class WakelyTabBar extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 62,
+          height: height,
           child: LayoutBuilder(
             builder: (context, constraints) {
               final itemWidth = constraints.maxWidth / _items.length;
@@ -65,7 +72,7 @@ class WakelyTabBar extends StatelessWidget {
                       final item = _items[i];
                       return SizedBox(
                         width: itemWidth,
-                        height: 62,
+                        height: height,
                         child: Semantics(
                           button: true,
                           selected: selected,

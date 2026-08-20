@@ -96,6 +96,13 @@ class PlatformScaffold extends StatelessWidget {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         extendBodyBehindAppBar: true,
+        // Without this, `body` was sized to stop exactly where
+        // `bottomNavigationBar` begins — so the tab bar's own frosted blur
+        // had nothing real behind it to blur, just the plain scaffold
+        // background, regardless of which tab's own colorful/dark content
+        // was showing above it. That's why it always looked like a flat,
+        // disconnected strip instead of a glass bar over the actual page.
+        extendBody: bottomNavigationBar != null,
         appBar: appBar,
         floatingActionButton: floatingActionButton,
         floatingActionButtonLocation: floatingActionButtonLocation,
@@ -113,6 +120,7 @@ class PlatformScaffold extends StatelessWidget {
         appBar: appBar,
         floatingActionButton: floatingActionButton,
         floatingActionButtonLocation: floatingActionButtonLocation,
+        extendBody: bottomNavigationBar != null,
         bottomNavigationBar: bottomNavigationBar,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Stack(

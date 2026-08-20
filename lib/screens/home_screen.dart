@@ -31,6 +31,7 @@ import '../widgets/platform_theme.dart';
 import '../widgets/sky_particles.dart';
 import '../widgets/weather_ambience.dart';
 import '../widgets/weather_widget.dart' show AnimatedWeatherIcon;
+import '../widgets/wakely_tab_bar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -919,10 +920,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => navigateToAlarmScreen(null),
-        icon: const Icon(Icons.add_alarm_rounded),
-        label: const Text("New Alarm"),
+      // MainScreen's Scaffold uses extendBody so the tab bar's blur has
+      // real content behind it to show through - which also means this
+      // screen's own body (and this FAB, positioned relative to it) now
+      // extends behind where the tab bar sits. Without this padding the
+      // FAB rendered directly underneath the tab bar, fully hidden.
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: WakelyTabBar.height + MediaQuery.of(context).padding.bottom),
+        child: FloatingActionButton.extended(
+          onPressed: () => navigateToAlarmScreen(null),
+          icon: const Icon(Icons.add_alarm_rounded),
+          label: const Text("New Alarm"),
+        ),
       ),
     );
   }
