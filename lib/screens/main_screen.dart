@@ -65,7 +65,12 @@ class _MainScreenState extends State<MainScreen> {
 
     // Wrap everything in one PlatformScaffold for the background.
     // The inner screens will just use standard transparent Scaffolds.
+    // applySafeArea: false — every tab screen below already wraps its own
+    // content in its own SafeArea; an extra one here just shrank the box
+    // each tab has to work with, which broke the Morning tab's full-bleed
+    // background from ever reaching the true top of the screen.
     return PlatformScaffold(
+      applySafeArea: false,
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 260),
         switchInCurve: Curves.easeOutCubic,

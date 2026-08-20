@@ -20,6 +20,19 @@ class PlatformScaffold extends StatelessWidget {
   /// illegible the moment Light mode picks a light scrim.
   final bool forceDarkWallpaperScrim;
 
+  /// Every existing screen that passes a `body` here relies on
+  /// PlatformScaffold to inset it from the status bar/notch itself, so this
+  /// defaults to true to keep them all unchanged. MainScreen is the one
+  /// exception: it passes each tab's already-self-contained screen (each of
+  /// which already wraps its own SafeArea internally) as `body`, so an
+  /// extra SafeArea here just shrinks the box that screen has to work with
+  /// — for a screen with a plain background that's invisible, but for one
+  /// that wants a full-bleed background reaching the true top of the
+  /// screen (the Morning tab), it left a gap of the app's flat background
+  /// showing above it that no descendant could reclaim, since by the time
+  /// it mounts the extra Padding has already shrunk its layout box.
+  final bool applySafeArea;
+
   const PlatformScaffold({
     Key? key,
     required this.body,
@@ -28,6 +41,7 @@ class PlatformScaffold extends StatelessWidget {
     this.floatingActionButtonLocation,
     this.bottomNavigationBar,
     this.forceDarkWallpaperScrim = false,
+    this.applySafeArea = true,
   }) : super(key: key);
 
   /// Renders the user's chosen background photo full-bleed behind
@@ -77,6 +91,7 @@ class PlatformScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final insetBody = applySafeArea ? SafeArea(child: body) : body;
     if (Platform.isIOS) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -87,7 +102,7 @@ class PlatformScaffold extends StatelessWidget {
         body: Stack(
           children: [
             _backgroundLayer(context),
-            SafeArea(child: body),
+            insetBody,
           ],
         ),
         bottomNavigationBar: bottomNavigationBar,
@@ -103,7 +118,7 @@ class PlatformScaffold extends StatelessWidget {
         body: Stack(
           children: [
             _backgroundLayer(context),
-            SafeArea(child: body),
+            insetBody,
           ],
         ),
       );
