@@ -4,11 +4,14 @@ PODS:
   - Flutter (1.0.0)
   - flutter_foreground_task (0.0.1):
     - Flutter
+  - flutter_tts (0.0.1):
+    - Flutter
 
 DEPENDENCIES:
   - audio_streamer (from `.symlinks/plugins/audio_streamer/ios`)
   - Flutter (from `Flutter`)
   - flutter_foreground_task (from `.symlinks/plugins/flutter_foreground_task/ios`)
+  - flutter_tts (from `.symlinks/plugins/flutter_tts/ios`)
 
 EXTERNAL SOURCES:
   audio_streamer:
@@ -17,11 +20,14 @@ EXTERNAL SOURCES:
     :path: Flutter
   flutter_foreground_task:
     :path: ".symlinks/plugins/flutter_foreground_task/ios"
+  flutter_tts:
+    :path: ".symlinks/plugins/flutter_tts/ios"
 
 SPEC CHECKSUMS:
   audio_streamer: 85e5b27e443525fcfe375052132327539c89d19a
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_foreground_task: a159d2c2173b33699ddb3e6c2a067045d7cebb89
+  flutter_tts: 35ac3c7d42412733e795ea96ad2d7e05d0a75113
 
 PODFILE CHECKSUM: e30f02f9d1c72c47bb6344a0a748c9d268180865
 

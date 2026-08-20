@@ -49,8 +49,12 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
   late String soundId;
   late bool fadeIn;
   late int fadeDuration;
-  late MissionSettings _missionSettings; // Kept for config screens compatibility
-  
+  late MissionSettings _missionSettings; // Kept for config screens compatibility - represents mission 1 of the chain
+  // Missions 2-5 of the chain (mission 1 always lives in _missionSettings so
+  // the existing single-mission picker/config screens stay untouched).
+  List<MissionConfig> _extraMissions = [];
+  late RingAnnouncementMode _announcementMode;
+
   // 0=Mon, 1=Tue, ..., 6=Sun
   List<bool> _selectedDays = List.filled(7, true);
   final List<String> _dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -95,6 +99,8 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
         label: widget.alarm!.label,
         smartLock: widget.alarm!.smartLock,
       );
+      _extraMissions = widget.alarm!.missions.length > 1 ? List.from(widget.alarm!.missions.sublist(1)) : [];
+      _announcementMode = widget.alarm!.announcementMode;
     } else {
       if (widget.initialTime != null) {
         final now = DateTime.now();
@@ -119,6 +125,8 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
       );
       _labelController.text = '';
       _selectedDays = List.filled(7, false); // default to one-shot
+      _extraMissions = [];
+      _announcementMode = RingAnnouncementMode.off;
     }
   }
   
@@ -144,6 +152,10 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
       rounds: _missionSettings.missionRounds,
       data: _missionSettings.missionData,
     );
+    // A chain only makes sense once there's a primary mission - if the
+    // user picked 'None', ignore any leftover extra steps rather than
+    // shipping a mission-less alarm that somehow still gates on a chain.
+    final missionChain = missionConfig.type == MissionType.none ? <MissionConfig>[] : [missionConfig, ..._extraMissions];
 
     final alarmType = widget.isWakeRoutine ? AlarmType.wakeRoutine : AlarmType.standard;
 
@@ -164,13 +176,15 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
         volume: volume,
         smartLock: _missionSettings.smartLock,
         mission: missionConfig,
+        missions: missionChain,
+        announcementMode: _announcementMode,
         sleepGoal: _missionSettings.sleepGoal,
         sleepTracking: _missionSettings.sleepTracking,
         sleepSounds: _missionSettings.sleepSounds,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
-      
+
       final created = await AlarmController.instance.createAlarm(newAlarm);
       if (mounted) Navigator.pop(context, created);
     } else {
@@ -189,12 +203,14 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
         volume: volume,
         smartLock: _missionSettings.smartLock,
         mission: missionConfig,
+        missions: missionChain,
+        announcementMode: _announcementMode,
         sleepGoal: _missionSettings.sleepGoal,
         sleepTracking: _missionSettings.sleepTracking,
         sleepSounds: _missionSettings.sleepSounds,
         updatedAt: DateTime.now(),
       );
-      
+
       final saved = await AlarmController.instance.updateAlarm(updatedAlarm);
       if (mounted) Navigator.pop(context, saved);
     }
@@ -284,6 +300,87 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
     }
   }
 
+  /// The 8 real mission types (+ optional 'None'), each wired to its own
+  /// config screen. Shared by the primary mission picker and the "add
+  /// another mission" picker for extra chain steps, so both stay in sync
+  /// instead of drifting into two copies of the same list.
+  List<Widget> _missionOptionTiles({
+    required MissionSettings baseSettings,
+    required String? selectedType,
+    required void Function(MissionSettings result) onPicked,
+    bool includeNone = true,
+  }) {
+    Widget tile({
+      required IconData icon,
+      required Color color,
+      required String title,
+      required String subtitle,
+      required String type,
+      required Widget Function() buildConfigScreen,
+    }) {
+      return ListTile(
+        leading: Icon(icon, color: color),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        trailing: selectedType == type ? Icon(Icons.check, color: color) : null,
+        onTap: () async {
+          Navigator.pop(context);
+          final result = await Navigator.push<MissionSettings>(
+            context,
+            MaterialPageRoute(builder: (context) => buildConfigScreen()),
+          );
+          if (result != null) onPicked(result);
+        },
+      );
+    }
+
+    return [
+      tile(
+        icon: Icons.calculate, color: Colors.blue, title: 'Math Problem', subtitle: 'Solve a math equation to wake up.', type: 'math',
+        buildConfigScreen: () => DefaultMissionConfigScreen(initialSettings: baseSettings, missionId: 'math', title: 'Math Problem', icon: Icons.calculate, color: Colors.blue),
+      ),
+      tile(
+        icon: Icons.psychology, color: Colors.purple, title: 'Memory Match', subtitle: 'Memorize and recall a sequence.', type: 'memory',
+        buildConfigScreen: () => DefaultMissionConfigScreen(initialSettings: baseSettings, missionId: 'memory', title: 'Memory Match', icon: Icons.psychology, color: Colors.purple),
+      ),
+      tile(
+        icon: Icons.keyboard, color: Colors.indigo, title: 'Typing', subtitle: 'Type a motivational phrase.', type: 'typing',
+        buildConfigScreen: () => TypingConfigScreen(initialSettings: baseSettings),
+      ),
+      tile(
+        icon: Icons.grid_view, color: Colors.teal, title: 'Color Tiles', subtitle: 'Find all tiles of a target color.', type: 'color_tiles',
+        buildConfigScreen: () => DefaultMissionConfigScreen(initialSettings: baseSettings, missionId: 'color_tiles', title: 'Color Tiles', icon: Icons.grid_view, color: Colors.teal),
+      ),
+      tile(
+        icon: Icons.question_mark, color: Colors.orange, title: 'Missing Symbol', subtitle: 'Find the missing math operator.', type: 'missing_symbol',
+        buildConfigScreen: () => DefaultMissionConfigScreen(initialSettings: baseSettings, missionId: 'missing_symbol', title: 'Missing Symbol', icon: Icons.question_mark, color: Colors.orange),
+      ),
+      tile(
+        icon: Icons.vibration, color: Colors.redAccent, title: 'Shake', subtitle: 'Shake your phone vigorously.', type: 'shake',
+        buildConfigScreen: () => ShakeConfigScreen(initialSettings: baseSettings),
+      ),
+      tile(
+        icon: Icons.qr_code_scanner, color: Colors.pink, title: 'QR / Barcode', subtitle: 'Scan a specific barcode to wake up.', type: 'qr',
+        buildConfigScreen: () => QRConfigScreen(initialSettings: baseSettings),
+      ),
+      tile(
+        icon: Icons.directions_walk, color: Colors.blueAccent, title: 'Steps', subtitle: 'Walk a target number of steps.', type: 'steps',
+        buildConfigScreen: () => StepsConfigScreen(initialSettings: baseSettings),
+      ),
+      if (includeNone)
+        ListTile(
+          leading: const Icon(Icons.swipe, color: Colors.green),
+          title: const Text('None'),
+          subtitle: const Text('Just slide to turn off the alarm.'),
+          trailing: selectedType == 'none' ? const Icon(Icons.check, color: Colors.green) : null,
+          onTap: () {
+            Navigator.pop(context);
+            onPicked(baseSettings.copyWith(mission: 'none'));
+          },
+        ),
+    ];
+  }
+
   void _showMissionPicker() {
     showModalBottomSheet(
       context: context,
@@ -299,165 +396,151 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                   padding: EdgeInsets.all(16.0),
                   child: Text('Select Mission', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
-                ListTile(
-                leading: const Icon(Icons.calculate, color: Colors.blue),
-                title: const Text('Math Problem'),
-                subtitle: const Text('Solve a math equation to wake up.'),
-                trailing: _missionSettings.mission == 'math' ? const Icon(Icons.check, color: Colors.blue) : null,
-                onTap: () async {
-                  Navigator.pop(context);
-                  final result = await Navigator.push<MissionSettings>(
-                    context,
-                    MaterialPageRoute(builder: (context) => DefaultMissionConfigScreen(
-                      initialSettings: _missionSettings,
-                      missionId: 'math',
-                      title: 'Math Problem',
-                      icon: Icons.calculate,
-                      color: Colors.blue,
-                    )),
-                  );
-                  if (result != null) setState(() => _missionSettings = result);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.psychology, color: Colors.purple),
-                title: const Text('Memory Match'),
-                subtitle: const Text('Memorize and recall a sequence.'),
-                trailing: _missionSettings.mission == 'memory' ? const Icon(Icons.check, color: Colors.purple) : null,
-                onTap: () async {
-                  Navigator.pop(context);
-                  final result = await Navigator.push<MissionSettings>(
-                    context,
-                    MaterialPageRoute(builder: (context) => DefaultMissionConfigScreen(
-                      initialSettings: _missionSettings,
-                      missionId: 'memory',
-                      title: 'Memory Match',
-                      icon: Icons.psychology,
-                      color: Colors.purple,
-                    )),
-                  );
-                  if (result != null) setState(() => _missionSettings = result);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.keyboard, color: Colors.indigo),
-                title: const Text('Typing'),
-                subtitle: const Text('Type a motivational phrase.'),
-                trailing: _missionSettings.mission == 'typing' ? const Icon(Icons.check, color: Colors.indigo) : null,
-                onTap: () async {
-                  Navigator.pop(context);
-                  final result = await Navigator.push<MissionSettings>(
-                    context,
-                    MaterialPageRoute(builder: (context) => TypingConfigScreen(
-                      initialSettings: _missionSettings,
-                    )),
-                  );
-                  if (result != null) setState(() => _missionSettings = result);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.grid_view, color: Colors.teal),
-                title: const Text('Color Tiles'),
-                subtitle: const Text('Find all tiles of a target color.'),
-                trailing: _missionSettings.mission == 'color_tiles' ? const Icon(Icons.check, color: Colors.teal) : null,
-                onTap: () async {
-                  Navigator.pop(context);
-                  final result = await Navigator.push<MissionSettings>(
-                    context,
-                    MaterialPageRoute(builder: (context) => DefaultMissionConfigScreen(
-                      initialSettings: _missionSettings,
-                      missionId: 'color_tiles',
-                      title: 'Color Tiles',
-                      icon: Icons.grid_view,
-                      color: Colors.teal,
-                    )),
-                  );
-                  if (result != null) setState(() => _missionSettings = result);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.question_mark, color: Colors.orange),
-                title: const Text('Missing Symbol'),
-                subtitle: const Text('Find the missing math operator.'),
-                trailing: _missionSettings.mission == 'missing_symbol' ? const Icon(Icons.check, color: Colors.orange) : null,
-                onTap: () async {
-                  Navigator.pop(context);
-                  final result = await Navigator.push<MissionSettings>(
-                    context,
-                    MaterialPageRoute(builder: (context) => DefaultMissionConfigScreen(
-                      initialSettings: _missionSettings,
-                      missionId: 'missing_symbol',
-                      title: 'Missing Symbol',
-                      icon: Icons.question_mark,
-                      color: Colors.orange,
-                    )),
-                  );
-                  if (result != null) setState(() => _missionSettings = result);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.vibration, color: Colors.redAccent),
-                title: const Text('Shake'),
-                subtitle: const Text('Shake your phone vigorously.'),
-                trailing: _missionSettings.mission == 'shake' ? const Icon(Icons.check, color: Colors.redAccent) : null,
-                onTap: () async {
-                  Navigator.pop(context);
-                  final result = await Navigator.push<MissionSettings>(
-                    context,
-                    MaterialPageRoute(builder: (context) => ShakeConfigScreen(
-                      initialSettings: _missionSettings,
-                    )),
-                  );
-                  if (result != null) setState(() => _missionSettings = result);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.qr_code_scanner, color: Colors.pink),
-                title: const Text('QR / Barcode'),
-                subtitle: const Text('Scan a specific barcode to wake up.'),
-                trailing: _missionSettings.mission == 'qr' ? const Icon(Icons.check, color: Colors.pink) : null,
-                onTap: () async {
-                  Navigator.pop(context);
-                  final result = await Navigator.push<MissionSettings>(
-                    context,
-                    MaterialPageRoute(builder: (context) => QRConfigScreen(
-                      initialSettings: _missionSettings,
-                    )),
-                  );
-                  if (result != null) setState(() => _missionSettings = result);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.directions_walk, color: Colors.blueAccent),
-                title: const Text('Steps'),
-                subtitle: const Text('Walk a target number of steps.'),
-                trailing: _missionSettings.mission == 'steps' ? const Icon(Icons.check, color: Colors.blueAccent) : null,
-                onTap: () async {
-                  Navigator.pop(context);
-                  final result = await Navigator.push<MissionSettings>(
-                    context,
-                    MaterialPageRoute(builder: (context) => StepsConfigScreen(
-                      initialSettings: _missionSettings,
-                    )),
-                  );
-                  if (result != null) setState(() => _missionSettings = result);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.swipe, color: Colors.green),
-                title: const Text('None'),
-                subtitle: const Text('Just slide to turn off the alarm.'),
-                trailing: _missionSettings.mission == 'none' ? const Icon(Icons.check, color: Colors.green) : null,
-                onTap: () {
-                  setState(() => _missionSettings = _missionSettings.copyWith(mission: 'none'));
-                  Navigator.pop(context);
-                },
-              ),
-            ],
+                ..._missionOptionTiles(
+                  baseSettings: _missionSettings,
+                  selectedType: _missionSettings.mission,
+                  onPicked: (result) => setState(() {
+                    _missionSettings = result;
+                    // 'None' as the primary mission means no mission at
+                    // all - a chain of follow-ups only makes sense once
+                    // there's a first mission leading it.
+                    if (result.mission == 'none') _extraMissions = [];
+                  }),
+                ),
+              ],
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
+  }
+
+  void _addExtraMission() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text('Add Mission ${_extraMissions.length + 2} of 5', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ),
+                ..._missionOptionTiles(
+                  baseSettings: MissionSettings(mission: 'memory'),
+                  selectedType: null,
+                  includeNone: false,
+                  onPicked: (result) => setState(() {
+                    _extraMissions.add(MissionConfig(
+                      type: MissionType.fromString(result.mission),
+                      difficultyMode: result.difficultyMode,
+                      difficultyOverride: result.difficultyOverride,
+                      rounds: result.missionRounds,
+                      data: result.missionData,
+                    ));
+                  }),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildExtraMissionRow(int index) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final m = _extraMissions[index];
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: CircleAvatar(
+        radius: 12,
+        backgroundColor: AppTokens.signal.withValues(alpha: 0.15),
+        child: Text('${index + 2}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTokens.signal)),
+      ),
+      title: Text(_getMissionDisplayName(m.type.toStringValue())),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: Icon(Icons.keyboard_arrow_up, color: index > 0 ? colorScheme.onSurfaceVariant : colorScheme.onSurfaceVariant.withValues(alpha: 0.25)),
+            onPressed: index > 0
+                ? () => setState(() {
+                      final item = _extraMissions.removeAt(index);
+                      _extraMissions.insert(index - 1, item);
+                    })
+                : null,
+          ),
+          IconButton(
+            icon: Icon(Icons.keyboard_arrow_down, color: index < _extraMissions.length - 1 ? colorScheme.onSurfaceVariant : colorScheme.onSurfaceVariant.withValues(alpha: 0.25)),
+            onPressed: index < _extraMissions.length - 1
+                ? () => setState(() {
+                      final item = _extraMissions.removeAt(index);
+                      _extraMissions.insert(index + 1, item);
+                    })
+                : null,
+          ),
+          IconButton(
+            icon: Icon(Icons.close, color: colorScheme.error),
+            onPressed: () => setState(() => _extraMissions.removeAt(index)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAnnouncementPicker() {
+    final options = <(RingAnnouncementMode, IconData, String, String)>[
+      (RingAnnouncementMode.off, Icons.voice_over_off, 'Off', 'Just the alarm sound, like today.'),
+      (RingAnnouncementMode.voiceOnly, Icons.record_voice_over, 'Voice readout only', 'A spoken time, date, and weather readout instead of the alarm tone.'),
+      (RingAnnouncementMode.voiceAndTone, Icons.graphic_eq, 'Voice readout + tone', 'The spoken readout plays alongside the normal alarm sound.'),
+    ];
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text('Ring Announcement', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ),
+                for (final option in options)
+                  ListTile(
+                    leading: Icon(option.$2, color: AppTokens.signal),
+                    title: Text(option.$3),
+                    subtitle: Text(option.$4),
+                    trailing: _announcementMode == option.$1 ? Icon(Icons.check, color: AppTokens.signal) : null,
+                    onTap: () {
+                      setState(() => _announcementMode = option.$1);
+                      Navigator.pop(context);
+                    },
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _announcementDisplayName(RingAnnouncementMode mode) {
+    switch (mode) {
+      case RingAnnouncementMode.off:
+        return 'Off';
+      case RingAnnouncementMode.voiceOnly:
+        return 'Voice only';
+      case RingAnnouncementMode.voiceAndTone:
+        return 'Voice + tone';
+    }
   }
 
   /// Was previously not wired up at all — the Sleep Goal row displayed a
@@ -798,8 +881,44 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
                               ),
                               onTap: _showMissionPicker,
                             ),
+                            if (_missionSettings.mission != 'none') ...[
+                              const Divider(height: 1),
+                              for (int i = 0; i < _extraMissions.length; i++) _buildExtraMissionRow(i),
+                              if (_extraMissions.length < 4)
+                                ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: const Icon(Icons.add_circle_outline, color: AppTokens.signal),
+                                  title: Text(
+                                    'Add mission ${_extraMissions.length + 2} of 5',
+                                    style: TextStyle(color: AppTokens.signal, fontWeight: FontWeight.w600, fontSize: 15),
+                                  ),
+                                  onTap: _addExtraMission,
+                                ),
+                            ],
                           ],
                         ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+                    // Ring announcement (spoken time/date/weather readout)
+                    PlatformCard(
+                      child: ListTile(
+                        leading: Icon(Icons.record_voice_over, color: AppTokens.signal),
+                        title: const Text('Ring Announcement'),
+                        subtitle: const Text('Speak the time, date, and weather when this alarm rings.'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _announcementDisplayName(_announcementMode),
+                              style: TextStyle(color: AppTokens.signal, fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant, size: 20),
+                          ],
+                        ),
+                        onTap: _showAnnouncementPicker,
                       ),
                     ),
 

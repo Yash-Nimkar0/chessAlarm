@@ -96,6 +96,14 @@ class WeatherService {
   static WeatherData? cachedWeather;
   static DateTime? _lastFetchTime;
 
+  /// How old [cachedWeather] is right now, or null if nothing has ever been
+  /// fetched. There's no background refresh - a reading can be arbitrarily
+  /// old if the user hasn't opened a weather-showing screen recently -  so
+  /// anything reading this cache opportunistically (e.g. a ring-time
+  /// announcement) needs to make its own staleness judgment rather than
+  /// trusting presence alone.
+  static Duration? get cacheAge => _lastFetchTime == null ? null : DateTime.now().difference(_lastFetchTime!);
+
   static Future<WeatherData?> getCurrentWeather() async {
     if (cachedWeather != null && _lastFetchTime != null) {
       if (DateTime.now().difference(_lastFetchTime!).inMinutes < 60) {

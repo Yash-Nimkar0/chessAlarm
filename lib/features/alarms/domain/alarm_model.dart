@@ -42,6 +42,36 @@ enum AlarmType {
   }
 }
 
+/// How an alarm should speak at ring time. Off means no change to today's
+/// behavior; the other two are opt-in per alarm.
+enum RingAnnouncementMode {
+  off,
+  voiceOnly,
+  voiceAndTone;
+
+  String toStringValue() {
+    switch (this) {
+      case RingAnnouncementMode.off:
+        return 'off';
+      case RingAnnouncementMode.voiceOnly:
+        return 'voiceOnly';
+      case RingAnnouncementMode.voiceAndTone:
+        return 'voiceAndTone';
+    }
+  }
+
+  static RingAnnouncementMode fromString(String value) {
+    switch (value) {
+      case 'voiceOnly':
+        return RingAnnouncementMode.voiceOnly;
+      case 'voiceAndTone':
+        return RingAnnouncementMode.voiceAndTone;
+      default:
+        return RingAnnouncementMode.off;
+    }
+  }
+}
+
 /// Represents the state of the Wake Check (re-alert enforcement mechanism).
 enum WakeCheckState {
   disabled,
@@ -60,7 +90,11 @@ enum WakeSessionState {
   reAlertPending,
   recovering,
   completed,
-  emergencyEscaped
+  emergencyEscaped,
+  // A short, limited deferral (see AlarmController.snoozeAlarm) - distinct
+  // from `completed` so analytics/debugging can tell "genuinely dismissed"
+  // apart from "will ring again shortly".
+  snoozed,
 }
 
 /// The core alarm domain model.
@@ -87,6 +121,12 @@ class WakelyAlarm {
   final double volume;
   final bool smartLock;
   final MissionConfig mission;
+  // Ordered chain of up to 5 missions that must all be solved, in order,
+  // before the alarm can be dismissed. Empty means "use `mission` alone"
+  // (or no mission at all, if `mission.type` is none) — this keeps every
+  // alarm saved before chains existed working unchanged; see [missionChain].
+  final List<MissionConfig> missions;
+  final RingAnnouncementMode announcementMode;
   final double sleepGoal;
   final bool sleepTracking;
   final bool sleepSounds;
@@ -108,12 +148,23 @@ class WakelyAlarm {
     this.volume = 0.8,
     this.smartLock = true,
     this.mission = const MissionConfig(),
+    this.missions = const [],
+    this.announcementMode = RingAnnouncementMode.off,
     this.sleepGoal = 8.0,
     this.sleepTracking = true,
     this.sleepSounds = true,
     required this.createdAt,
     required this.updatedAt,
   });
+
+  /// The full ordered mission chain to complete before this alarm can be
+  /// dismissed. Falls back to the single legacy `mission` field for alarms
+  /// saved before multi-mission chains existed, so nothing else in the app
+  /// needs to know which shape a given alarm was saved with.
+  List<MissionConfig> get missionChain {
+    if (missions.isNotEmpty) return missions;
+    return mission.type == MissionType.none ? const [] : [mission];
+  }
 
   WakelyAlarm copyWith({
     int? id,
@@ -130,6 +181,8 @@ class WakelyAlarm {
     double? volume,
     bool? smartLock,
     MissionConfig? mission,
+    List<MissionConfig>? missions,
+    RingAnnouncementMode? announcementMode,
     double? sleepGoal,
     bool? sleepTracking,
     bool? sleepSounds,
@@ -151,6 +204,8 @@ class WakelyAlarm {
       volume: volume ?? this.volume,
       smartLock: smartLock ?? this.smartLock,
       mission: mission ?? this.mission,
+      missions: missions ?? this.missions,
+      announcementMode: announcementMode ?? this.announcementMode,
       sleepGoal: sleepGoal ?? this.sleepGoal,
       sleepTracking: sleepTracking ?? this.sleepTracking,
       sleepSounds: sleepSounds ?? this.sleepSounds,
@@ -175,6 +230,8 @@ class WakelyAlarm {
       'volume': volume,
       'smartLock': smartLock,
       'mission': mission.toJson(),
+      'missions': missions.map((m) => m.toJson()).toList(),
+      'announcementMode': announcementMode.toStringValue(),
       'sleepGoal': sleepGoal,
       'sleepTracking': sleepTracking,
       'sleepSounds': sleepSounds,
@@ -199,6 +256,11 @@ class WakelyAlarm {
       volume: (json['volume'] as num?)?.toDouble() ?? 0.8,
       smartLock: json['smartLock'] as bool? ?? true,
       mission: MissionConfig.fromJson(json['mission'] as Map<String, dynamic>? ?? {}),
+      missions: (json['missions'] as List<dynamic>?)
+              ?.map((m) => MissionConfig.fromJson(m as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      announcementMode: RingAnnouncementMode.fromString(json['announcementMode'] as String? ?? 'off'),
       sleepGoal: (json['sleepGoal'] as num?)?.toDouble() ?? 8.0,
       sleepTracking: json['sleepTracking'] as bool? ?? true,
       sleepSounds: json['sleepSounds'] as bool? ?? true,
@@ -247,6 +309,8 @@ class WakelyAlarm {
         'difficultyOverride': mission.difficultyOverride,
         'missionRounds': mission.rounds,
         'missionData': mission.data,
+        'missionChain': missionChain.map((m) => m.toJson()).toList(),
+        'announcementMode': announcementMode.toStringValue(),
         'label': label,
       }),
     );

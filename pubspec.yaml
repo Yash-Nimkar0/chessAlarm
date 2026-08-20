@@ -38,6 +38,7 @@ dependencies:
   volume_controller: ^3.6.0
   in_app_review: ^2.0.12
   home_widget: ^0.9.3
+  flutter_tts: ^4.2.5
 dev_dependencies:
   flutter_test:
     sdk: flutter

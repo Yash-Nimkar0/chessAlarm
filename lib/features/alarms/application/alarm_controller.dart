@@ -33,6 +33,38 @@ class AlarmController extends ChangeNotifier {
   // Platform event channel for AlarmKit native interactions
   static const EventChannel _eventChannel = EventChannel('wakely.alarmkit.events');
 
+  // Short and limited by design - this app's re-alert chain is deliberately
+  // relentless; snooze is a small, bounded escape hatch, not a way to
+  // indefinitely defer waking up.
+  static const int maxSnoozesPerRing = 2;
+  static const Duration snoozeDuration = Duration(minutes: 5);
+  final Map<int, int> _snoozeCounts = {};
+
+  /// How many more times [id] can still be snoozed during its current ring
+  /// cycle. Resets to [maxSnoozesPerRing] once the alarm is genuinely
+  /// completed (see [completeAlarm]).
+  int remainingSnoozes(int id) => (maxSnoozesPerRing - (_snoozeCounts[id] ?? 0)).clamp(0, maxSnoozesPerRing);
+
+  /// Defers [id]'s native fire time by [snoozeDuration]. Purely a native
+  /// reschedule under the same alarm id - the alarm's own configured time
+  /// and recurrence in storage are left untouched, so its real next
+  /// occurrence is computed correctly once it's genuinely completed rather
+  /// than drifting to whatever time it last snoozed to. Returns false
+  /// without doing anything once [maxSnoozesPerRing] is used up, or if the
+  /// alarm can't be found.
+  Future<bool> snoozeAlarm(int id) async {
+    final used = _snoozeCounts[id] ?? 0;
+    if (used >= maxSnoozesPerRing) return false;
+
+    final alarm = await _repository.getById(id);
+    if (alarm == null) return false;
+
+    await _scheduler.cancel(id);
+    await _scheduler.schedule(alarm.copyWith(time: DateTime.now().add(snoozeDuration)));
+    _snoozeCounts[id] = used + 1;
+    return true;
+  }
+
   // Singleton instance for easy access across the app
   static final AlarmController instance = AlarmController._(
     AlarmRepository(),
@@ -481,6 +513,9 @@ class AlarmController extends ChangeNotifier {
   Future<void> completeAlarm(int id) async {
     final alarm = await _repository.getById(id);
     if (alarm == null) return;
+
+    // This ring cycle is over - a future firing gets a fresh snooze budget.
+    _snoozeCounts.remove(id);
 
     // Always cancel current first to prevent any race conditions or duplicates
     await _scheduler.cancel(id);

@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_windows
   dynamic_color
+  flutter_tts
   geolocator_windows
   permission_handler_windows
   record_windows

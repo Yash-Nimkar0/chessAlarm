@@ -9,6 +9,7 @@ import 'ringing_screen.dart';
 import 'wake_success_screen.dart';
 import '../models/mission_settings.dart';
 import '../services/weather_service.dart';
+import '../services/alarm_announcement_service.dart';
 import '../services/preferences_service.dart';
 import '../utils/greeting_utils.dart';
 import '../theme/design_tokens.dart';
@@ -45,6 +46,15 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
       }
     }
 
+    // Guaranteed trigger point on this (legacy/Android) ring path: the
+    // `alarm` plugin already runs real Dart code the instant it rings, no
+    // user interaction required, so this is the earliest reliable moment
+    // to speak — unlike AlarmKit, which needs the process alive already.
+    AlarmAnnouncementService.maybeSpeak(
+      alarmId: widget.alarmSettings.id,
+      announcementMode: _missionSettings?.announcementMode ?? 'off',
+    );
+
     _loadName();
     _updateTime();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -61,6 +71,7 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
   void dispose() {
     _timer.cancel();
     _bgAnimController.dispose();
+    AlarmAnnouncementService.stop();
     super.dispose();
   }
   
@@ -82,6 +93,22 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
     setState(() {
       _currentTime = DateFormat('HH:mm').format(DateTime.now());
     });
+  }
+
+  void _handleSnooze() async {
+    // No wake session exists yet at this point in the flow (one only
+    // starts once the user actually slides to stop), so this is a direct,
+    // simple reschedule - nothing to tear down.
+    final snoozed = await AlarmController.instance.snoozeAlarm(widget.alarmSettings.id);
+    if (!mounted) return;
+    if (snoozed) {
+      Haptics.vibrate(HapticsType.medium);
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No snoozes left for this alarm.')),
+      );
+    }
   }
 
   void _onSlideComplete() async {
@@ -214,18 +241,16 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
               ),
             ])),
             const Spacer(),
-            // UI space for Snooze
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 OutlinedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Snooze deferred to future phase.')),
-                    );
-                  },
+                  onPressed: _handleSnooze,
                   icon: const Icon(Icons.snooze, color: Colors.white),
-                  label: const Text('Snooze', style: TextStyle(color: Colors.white)),
+                  label: Text(
+                    'Snooze (${AlarmController.instance.remainingSnoozes(widget.alarmSettings.id)} left)',
+                    style: const TextStyle(color: Colors.white),
+                  ),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Colors.white54),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

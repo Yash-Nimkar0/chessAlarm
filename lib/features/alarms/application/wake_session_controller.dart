@@ -8,6 +8,7 @@ import '../domain/recurrence.dart';
 import '../domain/wake_check_id.dart';
 import 'alarm_controller.dart';
 import 'wake_audio_session_controller.dart';
+import '../../../services/alarm_announcement_service.dart';
 
 /// Manages the logical lifecycle of an active wake experience.
 ///
@@ -23,7 +24,11 @@ class WakeSessionController extends ChangeNotifier {
   WakeSessionState _sessionState = WakeSessionState.completed;
   WakeSessionState get sessionState => _sessionState;
   
-  bool get isActive => _activeAlarm != null && _sessionState != WakeSessionState.completed && _sessionState != WakeSessionState.emergencyEscaped;
+  bool get isActive =>
+      _activeAlarm != null &&
+      _sessionState != WakeSessionState.completed &&
+      _sessionState != WakeSessionState.emergencyEscaped &&
+      _sessionState != WakeSessionState.snoozed;
 
   static final WakeSessionController instance = WakeSessionController._();
   WakeSessionController._();
@@ -198,6 +203,22 @@ class WakeSessionController extends ChangeNotifier {
       // BUT we do NOT start custom audio, because AlarmKit is playing natively!
       // This prevents double playback.
       await startSession(event.alarmId, startAudio: false);
+
+      // Best-effort early announcement: only reachable when the Flutter
+      // process was already alive the instant AlarmKit fired (app
+      // backgrounded, not killed) — mixed in via duckOthers so it layers
+      // over AlarmKit's own native tone rather than silencing it. If the
+      // app was killed, this never runs; RingingScreen's own guaranteed
+      // trigger still speaks once the user actually opens the alert.
+      final firingOriginalId = originalAlarmIdFor(event.alarmId);
+      final firingAlarm = await AlarmController.instance.getAlarm(event.alarmId) ??
+          await AlarmController.instance.getAlarm(firingOriginalId);
+      if (firingAlarm != null) {
+        unawaited(AlarmAnnouncementService.maybeSpeak(
+          alarmId: firingOriginalId,
+          announcementMode: firingAlarm.announcementMode.toStringValue(),
+        ));
+      }
     }
   }
 
@@ -338,8 +359,10 @@ class WakeSessionController extends ChangeNotifier {
     await WakeAudioSessionController.instance.stopAudio();
     _activeAlarm = null;
     _currentAudioOwnership = AudioOwnership.nativeAlarmKit; // Reset ownership
-    // Ensure state reflects stopped if it wasn't already marked completed or escaped
-    if (_sessionState != WakeSessionState.completed && _sessionState != WakeSessionState.emergencyEscaped) {
+    // Ensure state reflects stopped if it wasn't already marked completed, escaped, or snoozed
+    if (_sessionState != WakeSessionState.completed &&
+        _sessionState != WakeSessionState.emergencyEscaped &&
+        _sessionState != WakeSessionState.snoozed) {
       _sessionState = WakeSessionState.completed; // Fallback
     }
     notifyListeners();
@@ -398,5 +421,33 @@ class WakeSessionController extends ChangeNotifier {
     await AlarmController.instance.cancelWakeCheckChain(originalId);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_wakeCheckCountKey(originalId));
+  }
+
+  /// Short, limited deferral (AlarmController.snoozeAlarm) - reschedules the
+  /// same alarm to fire again shortly, rather than completing it. Returns
+  /// false without changing any state if the alarm has used up its snooze
+  /// budget for this ring cycle, so the caller can show "no snoozes left"
+  /// and leave the session running untouched.
+  Future<bool> snoozeSession() async {
+    if (!isActive) return false;
+    final originalId = originalAlarmIdFor(_activeAlarm!.id);
+
+    final snoozed = await AlarmController.instance.snoozeAlarm(originalId);
+    if (!snoozed) return false;
+
+    debugPrint('WakeSessionController: Snoozed for $originalId.');
+    _recentlyCompletedOriginalId = originalId;
+    _recentlyCompletedAt = DateTime.now();
+    _sessionState = WakeSessionState.snoozed;
+    await stopSession();
+
+    // Same cleanup completeSession/emergencyEscape do: this ring cycle's
+    // Wake Check chain must not keep re-alerting on its own and race with
+    // the alarm firing fresh again after the snooze duration.
+    await AlarmController.instance.deleteAlarm(wakeCheckAlarmIdFor(originalId));
+    await AlarmController.instance.cancelWakeCheckChain(originalId);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_wakeCheckCountKey(originalId));
+    return true;
   }
 }

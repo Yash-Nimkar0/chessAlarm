@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:alarm/alarm.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
+import '../features/alarms/application/alarm_controller.dart';
 import '../features/alarms/application/wake_session_controller.dart';
+import '../services/alarm_announcement_service.dart';
 
 import '../models/mission_settings.dart';
 import 'missions/math_mission.dart';
@@ -45,7 +47,28 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
   late Animation<Color?> _skyAnimation;
 
   late MissionSettings _missionSettings;
+  // The ordered chain to work through (up to 5 steps). Each entry is a raw
+  // MissionConfig-shaped map (type/difficultyMode/difficultyOverride/
+  // rounds/data). `_currentMissionSettings` is `_missionSettings` with just
+  // the current step's fields overlaid, so the existing per-mission-type
+  // widgets (which all take a single `MissionSettings`) don't need to
+  // change at all to support a chain.
+  late List<Map<String, dynamic>> _missionChain;
+  int _missionIndex = 0;
+  late MissionSettings _currentMissionSettings;
   late DateTime _startTime;
+
+  MissionSettings _buildStepSettings(int index) {
+    if (_missionChain.isEmpty || index >= _missionChain.length) return _missionSettings;
+    final step = _missionChain[index];
+    return _missionSettings.copyWith(
+      mission: step['type'] as String? ?? 'none',
+      difficultyMode: step['difficultyMode'] as String?,
+      difficultyOverride: step['difficultyOverride'] as int?,
+      missionRounds: step['rounds'] as int?,
+      missionData: step['data'] as Map<String, dynamic>?,
+    );
+  }
 
   @override
   void initState() {
@@ -93,6 +116,34 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
     } else {
       _missionSettings = MissionSettings(type: 'wakeRoutine');
     }
+
+    // Alarms saved before mission chains existed carry no `missionChain` in
+    // their payload - synthesize a single-step chain from the legacy
+    // top-level fields so they behave exactly as they did before.
+    _missionChain = _missionSettings.missionChain.isNotEmpty
+        ? _missionSettings.missionChain
+        : (_missionSettings.mission == 'none'
+            ? const []
+            : [
+                {
+                  'type': _missionSettings.mission,
+                  'difficultyMode': _missionSettings.difficultyMode,
+                  'difficultyOverride': _missionSettings.difficultyOverride,
+                  'rounds': _missionSettings.missionRounds,
+                  'data': _missionSettings.missionData,
+                }
+              ]);
+    _currentMissionSettings = _buildStepSettings(0);
+
+    // Guaranteed trigger point: this screen being visible means the app is
+    // interactive regardless of which ring path got us here (AlarmKit's
+    // own pre-interaction hook is best-effort only - see
+    // WakeSessionController.handleAlarmEvent). Safe to call even if the
+    // pre-interaction hook already spoke - maybeSpeak de-dupes per alarm.
+    unawaited(AlarmAnnouncementService.maybeSpeak(
+      alarmId: widget.alarmSettings.id,
+      announcementMode: _missionSettings.announcementMode,
+    ));
 
     _isLoading = false;
   }
@@ -157,7 +208,30 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
 
 
 
+  void _handleSnooze() async {
+    if (_isProcessing) return;
+    final remaining = AlarmController.instance.remainingSnoozes(widget.alarmSettings.id);
+    if (remaining <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No snoozes left for this alarm.')),
+      );
+      return;
+    }
+    Haptics.vibrate(HapticsType.medium);
+    final snoozed = await WakeSessionController.instance.snoozeSession();
+    if (!mounted) return;
+    if (snoozed) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No snoozes left for this alarm.')),
+      );
+    }
+  }
+
   void _handleSuccess() async {
+    final isLastMission = _missionIndex >= _missionChain.length - 1;
+
     if (mounted) {
       setState(() {
         _isSuccess = true;
@@ -165,6 +239,20 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
       });
     }
     Haptics.vibrate(HapticsType.heavy);
+
+    if (!isLastMission) {
+      // Only the last mission in the chain triggers real completion - a
+      // brief success beat here, then straight into the next mission.
+      await Future.delayed(const Duration(milliseconds: 900));
+      if (!mounted) return;
+      setState(() {
+        _missionIndex++;
+        _currentMissionSettings = _buildStepSettings(_missionIndex);
+        _isSuccess = false;
+        _isProcessing = false;
+      });
+      return;
+    }
 
     await Future.delayed(const Duration(seconds: 2));
 
@@ -230,6 +318,7 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
     WidgetsBinding.instance.removeObserver(this);
     _pulseController.dispose();
     _sunriseController.dispose();
+    unawaited(AlarmAnnouncementService.stop());
     super.dispose();
   }
 
@@ -246,22 +335,22 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
     
     Widget content;
 
-    if (_missionSettings.mission == 'math') {
-      content = MathMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _missionSettings);
-    } else if (_missionSettings.mission == 'memory') {
-      content = MemoryMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _missionSettings);
-    } else if (_missionSettings.mission == 'typing') {
-      content = TypingMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _missionSettings);
-    } else if (_missionSettings.mission == 'color_tiles') {
-      content = ColorTilesMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _missionSettings);
-    } else if (_missionSettings.mission == 'missing_symbol') {
-      content = MissingSymbolMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _missionSettings);
-    } else if (_missionSettings.mission == 'shake') {
-      content = ShakeMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _missionSettings);
-    } else if (_missionSettings.mission == 'qr') {
-      content = QRMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, missionData: _missionSettings.missionData ?? {});
-    } else if (_missionSettings.mission == 'steps') {
-      content = StepsMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, missionData: _missionSettings.missionData ?? {});
+    if (_currentMissionSettings.mission == 'math') {
+      content = MathMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _currentMissionSettings);
+    } else if (_currentMissionSettings.mission == 'memory') {
+      content = MemoryMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _currentMissionSettings);
+    } else if (_currentMissionSettings.mission == 'typing') {
+      content = TypingMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _currentMissionSettings);
+    } else if (_currentMissionSettings.mission == 'color_tiles') {
+      content = ColorTilesMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _currentMissionSettings);
+    } else if (_currentMissionSettings.mission == 'missing_symbol') {
+      content = MissingSymbolMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _currentMissionSettings);
+    } else if (_currentMissionSettings.mission == 'shake') {
+      content = ShakeMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, settings: _currentMissionSettings);
+    } else if (_currentMissionSettings.mission == 'qr') {
+      content = QRMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, missionData: _currentMissionSettings.missionData ?? {});
+    } else if (_currentMissionSettings.mission == 'steps') {
+      content = StepsMission(onSuccess: _handleSuccess, onSkip: _emergencyEscape, missionData: _currentMissionSettings.missionData ?? {});
     } else {
       content = Center(
         child: ElevatedButton(
@@ -336,6 +425,19 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
                             ),
                           ),
                         ),
+                      if (_missionChain.length > 1)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4.0, bottom: 8.0),
+                          child: Text(
+                            'Mission ${_missionIndex + 1} of ${_missionChain.length}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                              color: AppTokens.signal.withValues(alpha: 0.85),
+                            ),
+                          ),
+                        ),
                       Expanded(
                         child: Listener(
                           behavior: HitTestBehavior.translucent,
@@ -343,8 +445,25 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
                           child: content,
                         ),
                       ),
+                      if (!_isSuccess)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16.0),
+                          child: OutlinedButton.icon(
+                            onPressed: _handleSnooze,
+                            icon: const Icon(Icons.snooze, color: AppTokens.signal),
+                            label: Text(
+                              'Snooze (${AlarmController.instance.remainingSnoozes(widget.alarmSettings.id)} left)',
+                              style: const TextStyle(color: AppTokens.signal),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: AppTokens.signal.withValues(alpha: 0.5)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            ),
+                          ),
+                        ),
                       Padding(
-                        padding: const EdgeInsets.only(top: 16.0),
+                        padding: const EdgeInsets.only(top: 12.0),
                         child: AnimatedPressable(
                           onLongPress: _emergencyEscape,
                           child: OutlinedButton.icon(
