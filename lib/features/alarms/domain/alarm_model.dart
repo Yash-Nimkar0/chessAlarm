@@ -127,6 +127,13 @@ class WakelyAlarm {
   // alarm saved before chains existed working unchanged; see [missionChain].
   final List<MissionConfig> missions;
   final RingAnnouncementMode announcementMode;
+  // Which parts of the readout to include, independently selectable -
+  // e.g. time + weather only, or just the day. All default true so
+  // turning the mode on for the first time speaks the full phrase.
+  final bool announceDay;
+  final bool announceDate;
+  final bool announceTime;
+  final bool announceWeather;
   final double sleepGoal;
   final bool sleepTracking;
   final bool sleepSounds;
@@ -150,6 +157,10 @@ class WakelyAlarm {
     this.mission = const MissionConfig(),
     this.missions = const [],
     this.announcementMode = RingAnnouncementMode.off,
+    this.announceDay = true,
+    this.announceDate = true,
+    this.announceTime = true,
+    this.announceWeather = true,
     this.sleepGoal = 8.0,
     this.sleepTracking = true,
     this.sleepSounds = true,
@@ -183,6 +194,10 @@ class WakelyAlarm {
     MissionConfig? mission,
     List<MissionConfig>? missions,
     RingAnnouncementMode? announcementMode,
+    bool? announceDay,
+    bool? announceDate,
+    bool? announceTime,
+    bool? announceWeather,
     double? sleepGoal,
     bool? sleepTracking,
     bool? sleepSounds,
@@ -206,6 +221,10 @@ class WakelyAlarm {
       mission: mission ?? this.mission,
       missions: missions ?? this.missions,
       announcementMode: announcementMode ?? this.announcementMode,
+      announceDay: announceDay ?? this.announceDay,
+      announceDate: announceDate ?? this.announceDate,
+      announceTime: announceTime ?? this.announceTime,
+      announceWeather: announceWeather ?? this.announceWeather,
       sleepGoal: sleepGoal ?? this.sleepGoal,
       sleepTracking: sleepTracking ?? this.sleepTracking,
       sleepSounds: sleepSounds ?? this.sleepSounds,
@@ -232,6 +251,10 @@ class WakelyAlarm {
       'mission': mission.toJson(),
       'missions': missions.map((m) => m.toJson()).toList(),
       'announcementMode': announcementMode.toStringValue(),
+      'announceDay': announceDay,
+      'announceDate': announceDate,
+      'announceTime': announceTime,
+      'announceWeather': announceWeather,
       'sleepGoal': sleepGoal,
       'sleepTracking': sleepTracking,
       'sleepSounds': sleepSounds,
@@ -261,6 +284,10 @@ class WakelyAlarm {
               .toList() ??
           const [],
       announcementMode: RingAnnouncementMode.fromString(json['announcementMode'] as String? ?? 'off'),
+      announceDay: json['announceDay'] as bool? ?? true,
+      announceDate: json['announceDate'] as bool? ?? true,
+      announceTime: json['announceTime'] as bool? ?? true,
+      announceWeather: json['announceWeather'] as bool? ?? true,
       sleepGoal: (json['sleepGoal'] as num?)?.toDouble() ?? 8.0,
       sleepTracking: json['sleepTracking'] as bool? ?? true,
       sleepSounds: json['sleepSounds'] as bool? ?? true,
@@ -311,6 +338,10 @@ class WakelyAlarm {
         'missionData': mission.data,
         'missionChain': missionChain.map((m) => m.toJson()).toList(),
         'announcementMode': announcementMode.toStringValue(),
+        'announceDay': announceDay,
+        'announceDate': announceDate,
+        'announceTime': announceTime,
+        'announceWeather': announceWeather,
         'label': label,
       }),
     );

@@ -143,6 +143,10 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
     unawaited(AlarmAnnouncementService.maybeSpeak(
       alarmId: widget.alarmSettings.id,
       announcementMode: _missionSettings.announcementMode,
+      announceDay: _missionSettings.announceDay,
+      announceDate: _missionSettings.announceDate,
+      announceTime: _missionSettings.announceTime,
+      announceWeather: _missionSettings.announceWeather,
     ));
 
     _isLoading = false;

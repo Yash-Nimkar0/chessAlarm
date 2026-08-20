@@ -31,6 +31,13 @@ class MissionSettings {
   // string values without this legacy payload class depending on the
   // domain layer.
   final String announcementMode;
+  // Which parts of the readout to include, independently selectable —
+  // mirrors WakelyAlarm's announceDay/announceDate/announceTime/
+  // announceWeather.
+  final bool announceDay;
+  final bool announceDate;
+  final bool announceTime;
+  final bool announceWeather;
 
   MissionSettings({
     this.type = "quickAlarm",
@@ -48,6 +55,10 @@ class MissionSettings {
     this.label,
     this.missionChain = const [],
     this.announcementMode = 'off',
+    this.announceDay = true,
+    this.announceDate = true,
+    this.announceTime = true,
+    this.announceWeather = true,
   }) : createdAt = createdAt ?? DateTime.now().toIso8601String();
 
   Map<String, dynamic> toJson() {
@@ -67,6 +78,10 @@ class MissionSettings {
       'label': label,
       'missionChain': missionChain,
       'announcementMode': announcementMode,
+      'announceDay': announceDay,
+      'announceDate': announceDate,
+      'announceTime': announceTime,
+      'announceWeather': announceWeather,
     };
   }
 
@@ -86,6 +101,10 @@ class MissionSettings {
     String? label,
     List<Map<String, dynamic>>? missionChain,
     String? announcementMode,
+    bool? announceDay,
+    bool? announceDate,
+    bool? announceTime,
+    bool? announceWeather,
   }) {
     return MissionSettings(
       type: type ?? this.type,
@@ -103,6 +122,10 @@ class MissionSettings {
       label: label ?? this.label,
       missionChain: missionChain ?? this.missionChain,
       announcementMode: announcementMode ?? this.announcementMode,
+      announceDay: announceDay ?? this.announceDay,
+      announceDate: announceDate ?? this.announceDate,
+      announceTime: announceTime ?? this.announceTime,
+      announceWeather: announceWeather ?? this.announceWeather,
     );
   }
 
@@ -132,6 +155,10 @@ class MissionSettings {
               .toList() ??
           const [],
       announcementMode: json['announcementMode'] as String? ?? 'off',
+      announceDay: json['announceDay'] as bool? ?? true,
+      announceDate: json['announceDate'] as bool? ?? true,
+      announceTime: json['announceTime'] as bool? ?? true,
+      announceWeather: json['announceWeather'] as bool? ?? true,
     );
   }
 

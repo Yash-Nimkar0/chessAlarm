@@ -3,9 +3,11 @@ import 'package:intl/intl.dart';
 import '../utils/greeting_utils.dart';
 import 'weather_service.dart';
 
-/// Speaks a short time/day/date/weather readout at alarm ring time, for
-/// alarms with a `RingAnnouncementMode` of voiceOnly or voiceAndTone (see
-/// WakelyAlarm.announcementMode) — an Alarmy-style talking alarm.
+/// Speaks a short readout at alarm ring time, for alarms with a
+/// `RingAnnouncementMode` of voiceOnly or voiceAndTone (see
+/// WakelyAlarm.announcementMode) — an Alarmy-style talking alarm. Day,
+/// date, time, and weather are each independently selectable per alarm
+/// (WakelyAlarm.announceDay/announceDate/announceTime/announceWeather).
 ///
 /// Weather is read only from WeatherService's cache, never fetched fresh —
 /// a hung or slow network call at ring time must never delay, block, or
@@ -50,38 +52,75 @@ class AlarmAnnouncementService {
   }
 
   /// Speaks the readout for [alarmId] if [announcementMode] calls for it.
-  /// Safe to call from multiple trigger points per ring cycle (only
-  /// actually speaks once, per [_dedupeWindow]) and safe to call even if
-  /// TTS is unavailable on the device — never throws, never delays the
-  /// caller waiting on the alarm to actually ring.
-  static Future<void> maybeSpeak({required int alarmId, required String announcementMode}) async {
+  /// Each of day/date/time/weather is independently selectable — any
+  /// subset (including all four, or just one) produces a sensible
+  /// sentence. Safe to call from multiple trigger points per ring cycle
+  /// (only actually speaks once, per [_dedupeWindow], unless [forcePreview]
+  /// bypasses that for an explicit "hear it now" preview) and safe to call
+  /// even if TTS is unavailable on the device — never throws, never delays
+  /// the caller waiting on the alarm to actually ring.
+  static Future<void> maybeSpeak({
+    required int alarmId,
+    required String announcementMode,
+    bool announceDay = true,
+    bool announceDate = true,
+    bool announceTime = true,
+    bool announceWeather = true,
+    bool forcePreview = false,
+  }) async {
     if (announcementMode != 'voiceOnly' && announcementMode != 'voiceAndTone') return;
 
-    final last = _lastSpokenAt[alarmId];
-    if (last != null && DateTime.now().difference(last) < _dedupeWindow) return;
-    _lastSpokenAt[alarmId] = DateTime.now();
+    if (!forcePreview) {
+      final last = _lastSpokenAt[alarmId];
+      if (last != null && DateTime.now().difference(last) < _dedupeWindow) return;
+      _lastSpokenAt[alarmId] = DateTime.now();
+    }
 
     try {
       await _ensureConfigured();
       await _tts.stop();
-      await _tts.speak(_buildPhrase());
+      await _tts.speak(_buildPhrase(
+        announceDay: announceDay,
+        announceDate: announceDate,
+        announceTime: announceTime,
+        announceWeather: announceWeather,
+      ));
     } catch (_) {
       // Never let a TTS failure affect the alarm itself.
     }
   }
 
-  static String _buildPhrase() {
+  static String _buildPhrase({
+    required bool announceDay,
+    required bool announceDate,
+    required bool announceTime,
+    required bool announceWeather,
+  }) {
     final now = DateTime.now();
     final greeting = GreetingUtils.getGreeting(now: now);
-    final dayDate = DateFormat('EEEE, MMMM d').format(now);
-    final time = DateFormat('h:mm a').format(now);
+    final buffer = StringBuffer(greeting);
 
-    final buffer = StringBuffer("$greeting. It's $dayDate, $time.");
+    final dayDateParts = [
+      if (announceDay) DateFormat('EEEE').format(now),
+      if (announceDate) DateFormat('MMMM d').format(now),
+    ];
+    final sentenceParts = [
+      if (dayDateParts.isNotEmpty) dayDateParts.join(', '),
+      if (announceTime) DateFormat('h:mm a').format(now),
+    ];
 
-    final weather = WeatherService.cachedWeather;
-    final age = WeatherService.cacheAge;
-    if (weather != null && age != null && age <= _maxWeatherAge) {
-      buffer.write(' Currently ${weather.temperature.round()} degrees and ${weather.conditionTitle.toLowerCase()}.');
+    if (sentenceParts.isNotEmpty) {
+      buffer.write(". It's ${sentenceParts.join(', ')}.");
+    } else {
+      buffer.write('.');
+    }
+
+    if (announceWeather) {
+      final weather = WeatherService.cachedWeather;
+      final age = WeatherService.cacheAge;
+      if (weather != null && age != null && age <= _maxWeatherAge) {
+        buffer.write(' Currently ${weather.temperature.round()} degrees and ${weather.conditionTitle.toLowerCase()}.');
+      }
     }
 
     return buffer.toString();

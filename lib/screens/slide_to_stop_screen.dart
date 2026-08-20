@@ -53,6 +53,10 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
     AlarmAnnouncementService.maybeSpeak(
       alarmId: widget.alarmSettings.id,
       announcementMode: _missionSettings?.announcementMode ?? 'off',
+      announceDay: _missionSettings?.announceDay ?? true,
+      announceDate: _missionSettings?.announceDate ?? true,
+      announceTime: _missionSettings?.announceTime ?? true,
+      announceWeather: _missionSettings?.announceWeather ?? true,
     );
 
     _loadName();

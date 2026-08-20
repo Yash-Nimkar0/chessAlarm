@@ -217,6 +217,10 @@ class WakeSessionController extends ChangeNotifier {
         unawaited(AlarmAnnouncementService.maybeSpeak(
           alarmId: firingOriginalId,
           announcementMode: firingAlarm.announcementMode.toStringValue(),
+          announceDay: firingAlarm.announceDay,
+          announceDate: firingAlarm.announceDate,
+          announceTime: firingAlarm.announceTime,
+          announceWeather: firingAlarm.announceWeather,
         ));
       }
     }

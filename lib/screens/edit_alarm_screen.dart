@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
@@ -9,6 +10,7 @@ import '../features/alarms/domain/alarm_model.dart';
 import '../features/alarms/domain/mission_config.dart';
 import '../features/alarms/domain/recurrence.dart';
 import '../features/alarms/application/alarm_controller.dart';
+import '../services/alarm_announcement_service.dart';
 
 import 'missions/typing_config_screen.dart';
 import 'missions/shake_config_screen.dart';
@@ -54,6 +56,11 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
   // the existing single-mission picker/config screens stay untouched).
   List<MissionConfig> _extraMissions = [];
   late RingAnnouncementMode _announcementMode;
+  // Independently selectable readout components.
+  late bool _announceDay;
+  late bool _announceDate;
+  late bool _announceTime;
+  late bool _announceWeather;
 
   // 0=Mon, 1=Tue, ..., 6=Sun
   List<bool> _selectedDays = List.filled(7, true);
@@ -66,6 +73,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
   void dispose() {
     _labelController.dispose();
     _audioPlayer?.dispose();
+    AlarmAnnouncementService.stop();
     super.dispose();
   }
 
@@ -101,6 +109,10 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
       );
       _extraMissions = widget.alarm!.missions.length > 1 ? List.from(widget.alarm!.missions.sublist(1)) : [];
       _announcementMode = widget.alarm!.announcementMode;
+      _announceDay = widget.alarm!.announceDay;
+      _announceDate = widget.alarm!.announceDate;
+      _announceTime = widget.alarm!.announceTime;
+      _announceWeather = widget.alarm!.announceWeather;
     } else {
       if (widget.initialTime != null) {
         final now = DateTime.now();
@@ -127,6 +139,10 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
       _selectedDays = List.filled(7, false); // default to one-shot
       _extraMissions = [];
       _announcementMode = RingAnnouncementMode.off;
+      _announceDay = true;
+      _announceDate = true;
+      _announceTime = true;
+      _announceWeather = true;
     }
   }
   
@@ -178,6 +194,10 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
         mission: missionConfig,
         missions: missionChain,
         announcementMode: _announcementMode,
+        announceDay: _announceDay,
+        announceDate: _announceDate,
+        announceTime: _announceTime,
+        announceWeather: _announceWeather,
         sleepGoal: _missionSettings.sleepGoal,
         sleepTracking: _missionSettings.sleepTracking,
         sleepSounds: _missionSettings.sleepSounds,
@@ -205,6 +225,10 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
         mission: missionConfig,
         missions: missionChain,
         announcementMode: _announcementMode,
+        announceDay: _announceDay,
+        announceDate: _announceDate,
+        announceTime: _announceTime,
+        announceWeather: _announceWeather,
         sleepGoal: _missionSettings.sleepGoal,
         sleepTracking: _missionSettings.sleepTracking,
         sleepSounds: _missionSettings.sleepSounds,
@@ -246,8 +270,24 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
   Future<void> _previewAlarm() async {
     if (_isPreviewing) {
       _audioPlayer?.stop();
+      unawaited(AlarmAnnouncementService.stop());
       setState(() => _isPreviewing = false);
       return;
+    }
+
+    // The ring announcement is part of what this alarm actually sounds
+    // like, so "Preview Alarm" wasn't a real preview without it — this was
+    // silently missing before.
+    if (_announcementMode != RingAnnouncementMode.off) {
+      unawaited(AlarmAnnouncementService.maybeSpeak(
+        alarmId: widget.alarm?.id ?? -1,
+        announcementMode: _announcementMode.toStringValue(),
+        announceDay: _announceDay,
+        announceDate: _announceDate,
+        announceTime: _announceTime,
+        announceWeather: _announceWeather,
+        forcePreview: true,
+      ));
     }
 
     final sound = SoundRepository.instance.getSoundById(soundId);
@@ -496,40 +536,141 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
   void _showAnnouncementPicker() {
     final options = <(RingAnnouncementMode, IconData, String, String)>[
       (RingAnnouncementMode.off, Icons.voice_over_off, 'Off', 'Just the alarm sound, like today.'),
-      (RingAnnouncementMode.voiceOnly, Icons.record_voice_over, 'Voice readout only', 'A spoken time, date, and weather readout instead of the alarm tone.'),
+      (RingAnnouncementMode.voiceOnly, Icons.record_voice_over, 'Voice readout only', 'A spoken readout instead of the alarm tone.'),
       (RingAnnouncementMode.voiceAndTone, Icons.graphic_eq, 'Voice readout + tone', 'The spoken readout plays alongside the normal alarm sound.'),
     ];
+    bool isPreviewingAnnouncement = false;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) {
-        return SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text('Ring Announcement', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            final colorScheme = Theme.of(sheetContext).colorScheme;
+            final enabled = _announcementMode != RingAnnouncementMode.off;
+
+            Widget componentToggle({
+              required IconData icon,
+              required String title,
+              required String subtitle,
+              required bool value,
+              required ValueChanged<bool> onChanged,
+            }) {
+              return SwitchListTile(
+                secondary: Icon(icon, color: enabled ? AppTokens.signal : colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
+                title: Text(title),
+                subtitle: Text(subtitle),
+                activeThumbColor: AppTokens.signal,
+                value: value,
+                onChanged: enabled
+                    ? (v) {
+                        setSheetState(() {});
+                        setState(() => onChanged(v));
+                      }
+                    : null,
+              );
+            }
+
+            return SafeArea(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text('Ring Announcement', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
+                    for (final option in options)
+                      ListTile(
+                        leading: Icon(option.$2, color: AppTokens.signal),
+                        title: Text(option.$3),
+                        subtitle: Text(option.$4),
+                        trailing: _announcementMode == option.$1 ? Icon(Icons.check, color: AppTokens.signal) : null,
+                        onTap: () {
+                          setSheetState(() {});
+                          setState(() => _announcementMode = option.$1);
+                        },
+                      ),
+                    const Divider(height: 1, indent: 16, endIndent: 16),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                      child: Row(
+                        children: [
+                          Text('WHAT TO SAY', style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                        ],
+                      ),
+                    ),
+                    componentToggle(
+                      icon: Icons.wb_sunny_outlined,
+                      title: 'Day',
+                      subtitle: 'e.g. "Thursday"',
+                      value: _announceDay,
+                      onChanged: (v) => _announceDay = v,
+                    ),
+                    componentToggle(
+                      icon: Icons.calendar_today_outlined,
+                      title: 'Date',
+                      subtitle: 'e.g. "August 20"',
+                      value: _announceDate,
+                      onChanged: (v) => _announceDate = v,
+                    ),
+                    componentToggle(
+                      icon: Icons.access_time,
+                      title: 'Time',
+                      subtitle: 'e.g. "10:36 AM"',
+                      value: _announceTime,
+                      onChanged: (v) => _announceTime = v,
+                    ),
+                    componentToggle(
+                      icon: Icons.cloud_outlined,
+                      title: 'Weather',
+                      subtitle: 'Only when a recent reading is available',
+                      value: _announceWeather,
+                      onChanged: (v) => _announceWeather = v,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: !enabled
+                              ? null
+                              : () async {
+                                  setSheetState(() => isPreviewingAnnouncement = true);
+                                  await AlarmAnnouncementService.maybeSpeak(
+                                    alarmId: widget.alarm?.id ?? -1,
+                                    announcementMode: _announcementMode.toStringValue(),
+                                    announceDay: _announceDay,
+                                    announceDate: _announceDate,
+                                    announceTime: _announceTime,
+                                    announceWeather: _announceWeather,
+                                    forcePreview: true,
+                                  );
+                                  setSheetState(() => isPreviewingAnnouncement = false);
+                                },
+                          icon: Icon(isPreviewingAnnouncement ? Icons.stop_circle : Icons.play_circle_fill, color: enabled ? AppTokens.signal : colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
+                          label: Text(
+                            isPreviewingAnnouncement ? 'Speaking…' : 'Preview Announcement',
+                            style: TextStyle(color: enabled ? AppTokens.signal : colorScheme.onSurfaceVariant.withValues(alpha: 0.4), fontWeight: FontWeight.bold),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: (enabled ? AppTokens.signal : colorScheme.onSurfaceVariant).withValues(alpha: 0.4)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusLg)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                for (final option in options)
-                  ListTile(
-                    leading: Icon(option.$2, color: AppTokens.signal),
-                    title: Text(option.$3),
-                    subtitle: Text(option.$4),
-                    trailing: _announcementMode == option.$1 ? Icon(Icons.check, color: AppTokens.signal) : null,
-                    onTap: () {
-                      setState(() => _announcementMode = option.$1);
-                      Navigator.pop(context);
-                    },
-                  ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
-    );
+    ).whenComplete(() => AlarmAnnouncementService.stop());
   }
 
   String _announcementDisplayName(RingAnnouncementMode mode) {
