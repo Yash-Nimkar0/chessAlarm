@@ -42,6 +42,15 @@ class AlarmAnnouncementService {
         ],
         IosTextToSpeechAudioMode.spokenAudio,
       );
+      // flutter_tts defaults to deactivating the shared iOS audio session
+      // the instant it finishes speaking - since the whole point of
+      // voiceAndTone is the tone playing alongside/after the voice, that
+      // default was silently killing the tone out from under it the moment
+      // speech ended (mixWithOthers only governs OTHER apps' audio, not
+      // whether finishing speech tears down the one shared session this
+      // app's own tone is also using). Leave the session's lifecycle to
+      // whatever actually owns the ring audio instead.
+      await _tts.autoStopSharedSession(false);
       await _tts.setSpeechRate(0.48);
       await _tts.setVolume(1.0);
     } catch (_) {
