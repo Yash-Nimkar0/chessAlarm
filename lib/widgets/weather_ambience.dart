@@ -26,12 +26,22 @@ double _rainIntensity(int weatherCode) {
 /// one-off streak), snow drifts down and sways, clouds drift steadily in one
 /// direction and wrap around instead of rocking back and forth, storms flash,
 /// and clear skies keep the twinkling stars / shooting stars / light motes.
+///
+/// [t] drives everything on the fast (8s) cycle; [tCloud] drives cloud drift
+/// on its own slower cycle. Both are 0..1 loop fractions. Anything using a
+/// `(t * speed + phase) % 1.0` position formula MUST use an integer `speed`
+/// - a fractional speed means the position at t=1 (just before the
+/// controller wraps back to t=0) doesn't match the position at t=0, so the
+/// element visibly jumps/teleports every loop instead of wrapping
+/// seamlessly. That was a real bug here: clouds/rain/snow all used
+/// fractional speeds and visibly "hitched" every 8 seconds.
 class WeatherAmbiencePainter extends CustomPainter {
   final double t;
+  final double tCloud;
   final int weatherCode;
   final bool isDay;
 
-  WeatherAmbiencePainter({required this.t, required this.weatherCode, required this.isDay});
+  WeatherAmbiencePainter({required this.t, required this.tCloud, required this.weatherCode, required this.isDay});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -135,15 +145,19 @@ class WeatherAmbiencePainter extends CustomPainter {
     }
   }
 
-  // --- Clouds: continuous one-direction drift that WRAPS, never oscillates ---
+  // --- Clouds: slow, seamless one-direction drift that WRAPS, never
+  // oscillates. Runs on tCloud (its own ~28s cycle) with an INTEGER speed
+  // per layer so position(tCloud=1) == position(tCloud=0) exactly - no jump
+  // at the loop boundary - while still giving back layers a slower drift
+  // than front layers for parallax depth.
   void _paintDriftingClouds(Canvas canvas, Size size, {required Color color, int layers = 3, bool wide = false}) {
     for (int layer = 0; layer < layers; layer++) {
       final random = math.Random(100 + layer);
-      final speed = 0.6 + layer * 0.35; // back layers drift slower (parallax)
+      final speed = layer + 1; // integer: 1, 2, 3... whole sweeps per cycle
       final puffW = size.width * (wide ? 0.75 : (0.42 + layer * 0.12));
       final y = size.height * (0.15 + layer * 0.28 + random.nextDouble() * 0.1);
       final wrapWidth = size.width + puffW * 2;
-      final localT = (t * speed + random.nextDouble()) % 1.0;
+      final localT = (tCloud * speed + random.nextDouble()) % 1.0;
       final x = -puffW + localT * wrapWidth;
       final opacity = color.a * (wide ? 1.0 : (1.0 - layer * 0.22));
 
@@ -163,11 +177,14 @@ class WeatherAmbiencePainter extends CustomPainter {
     canvas.drawCircle(Offset(center.dx + width * 0.3, center.dy - h * 0.1), h * 0.55, paint);
   }
 
-  // --- Rain: continuous falling streaks, looping seamlessly, wind-slanted ---
+  // --- Rain: continuous falling streaks, looping seamlessly, wind-slanted.
+  // Integer speed (2 or 3 whole falls per t-cycle) instead of a fractional
+  // intensity-scaled speed, so it wraps with no jump; intensity still
+  // controls streak count/length/opacity instead.
   void _paintRain(Canvas canvas, Size size, {required double intensity}) {
     final random = math.Random(23);
     final count = (18 + intensity * 32).round();
-    final speed = 1.4 + intensity * 1.2;
+    final speed = intensity >= 0.9 ? 3 : 2;
     final paint = Paint()
       ..color = Colors.white.withValues(alpha: 0.35 + intensity * 0.25)
       ..strokeWidth = 1.4
@@ -184,14 +201,16 @@ class WeatherAmbiencePainter extends CustomPainter {
     }
   }
 
-  // --- Snow: falling flakes that sway side to side ---
+  // --- Snow: falling flakes that sway side to side. Each flake picks an
+  // integer speed (1 or 2 whole falls per t-cycle) instead of a random
+  // fractional one, so every flake wraps seamlessly.
   void _paintSnow(Canvas canvas, Size size) {
     final random = math.Random(29);
     const count = 26;
     for (int i = 0; i < count; i++) {
       final baseX = random.nextDouble() * size.width;
       final phase = random.nextDouble();
-      final speed = 0.35 + random.nextDouble() * 0.4;
+      final speed = 1 + random.nextInt(2); // 1 or 2
       final radius = 1.2 + random.nextDouble() * 1.8;
       final localT = (t * speed + phase) % 1.0;
       final y = localT * size.height;
@@ -217,10 +236,16 @@ class WeatherAmbiencePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(WeatherAmbiencePainter oldDelegate) =>
-      oldDelegate.t != t || oldDelegate.weatherCode != weatherCode || oldDelegate.isDay != isDay;
+      oldDelegate.t != t ||
+      oldDelegate.tCloud != tCloud ||
+      oldDelegate.weatherCode != weatherCode ||
+      oldDelegate.isDay != isDay;
 }
 
-/// Drives a [WeatherAmbiencePainter] with its own ticker.
+/// Drives a [WeatherAmbiencePainter] with two independent tickers - a fast
+/// 8s one for rain/snow/stars/lightning, and a slow 28s one just for cloud
+/// drift, so clouds glide at a calmer, more natural pace instead of racing
+/// across the card every 8 seconds.
 class WeatherAmbienceLayer extends StatefulWidget {
   final int weatherCode;
   final bool isDay;
@@ -230,27 +255,35 @@ class WeatherAmbienceLayer extends StatefulWidget {
   State<WeatherAmbienceLayer> createState() => _WeatherAmbienceLayerState();
 }
 
-class _WeatherAmbienceLayerState extends State<WeatherAmbienceLayer> with SingleTickerProviderStateMixin {
+class _WeatherAmbienceLayerState extends State<WeatherAmbienceLayer> with TickerProviderStateMixin {
   late final AnimationController _controller;
+  late final AnimationController _cloudController;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, duration: const Duration(seconds: 8))..repeat();
+    _cloudController = AnimationController(vsync: this, duration: const Duration(seconds: 28))..repeat();
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _cloudController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _controller,
+      animation: Listenable.merge([_controller, _cloudController]),
       builder: (context, _) => CustomPaint(
-        painter: WeatherAmbiencePainter(t: _controller.value, weatherCode: widget.weatherCode, isDay: widget.isDay),
+        painter: WeatherAmbiencePainter(
+          t: _controller.value,
+          tCloud: _cloudController.value,
+          weatherCode: widget.weatherCode,
+          isDay: widget.isDay,
+        ),
         size: Size.infinite,
       ),
     );

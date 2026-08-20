@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import '../widgets/weather_widget.dart';
 import '../widgets/platform_theme.dart';
 import '../widgets/animated_pressable.dart';
+import '../widgets/animated_counter.dart';
 import '../services/elo_service.dart';
 import '../services/analytics_service.dart';
 import '../theme/design_tokens.dart';
@@ -218,7 +219,7 @@ class _MorningScreenState extends State<MorningScreen> {
           children: [
             Text('While You Were Sleeping...', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text('$_sleepMomentsCaptured moments captured', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16)),
+            AnimatedCounter(value: _sleepMomentsCaptured, formatter: (v) => '$v moments captured', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16)),
             const SizedBox(height: 12),
             const Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -341,11 +342,11 @@ class _MorningScreenState extends State<MorningScreen> {
           children: [
             Text('Your Brain Week', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 32),
-            _buildRecapStat('Missions completed', '$_morningsWonThisWeek', AppTokens.signal),
-            _buildRecapStat('Streak extended', '$_currentStreak days', Colors.amberAccent),
-            _buildRecapStat('Total missions', '$_morningsWon', AppTokens.signal),
+            _buildRecapStat('Missions completed', _morningsWonThisWeek, AppTokens.signal, delayMs: 0),
+            _buildRecapStat('Streak extended', _currentStreak, Colors.amberAccent, formatter: (v) => '$v days', delayMs: 120),
+            _buildRecapStat('Total missions', _morningsWon, AppTokens.signal, delayMs: 240),
             if (_fastestSolve > 0 && _fastestSolve < 999)
-                _buildRecapStat('Fastest solve', '$_fastestSolve seconds', AppTokens.signal),
+                _buildRecapStat('Fastest solve', _fastestSolve, AppTokens.signal, formatter: (v) => '$v seconds', delayMs: 360),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
@@ -366,14 +367,19 @@ class _MorningScreenState extends State<MorningScreen> {
     );
   }
 
-  Widget _buildRecapStat(String label, String value, Color color) {
+  Widget _buildRecapStat(String label, int value, Color color, {String Function(int)? formatter, int delayMs = 0}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16)),
-          Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 18)),
+          AnimatedCounter(
+            value: value,
+            formatter: formatter,
+            delay: Duration(milliseconds: delayMs),
+            style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 18),
+          ),
         ],
       ),
     );

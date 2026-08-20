@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../widgets/platform_theme.dart';
 import '../widgets/fade_slide_in.dart';
+import '../widgets/animated_counter.dart';
 import '../theme/design_tokens.dart';
 import '../services/elo_service.dart';
 import '../services/invite_service.dart';
@@ -254,11 +255,11 @@ class _SettingScreenState extends State<SettingScreen> {
                         children: [
                           const Icon(Icons.local_fire_department, color: AppTokens.signal, size: 16),
                           const SizedBox(width: 4),
-                          Text('$currentStreak day streak', style: const TextStyle(color: AppTokens.signal)),
+                          AnimatedCounter(value: currentStreak, formatter: (v) => '$v day streak', style: const TextStyle(color: AppTokens.signal)),
                           const SizedBox(width: 12),
                           Icon(Icons.emoji_events, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 16),
                           const SizedBox(width: 4),
-                          Text('$morningsWon won', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                          AnimatedCounter(value: morningsWon, formatter: (v) => '$v won', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                         ],
                       ),
                     ],

@@ -165,7 +165,7 @@ class _ReportScreenState extends State<ReportScreen> {
             ],
           )),
           const SizedBox(height: 24),
-          FadeSlideIn(delay: const Duration(milliseconds: 70), child: _buildStatRow('Current Streak', '$_currentStreak Days', Icons.local_fire_department)),
+          FadeSlideIn(delay: const Duration(milliseconds: 70), child: _buildStatRow('Current Streak', _currentStreak, Icons.local_fire_department, formatter: (v) => '$v Days')),
           const SizedBox(height: 24),
           if (totalPuzzles == 0)
             FadeSlideIn(
@@ -362,7 +362,7 @@ class _ReportScreenState extends State<ReportScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('${lastSession.audioEvents.length} saved', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+              AnimatedCounter(value: lastSession.audioEvents.length, formatter: (v) => '$v saved', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
               if (lastSession.audioEvents.isNotEmpty)
                 TextButton(
                   onPressed: () async {
@@ -427,7 +427,7 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  Widget _buildStatRow(String label, String value, IconData icon) {
+  Widget _buildStatRow(String label, int value, IconData icon, {String Function(int)? formatter}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
@@ -444,7 +444,11 @@ class _ReportScreenState extends State<ReportScreen> {
               Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
             ],
           ),
-          Text(value, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
+          AnimatedCounter(
+            value: value,
+            formatter: formatter,
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );

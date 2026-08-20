@@ -13,6 +13,7 @@ import '../theme/design_tokens.dart';
 import '../widgets/animated_pressable.dart';
 import '../widgets/fade_slide_in.dart';
 import '../widgets/breathing_icon.dart';
+import '../widgets/animated_counter.dart';
 import '../features/sounds/data/custom_sound_service.dart';
 import '../features/sounds/domain/sound_model.dart';
 
@@ -299,12 +300,14 @@ class _SleepScreenState extends State<SleepScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(color: AppTokens.signal.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(AppTokens.radiusSm)),
-                              child: Text('$_userElo Points', style: const TextStyle(color: AppTokens.signal, fontWeight: FontWeight.bold, fontSize: 12)),
+                              child: AnimatedCounter(value: _userElo, formatter: (v) => '$v Points', style: const TextStyle(color: AppTokens.signal, fontWeight: FontWeight.bold, fontSize: 12)),
                             )
                           ],
                         ),
                         const SizedBox(height: 16),
-                        Text(_fastestSolve > 0 ? "Goal: Beat $_fastestSolve seconds" : "Goal: Complete your first mission!", style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
+                        _fastestSolve > 0
+                            ? AnimatedCounter(value: _fastestSolve, formatter: (v) => 'Goal: Beat $v seconds', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14))
+                            : Text("Goal: Complete your first mission!", style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
                         const SizedBox(height: 4),
                         Row(
                           children: [

@@ -44,16 +44,34 @@ private func isDay(_ date: Date) -> Bool {
     return hour >= 6 && hour < 19
 }
 
+/// Mirrors lib/widgets/weather_ambience.dart's condition buckets (Open-Meteo
+/// WMO weather codes) so the widget shows the same kind of sky as the
+/// in-app heroes instead of a generic star field regardless of conditions.
+private enum Ambience {
+    case clear, cloudy, fog, rain, snow, storm
+}
+
+private func ambience(for weatherCode: Int?) -> Ambience {
+    guard let code = weatherCode else { return .clear }
+    if code >= 95 { return .storm }
+    if code >= 71 && code <= 77 { return .snow }
+    if (code >= 51 && code <= 67) || (code >= 80 && code <= 82) { return .rain }
+    if code >= 45 && code <= 48 { return .fog }
+    if code >= 1 && code <= 3 { return .cloudy }
+    return .clear
+}
+
 struct WakleEntry: TimelineEntry {
     let date: Date
     let nextAlarmLabel: String
     let nextAlarmDate: Date?
     let currentStreak: Int
+    let weatherCode: Int?
 }
 
 struct WakleTimelineProvider: TimelineProvider {
     func placeholder(in context: Context) -> WakleEntry {
-        WakleEntry(date: Date(), nextAlarmLabel: "No alarm set", nextAlarmDate: nil, currentStreak: 0)
+        WakleEntry(date: Date(), nextAlarmLabel: "No alarm set", nextAlarmDate: nil, currentStreak: 0, weatherCode: nil)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (WakleEntry) -> Void) {
@@ -72,7 +90,7 @@ struct WakleTimelineProvider: TimelineProvider {
         var entries: [WakleEntry] = [entry]
         for hourOffset in stride(from: 1, through: 6, by: 1) {
             if let future = Calendar.current.date(byAdding: .hour, value: hourOffset, to: now) {
-                entries.append(WakleEntry(date: future, nextAlarmLabel: entry.nextAlarmLabel, nextAlarmDate: entry.nextAlarmDate, currentStreak: entry.currentStreak))
+                entries.append(WakleEntry(date: future, nextAlarmLabel: entry.nextAlarmLabel, nextAlarmDate: entry.nextAlarmDate, currentStreak: entry.currentStreak, weatherCode: entry.weatherCode))
             }
         }
         completion(Timeline(entries: entries, policy: .after(Calendar.current.date(byAdding: .hour, value: 6, to: now) ?? now)))
@@ -84,32 +102,109 @@ struct WakleTimelineProvider: TimelineProvider {
         let streak = defaults?.integer(forKey: "current_streak") ?? 0
         let epoch = defaults?.integer(forKey: "next_alarm_epoch") ?? 0
         let alarmDate = epoch > 0 ? Date(timeIntervalSince1970: TimeInterval(epoch)) : nil
-        return WakleEntry(date: Date(), nextAlarmLabel: label, nextAlarmDate: alarmDate, currentStreak: streak)
+        let weatherCode = defaults?.object(forKey: "weather_code") as? Int
+        return WakleEntry(date: Date(), nextAlarmLabel: label, nextAlarmDate: alarmDate, currentStreak: streak, weatherCode: weatherCode)
     }
 }
 
-/// A quiet field of stars/light motes behind the hero, matching the app's
-/// own SkyParticlesLayer concept. WidgetKit can't run a continuous
-/// animation loop the way the app can, so this is a fixed, seeded
-/// scattering rather than a twinkle - still gives the background texture
-/// instead of a flat gradient rectangle.
-private struct SkyParticles: View {
+/// Weather-appropriate background texture behind the hero, matching the
+/// in-app WeatherAmbienceLayer's condition buckets. WidgetKit can't run a
+/// continuous animation loop the way the app can, so this is a fixed,
+/// seeded arrangement rather than falling/drifting motion - still gives
+/// stars for a clear night, rain streaks for rain, drifting-looking cloud
+/// puffs for cloudy skies, etc. instead of one generic effect regardless of
+/// conditions.
+private struct WeatherAmbienceView: View {
+    let weatherCode: Int?
     let night: Bool
 
     var body: some View {
         GeometryReader { geo in
-            ZStack {
-                ForEach(0..<(night ? 22 : 10), id: \.self) { i in
-                    let seed = Double(i) * 12.9898
-                    let x = (sin(seed) * 0.5 + 0.5) * geo.size.width
-                    let y = (cos(seed * 1.7) * 0.5 + 0.5) * geo.size.height
-                    let r = night ? CGFloat(0.6 + (seed.truncatingRemainder(dividingBy: 1.4))) : CGFloat(1.5 + (seed.truncatingRemainder(dividingBy: 2.0)))
-                    let alpha = night ? 0.25 + (seed.truncatingRemainder(dividingBy: 0.5)) : 0.10 + (seed.truncatingRemainder(dividingBy: 0.12))
-                    Circle()
-                        .fill(Color.white.opacity(alpha))
-                        .frame(width: r * 2, height: r * 2)
-                        .position(x: x, y: y)
+            switch ambience(for: weatherCode) {
+            case .clear:
+                dots(in: geo.size, count: night ? 22 : 10, night: night)
+            case .cloudy:
+                ZStack {
+                    if night { dots(in: geo.size, count: 14, night: true) }
+                    clouds(in: geo.size, count: 3, opacity: night ? 0.14 : 0.5)
                 }
+            case .fog:
+                clouds(in: geo.size, count: 4, opacity: 0.22, wide: true)
+            case .rain:
+                ZStack {
+                    clouds(in: geo.size, count: 2, opacity: 0.18)
+                    rain(in: geo.size, count: 26)
+                }
+            case .snow:
+                ZStack {
+                    clouds(in: geo.size, count: 2, opacity: 0.16)
+                    snow(in: geo.size, count: 20)
+                }
+            case .storm:
+                ZStack {
+                    clouds(in: geo.size, count: 2, opacity: 0.16)
+                    rain(in: geo.size, count: 34)
+                }
+            }
+        }
+    }
+
+    private func dots(in size: CGSize, count: Int, night: Bool) -> some View {
+        ZStack {
+            ForEach(0..<count, id: \.self) { i in
+                let seed = Double(i) * 12.9898
+                let x = (sin(seed) * 0.5 + 0.5) * size.width
+                let y = (cos(seed * 1.7) * 0.5 + 0.5) * size.height
+                let r = night ? CGFloat(0.6 + (seed.truncatingRemainder(dividingBy: 1.4))) : CGFloat(1.5 + (seed.truncatingRemainder(dividingBy: 2.0)))
+                let alpha = night ? 0.25 + (seed.truncatingRemainder(dividingBy: 0.5)) : 0.10 + (seed.truncatingRemainder(dividingBy: 0.12))
+                Circle()
+                    .fill(Color.white.opacity(alpha))
+                    .frame(width: r * 2, height: r * 2)
+                    .position(x: x, y: y)
+            }
+        }
+    }
+
+    private func clouds(in size: CGSize, count: Int, opacity: Double, wide: Bool = false) -> some View {
+        ZStack {
+            ForEach(0..<count, id: \.self) { i in
+                let seed = Double(i) * 37.719 + 4.1
+                let w = size.width * (wide ? 0.7 : (0.35 + Double(i) * 0.1))
+                let x = ((sin(seed) * 0.5 + 0.5) * (size.width + w)) - w / 2
+                let y = size.height * (0.18 + Double(i) * 0.26)
+                Capsule()
+                    .fill(Color.white.opacity(opacity))
+                    .frame(width: w, height: w * 0.32)
+                    .position(x: x, y: y)
+            }
+        }
+    }
+
+    private func rain(in size: CGSize, count: Int) -> some View {
+        ZStack {
+            ForEach(0..<count, id: \.self) { i in
+                let seed = Double(i) * 19.31
+                let x = (seed.truncatingRemainder(dividingBy: 1.0)) * size.width
+                let y = ((seed * 3.7).truncatingRemainder(dividingBy: 1.0)) * size.height
+                Rectangle()
+                    .fill(Color.white.opacity(0.4))
+                    .frame(width: 1.4, height: size.height * 0.07)
+                    .rotationEffect(.degrees(12))
+                    .position(x: x, y: y)
+            }
+        }
+    }
+
+    private func snow(in size: CGSize, count: Int) -> some View {
+        ZStack {
+            ForEach(0..<count, id: \.self) { i in
+                let seed = Double(i) * 23.7
+                let x = (seed.truncatingRemainder(dividingBy: 1.0)) * size.width
+                let y = ((seed * 2.9).truncatingRemainder(dividingBy: 1.0)) * size.height
+                Circle()
+                    .fill(Color.white.opacity(0.7))
+                    .frame(width: 2.6, height: 2.6)
+                    .position(x: x, y: y)
             }
         }
     }
@@ -126,7 +221,7 @@ struct WakleWidgetEntryView: View {
         ZStack {
             LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            SkyParticles(night: night)
+            WeatherAmbienceView(weatherCode: entry.weatherCode, night: night)
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {

@@ -29,6 +29,7 @@ import '../widgets/breathing_icon.dart';
 import '../widgets/animated_pressable.dart';
 import '../widgets/platform_theme.dart';
 import '../widgets/sky_particles.dart';
+import '../widgets/weather_ambience.dart';
 import '../widgets/weather_widget.dart' show AnimatedWeatherIcon;
 
 class HomeScreen extends StatefulWidget {
@@ -92,6 +93,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
     final data = await WeatherService.getCurrentWeather();
     if (mounted) setState(() => _weatherData = data);
+    // Weather usually finishes loading after loadAlarms()'s own widget sync
+    // already ran (it has to wait on location + a network call), so without
+    // this the home screen widget would keep showing generic stars until
+    // the next unrelated alarm change happened to resync it.
+    unawaited(_syncHomeWidget());
+  }
+
+  Future<void> _syncHomeWidget() async {
+    final stats = await EloService.getStats();
+    unawaited(HomeWidgetService.update(
+      nextAlarmTime: _nextScheduled?.nextOccurrence,
+      currentStreak: stats['currentStreak'] ?? 0,
+      weatherCode: _weatherData?.weatherCode,
+      isDay: _weatherData?.isDay,
+    ));
   }
 
   ScheduledAlarm? _nextScheduled;
@@ -109,11 +125,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       });
     }
 
-    final stats = await EloService.getStats();
-    unawaited(HomeWidgetService.update(
-      nextAlarmTime: next?.nextOccurrence,
-      currentStreak: stats['currentStreak'] ?? 0,
-    ));
+    unawaited(_syncHomeWidget());
   }
 
   void _updateNextAlarmText() {
@@ -175,7 +187,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
         child: Stack(
           children: [
-            Positioned.fill(child: SkyParticlesLayer(night: isNight)),
+            Positioned.fill(
+              child: _weatherData != null
+                  ? WeatherAmbienceLayer(weatherCode: _weatherData!.weatherCode, isDay: !isNight)
+                  : SkyParticlesLayer(night: isNight),
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
               child: Row(

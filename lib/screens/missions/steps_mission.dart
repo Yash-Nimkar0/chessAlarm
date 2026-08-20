@@ -118,11 +118,16 @@ class _StepsMissionState extends State<StepsMission> {
                 SizedBox(
                   width: 250,
                   height: 250,
-                  child: CircularProgressIndicator(
-                    value: progress,
-                    strokeWidth: 20,
-                    backgroundColor: colorScheme.surfaceContainerHighest,
-                    color: Colors.blueAccent,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: progress),
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, animatedProgress, _) => CircularProgressIndicator(
+                      value: animatedProgress,
+                      strokeWidth: 20,
+                      backgroundColor: colorScheme.surfaceContainerHighest,
+                      color: Colors.blueAccent,
+                    ),
                   ),
                 ),
                 Padding(

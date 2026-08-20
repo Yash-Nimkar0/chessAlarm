@@ -11,6 +11,8 @@ class HomeWidgetService {
   static Future<void> update({
     required DateTime? nextAlarmTime,
     required int currentStreak,
+    int? weatherCode,
+    bool? isDay,
   }) async {
     await HomeWidget.setAppGroupId(_appGroupId);
 
@@ -28,6 +30,15 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<int>('next_alarm_epoch', 0);
     }
     await HomeWidget.saveWidgetData<int>('current_streak', currentStreak);
+    // So the widget's background can show the same weather-appropriate
+    // visuals (rain/snow/clouds/stars) as the in-app heroes instead of a
+    // generic star field regardless of actual conditions.
+    if (weatherCode != null) {
+      await HomeWidget.saveWidgetData<int>('weather_code', weatherCode);
+    }
+    if (isDay != null) {
+      await HomeWidget.saveWidgetData<bool>('is_day', isDay);
+    }
     await HomeWidget.updateWidget(iOSName: _iOSWidgetName);
   }
 }

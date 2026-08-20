@@ -4,6 +4,7 @@ import '../theme/design_tokens.dart';
 import '../services/elo_service.dart';
 import 'main_screen.dart';
 import '../widgets/platform_theme.dart';
+import '../widgets/animated_counter.dart';
 
 class MissionCompleteScreen extends StatefulWidget {
   final int elapsedSeconds;
@@ -137,13 +138,15 @@ class _MissionCompleteScreenState extends State<MissionCompleteScreen> with Tick
               ),
               const SizedBox(height: 40),
               if (!widget.isSkip) ...[
-                Text(
-                  'Solved in ${widget.elapsedSeconds}s',
+                AnimatedCounter(
+                  value: widget.elapsedSeconds,
+                  formatter: (v) => 'Solved in ${v}s',
                   style: TextStyle(fontSize: 24, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  '+${widget.eloChange} Points',
+                AnimatedCounter(
+                  value: widget.eloChange,
+                  formatter: (v) => '+$v Points',
                   style: const TextStyle(fontSize: 24, color: AppTokens.signal, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
@@ -159,8 +162,9 @@ class _MissionCompleteScreenState extends State<MissionCompleteScreen> with Tick
                 children: [
                   const Icon(Icons.local_fire_department, color: AppTokens.signal, size: 28),
                   const SizedBox(width: 8),
-                  Text(
-                    '$_currentStreak Day Streak',
+                  AnimatedCounter(
+                    value: _currentStreak,
+                    formatter: (v) => '$v Day Streak',
                     style: const TextStyle(fontSize: 24, color: AppTokens.signal, fontWeight: FontWeight.bold),
                   ),
                 ],
