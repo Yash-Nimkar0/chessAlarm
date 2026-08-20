@@ -6,7 +6,9 @@ import '../services/weather_service.dart';
 import '../services/preferences_service.dart';
 import '../theme/design_tokens.dart';
 import '../utils/greeting_utils.dart';
+import '../utils/sky_gradient.dart';
 import 'animated_pressable.dart';
+import 'sky_particles.dart';
 
 enum WeatherShapeType { sun, moon, clouds, rain, snow, storm, fog }
 
@@ -247,15 +249,21 @@ class WeatherWidget extends StatefulWidget {
   State<WeatherWidget> createState() => _WeatherWidgetState();
 }
 
-class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserver {
+class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   WeatherData? _weatherData;
   bool _isLoading = true;
   String _userName = "";
+  // Slowly drifts the hero gradient's direction and the glow behind the
+  // weather icon so the background never sits perfectly still - separate
+  // from SkyParticlesLayer's own faster-cycling controller (stars/shooting
+  // stars), which is a different rhythm entirely.
+  late final AnimationController _driftController;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _driftController = AnimationController(vsync: this, duration: const Duration(seconds: 16))..repeat(reverse: true);
     if (WeatherService.cachedWeather != null) {
       _weatherData = WeatherService.cachedWeather;
       _isLoading = false;
@@ -284,6 +292,7 @@ class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserv
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _driftController.dispose();
     super.dispose();
   }
 
@@ -396,99 +405,145 @@ class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserv
       sunsetStr  = DateFormat('h:mm a').format(_weatherData!.daily.first.sunset);
     }
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-        border: border,
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, 4))],
-      ),
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _userName.isEmpty ? '${_greeting()}!' : '${_greeting()}, $_userName',
-                      style: AppTokens.display.copyWith(color: textColor, fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(_weatherData!.conditionTitle, style: AppTokens.body.copyWith(color: subTextColor, fontSize: 14)),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+    final now = DateTime.now();
+    final skyColors = SkyGradient.colorsFor(now);
+    final isNight = !SkyGradient.isDay(now);
+    const heroText = Colors.white;
+    final heroSub = Colors.white.withValues(alpha: 0.78);
+    final glassBg = Colors.white.withValues(alpha: 0.14);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: AnimatedBuilder(
+        animation: _driftController,
+        builder: (context, child) {
+          final drift = _driftController.value; // 0..1, reverses forever
+          final begin = Alignment(-1.0 + drift * 0.5, -1.0 + drift * 0.3);
+          final end = Alignment(1.0 - drift * 0.3, 1.0 - drift * 0.5);
+          return Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: skyColors, begin: begin, end: end),
+              boxShadow: [BoxShadow(color: skyColors.last.withValues(alpha: 0.35), blurRadius: 24, offset: const Offset(0, 10))],
+            ),
+            child: child,
+          );
+        },
+        child: Stack(
+          children: [
+            Positioned.fill(child: SkyParticlesLayer(night: isNight, vivid: true)),
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AnimatedWeatherIcon(
-                    weatherCode: _weatherData!.weatherCode,
-                    isDay: day,
-                    color: textColor.withValues(alpha: 0.85),
-                    size: 32,
-                  ),
-                  const SizedBox(width: 8),
-                  Text('${_weatherData!.temperature.floor()}°', style: AppTokens.display.copyWith(color: textColor, fontSize: 26, fontWeight: FontWeight.w700)),
-                ],
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 16),
-          
-          SizedBox(
-            height: 72,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: upcoming.length,
-              physics: const NeverScrollableScrollPhysics(),
-              itemBuilder: (context, i) {
-                final h = upcoming[i];
-                final timeStr = i == 0 ? "Now" : DateFormat('h a').format(h.time);
-                return Padding(
-                  padding: const EdgeInsets.only(right: 24.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(timeStr, style: AppTokens.body.copyWith(color: subTextColor, fontSize: 11)),
-                      const SizedBox(height: 6),
-                      AnimatedWeatherIcon(
-                        weatherCode: h.weatherCode,
-                        isDay: day,
-                        color: subTextColor,
-                        size: 20,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _userName.isEmpty ? _greeting() : '${_greeting()}, $_userName',
+                              style: AppTokens.display.copyWith(color: heroText, fontSize: 22, fontWeight: FontWeight.w800),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(DateFormat('EEEE, MMMM d').format(now), style: AppTokens.body.copyWith(color: heroSub, fontSize: 13)),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 4),
-                      Text('${h.temperature.floor()}°', style: AppTokens.body.copyWith(color: textColor, fontWeight: FontWeight.w600, fontSize: 13)),
+                      Icon(isNight ? Icons.nightlight_round : Icons.wb_sunny_rounded, color: Colors.white.withValues(alpha: 0.85), size: 22),
                     ],
                   ),
-                );
-              },
+
+                  const SizedBox(height: 28),
+
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.white.withValues(alpha: 0.22 + _driftController.value * 0.14),
+                              blurRadius: 28,
+                              spreadRadius: 4,
+                            ),
+                          ],
+                        ),
+                        child: AnimatedWeatherIcon(
+                          weatherCode: _weatherData!.weatherCode,
+                          isDay: day,
+                          color: Colors.white,
+                          size: 64,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text('${_weatherData!.temperature.floor()}°', style: AppTokens.display.copyWith(color: heroText, fontSize: 64, fontWeight: FontWeight.w800, height: 1.0)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(_weatherData!.conditionTitle, style: AppTokens.body.copyWith(color: heroSub, fontSize: 16, fontWeight: FontWeight.w600)),
+
+                  const SizedBox(height: 24),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(color: glassBg, borderRadius: BorderRadius.circular(20)),
+                    child: SizedBox(
+                      height: 76,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: upcoming.length,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemBuilder: (context, i) {
+                          final h = upcoming[i];
+                          final timeStr = i == 0 ? "Now" : DateFormat('h a').format(h.time);
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 24.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(timeStr, style: AppTokens.body.copyWith(color: heroSub, fontSize: 11)),
+                                const SizedBox(height: 6),
+                                AnimatedWeatherIcon(
+                                  weatherCode: h.weatherCode,
+                                  isDay: day,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                const SizedBox(height: 4),
+                                Text('${h.temperature.floor()}°', style: AppTokens.body.copyWith(color: heroText, fontWeight: FontWeight.w600, fontSize: 13)),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Row(
+                    children: [
+                      Icon(Icons.wb_twilight_rounded, color: heroSub, size: 14),
+                      const SizedBox(width: 6),
+                      Text('Rise $sunriseStr', style: AppTokens.body.copyWith(color: heroSub, fontSize: 12)),
+                      const SizedBox(width: 16),
+                      Icon(Icons.nights_stay_rounded, color: heroSub, size: 14),
+                      const SizedBox(width: 6),
+                      Text('Set $sunsetStr', style: AppTokens.body.copyWith(color: heroSub, fontSize: 12)),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          
-          const SizedBox(height: 12),
-          
-          Row(
-            children: [
-              Icon(Icons.wb_twilight_rounded, color: day ? AppTokens.signal : AppTokens.dawnEnd, size: 14),
-              const SizedBox(width: 6),
-              Text('Rise $sunriseStr', style: AppTokens.body.copyWith(color: subTextColor, fontSize: 12)),
-              const SizedBox(width: 16),
-              Icon(Icons.nights_stay_rounded, color: subTextColor, size: 14),
-              const SizedBox(width: 6),
-              Text('Set $sunsetStr', style: AppTokens.body.copyWith(color: subTextColor, fontSize: 12)),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

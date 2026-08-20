@@ -1,8 +1,6 @@
 import 'report_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
-import '../services/preferences_service.dart';
-import '../utils/greeting_utils.dart';
 import '../widgets/weather_widget.dart';
 import '../widgets/platform_theme.dart';
 import '../widgets/animated_pressable.dart';
@@ -22,8 +20,6 @@ class MorningScreen extends StatefulWidget {
 }
 
 class _MorningScreenState extends State<MorningScreen> {
-  String _userName = '';
-
   int _currentStreak = 0;
   int _morningsWon = 0;
   int _morningsWonThisWeek = 0;
@@ -34,13 +30,7 @@ class _MorningScreenState extends State<MorningScreen> {
   @override
   void initState() {
     super.initState();
-    _loadName();
     _loadData();
-  }
-
-  Future<void> _loadName() async {
-    final name = await PreferencesService.getDisplayName();
-    if (mounted) setState(() => _userName = name);
   }
 
   Future<void> _loadData() async {
@@ -124,11 +114,6 @@ class _MorningScreenState extends State<MorningScreen> {
                 const SizedBox(height: 16),
                 const WeatherWidget(),
                 const SizedBox(height: 24),
-                Text(
-                  _userName.isEmpty ? GreetingUtils.getGreeting() : '${GreetingUtils.getGreeting()}, $_userName',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)
-                ),
-                const SizedBox(height: 24),
                 _buildMorningGiftCard(),
                 const SizedBox(height: 16),
 
@@ -154,6 +139,24 @@ class _MorningScreenState extends State<MorningScreen> {
 
   bool _giftRevealed = false;
 
+  static const List<String> _dailyMessages = [
+    "You showed up today. That's the whole game.",
+    "Every morning you win is a vote for who you're becoming.",
+    "Discipline is just self-respect in action.",
+    "The hardest part of the day is already behind you.",
+    "Small wins, repeated daily, become an identity.",
+    "You didn't hit snooze on your life today.",
+    "Consistency beats intensity. You're proving that right now.",
+  ];
+
+  String get _todaysMessage => _dailyMessages[DateTime.now().weekday % _dailyMessages.length];
+
+  // This used to be a fake "gift from Alex" with a stock photo of a random
+  // stranger pretending to be a real message from a real person — the same
+  // kind of fabricated-social-content issue as the mock "Wake Together"
+  // card removed from the home screen. Replaced with an honest daily
+  // message that's clearly from the app itself, keeping the same
+  // tap-to-reveal delight without pretending to be from someone it isn't.
   Widget _buildMorningGiftCard() {
     return AnimatedPressable(
       onTap: () {
@@ -172,7 +175,7 @@ class _MorningScreenState extends State<MorningScreen> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: _giftRevealed
-                ? [Theme.of(context).colorScheme.primaryContainer, Theme.of(context).colorScheme.surfaceContainerHighest]
+                ? [AppTokens.signal.withValues(alpha: 0.85), AppTokens.signalDeep]
                 : [Colors.orange.shade700, Colors.deepOrange],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -180,7 +183,7 @@ class _MorningScreenState extends State<MorningScreen> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: _giftRevealed ? [] : [
             BoxShadow(
-              color: Colors.orange.withOpacity(0.5),
+              color: Colors.orange.withValues(alpha: 0.5),
               blurRadius: 20,
               spreadRadius: 2,
             )
@@ -192,15 +195,19 @@ class _MorningScreenState extends State<MorningScreen> {
             if (!_giftRevealed) ...[
               const Icon(Icons.card_giftcard, color: Colors.white, size: 64),
               const SizedBox(height: 24),
-              const Text('🎁 Something from Alex', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white)),
+              const Text("🎁 Today's Message", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white)),
               const SizedBox(height: 8),
               const Text('Tap to reveal', style: TextStyle(color: Colors.white70, fontSize: 16)),
             ] else ...[
-              const CircleAvatar(radius: 32, backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=68')),
+              const Icon(Icons.wb_sunny_rounded, color: Colors.white, size: 40),
               const SizedBox(height: 16),
-              const Text('Good morning ❤️', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28)),
+              Text(
+                _todaysMessage,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.white, height: 1.3),
+              ),
               const SizedBox(height: 8),
-              const Text('- Alex', style: TextStyle(fontSize: 18, fontStyle: FontStyle.italic)),
+              const Text('- Wakle', style: TextStyle(fontSize: 15, fontStyle: FontStyle.italic, color: Colors.white70)),
             ]
           ],
         ),

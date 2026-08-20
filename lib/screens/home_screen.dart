@@ -18,12 +18,16 @@ import 'quick_alarm_screen.dart';
 import '../features/sounds/data/sound_repository.dart';
 import '../services/elo_service.dart';
 import '../services/home_widget_service.dart';
+import '../services/preferences_service.dart';
 import '../theme/design_tokens.dart';
 import '../theme/mission_colors.dart';
+import '../utils/greeting_utils.dart';
+import '../utils/sky_gradient.dart';
 import '../widgets/fade_slide_in.dart';
 import '../widgets/breathing_icon.dart';
 import '../widgets/animated_pressable.dart';
 import '../widgets/platform_theme.dart';
+import '../widgets/sky_particles.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -38,12 +42,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Timer? _countdownTimer;
   String _timeUntilNextAlarm = "";
   bool _permissionsGranted = true;
+  String _userName = '';
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _checkPermissions();
+    _loadName();
     loadAlarms();
     subscription = Alarm.ringing.listen((_) {
       loadAlarms();
@@ -69,6 +75,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _permissionsGranted = status.isReady;
       });
     }
+  }
+
+  Future<void> _loadName() async {
+    final name = await PreferencesService.getDisplayName();
+    if (mounted) setState(() => _userName = name);
   }
 
   ScheduledAlarm? _nextScheduled;
@@ -123,6 +134,86 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (_timeUntilNextAlarm != text) {
       setState(() => _timeUntilNextAlarm = text);
     }
+  }
+
+  // The old header was a plain "Alarms" title plus a small separate pill
+  // for the countdown - visually flat, and the two pieces of information
+  // (title, countdown) never related to each other. This hero merges them
+  // into one glanceable moment: a living-sky gradient (same system the
+  // Morning screen's weather hero uses, so both screens read as one
+  // cohesive app) with the next alarm's actual clock time as the headline,
+  // not just a relative countdown.
+  Widget _buildHomeHero(ColorScheme colorScheme) {
+    final now = DateTime.now();
+    final skyColors = SkyGradient.colorsFor(now);
+    final isNight = !SkyGradient.isDay(now);
+    const heroText = Colors.white;
+    final heroSub = Colors.white.withValues(alpha: 0.78);
+
+    final hasNext = _nextScheduled != null && _timeUntilNextAlarm.isNotEmpty;
+    final allOff = !hasNext && alarms.isNotEmpty;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: skyColors, begin: Alignment.topLeft, end: Alignment.bottomRight),
+          boxShadow: [BoxShadow(color: skyColors.last.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 6))],
+        ),
+        child: Stack(
+          children: [
+            Positioned.fill(child: SkyParticlesLayer(night: isNight)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(isNight ? Icons.nightlight_round : Icons.wb_sunny_rounded, color: Colors.white.withValues(alpha: 0.9), size: 24),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _userName.isEmpty ? GreetingUtils.getGreeting() : '${GreetingUtils.getGreeting()}, $_userName',
+                          style: AppTokens.body.copyWith(color: heroSub, fontSize: 12, fontWeight: FontWeight.w600),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        if (hasNext)
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                DateFormat('h:mm a').format(_nextScheduled!.nextOccurrence),
+                                style: AppTokens.display.copyWith(color: heroText, fontSize: 24, fontWeight: FontWeight.w800),
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  _timeUntilNextAlarm.replaceFirst('Next alarm ', ''),
+                                  style: AppTokens.body.copyWith(color: heroSub, fontSize: 13, fontWeight: FontWeight.w600),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          )
+                        else if (allOff)
+                          Text('All alarms are off', style: AppTokens.display.copyWith(color: heroText, fontSize: 18, fontWeight: FontWeight.w800))
+                        else
+                          Text('No alarms yet', style: AppTokens.display.copyWith(color: heroText, fontSize: 18, fontWeight: FontWeight.w800)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   IconData _missionIcon(MissionType type) {
@@ -526,60 +617,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
               ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: GestureDetector(
-                      onLongPress: kDebugMode ? _showDeveloperHarness : null,
-                      child: Text(
-                        'Alarms', 
-                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                ],
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+              child: GestureDetector(
+                onLongPress: kDebugMode ? _showDeveloperHarness : null,
+                child: _buildHomeHero(colorScheme),
               ),
             ),
 
-
-
-            // Next Alarm Banner
-            if (_timeUntilNextAlarm.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10, left: 16, right: 16),
-                child: PlatformCard(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                  child: Text(
-                    _timeUntilNextAlarm,
-                    style: AppTokens.display.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                ),
-              )
-            else if (alarms.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10, left: 16, right: 16),
-                child: PlatformCard(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                  child: Text(
-                    "All alarms are currently turned off.",
-                    style: AppTokens.display.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                ),
-              ),
-            
             // Expanded List View
             Expanded(
               child: alarms.isEmpty
