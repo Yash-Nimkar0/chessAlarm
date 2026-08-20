@@ -19,6 +19,7 @@ import '../features/sounds/data/sound_repository.dart';
 import '../services/elo_service.dart';
 import '../services/home_widget_service.dart';
 import '../services/preferences_service.dart';
+import '../services/weather_service.dart';
 import '../theme/design_tokens.dart';
 import '../theme/mission_colors.dart';
 import '../utils/greeting_utils.dart';
@@ -28,6 +29,7 @@ import '../widgets/breathing_icon.dart';
 import '../widgets/animated_pressable.dart';
 import '../widgets/platform_theme.dart';
 import '../widgets/sky_particles.dart';
+import '../widgets/weather_widget.dart' show AnimatedWeatherIcon;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -43,6 +45,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   String _timeUntilNextAlarm = "";
   bool _permissionsGranted = true;
   String _userName = '';
+  WeatherData? _weatherData;
 
   @override
   void initState() {
@@ -50,6 +53,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _checkPermissions();
     _loadName();
+    _loadWeather();
     loadAlarms();
     subscription = Alarm.ringing.listen((_) {
       loadAlarms();
@@ -80,6 +84,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _loadName() async {
     final name = await PreferencesService.getDisplayName();
     if (mounted) setState(() => _userName = name);
+  }
+
+  Future<void> _loadWeather() async {
+    if (WeatherService.cachedWeather != null) {
+      setState(() => _weatherData = WeatherService.cachedWeather);
+    }
+    final data = await WeatherService.getCurrentWeather();
+    if (mounted) setState(() => _weatherData = data);
   }
 
   ScheduledAlarm? _nextScheduled;
@@ -207,6 +219,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       ],
                     ),
                   ),
+                  if (_weatherData != null) ...[
+                    const SizedBox(width: 12),
+                    AnimatedWeatherIcon(
+                      weatherCode: _weatherData!.weatherCode,
+                      isDay: !isNight,
+                      color: Colors.white,
+                      size: 26,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${_weatherData!.temperature.floor()}°',
+                      style: AppTokens.display.copyWith(color: heroText, fontSize: 20, fontWeight: FontWeight.w700),
+                    ),
+                  ],
                 ],
               ),
             ),

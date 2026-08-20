@@ -114,7 +114,7 @@ class _MorningScreenState extends State<MorningScreen> {
                 const SizedBox(height: 16),
                 const WeatherWidget(),
                 const SizedBox(height: 24),
-                _buildMorningGiftCard(),
+                _buildDailyInsightCard(),
                 const SizedBox(height: 16),
 
                 if (_sleepMomentsCaptured > 0) ...[
@@ -137,80 +137,63 @@ class _MorningScreenState extends State<MorningScreen> {
     );
   }
 
-  bool _giftRevealed = false;
+  // This used to be a giant full-bleed orange "tap to reveal a gift from
+  // Alex" card - a fake message from a fake person (fixed once already this
+  // session), then a generic motivational-quote card that was still a giant
+  // attention-grabbing blob with no real substance. Replaced with a small,
+  // calm "Daily Insight" card that says something true and specific about
+  // *this user's* actual data instead of a canned quote that could apply to
+  // anyone.
+  ({IconData icon, String text}) _computeInsight() {
+    if (_fastestSolve > 0 && _fastestSolve < 999) {
+      return (icon: Icons.bolt_rounded, text: 'Your fastest wake-up so far is ${_fastestSolve}s. See if you can beat it tomorrow.');
+    }
+    if (_currentStreak >= 2) {
+      return (icon: Icons.local_fire_department_rounded, text: "You're on a $_currentStreak day streak. Don't break the chain tonight.");
+    }
+    if (_morningsWonThisWeek > 0) {
+      return (icon: Icons.calendar_today_rounded, text: '$_morningsWonThisWeek morning${_morningsWonThisWeek == 1 ? '' : 's'} won this week so far.');
+    }
+    if (_morningsWon > 0) {
+      return (icon: Icons.emoji_events_rounded, text: '$_morningsWon total morning${_morningsWon == 1 ? '' : 's'} won. Keep building the habit.');
+    }
+    return (icon: Icons.explore_rounded, text: 'Complete your first wake mission to start unlocking insights here.');
+  }
 
-  static const List<String> _dailyMessages = [
-    "You showed up today. That's the whole game.",
-    "Every morning you win is a vote for who you're becoming.",
-    "Discipline is just self-respect in action.",
-    "The hardest part of the day is already behind you.",
-    "Small wins, repeated daily, become an identity.",
-    "You didn't hit snooze on your life today.",
-    "Consistency beats intensity. You're proving that right now.",
-  ];
-
-  String get _todaysMessage => _dailyMessages[DateTime.now().weekday % _dailyMessages.length];
-
-  // This used to be a fake "gift from Alex" with a stock photo of a random
-  // stranger pretending to be a real message from a real person — the same
-  // kind of fabricated-social-content issue as the mock "Wake Together"
-  // card removed from the home screen. Replaced with an honest daily
-  // message that's clearly from the app itself, keeping the same
-  // tap-to-reveal delight without pretending to be from someone it isn't.
-  Widget _buildMorningGiftCard() {
-    return AnimatedPressable(
-      onTap: () {
-        if (!_giftRevealed) {
-          setState(() {
-            _giftRevealed = true;
-          });
-          Haptics.vibrate(HapticsType.heavy);
-        }
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeOutBack,
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: _giftRevealed
-                ? [AppTokens.signal.withValues(alpha: 0.85), AppTokens.signalDeep]
-                : [Colors.orange.shade700, Colors.deepOrange],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+  Widget _buildDailyInsightCard() {
+    final insight = _computeInsight();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppTokens.signal.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+        border: Border.all(color: AppTokens.signal.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(color: AppTokens.signal.withValues(alpha: 0.18), shape: BoxShape.circle),
+            child: Icon(insight.icon, color: AppTokens.signal, size: 20),
           ),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: _giftRevealed ? [] : [
-            BoxShadow(
-              color: Colors.orange.withValues(alpha: 0.5),
-              blurRadius: 20,
-              spreadRadius: 2,
-            )
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (!_giftRevealed) ...[
-              const Icon(Icons.card_giftcard, color: Colors.white, size: 64),
-              const SizedBox(height: 24),
-              const Text("🎁 Today's Message", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white)),
-              const SizedBox(height: 8),
-              const Text('Tap to reveal', style: TextStyle(color: Colors.white70, fontSize: 16)),
-            ] else ...[
-              const Icon(Icons.wb_sunny_rounded, color: Colors.white, size: 40),
-              const SizedBox(height: 16),
-              Text(
-                _todaysMessage,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.white, height: 1.3),
-              ),
-              const SizedBox(height: 8),
-              const Text('- Wakle', style: TextStyle(fontSize: 15, fontStyle: FontStyle.italic, color: Colors.white70)),
-            ]
-          ],
-        ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('DAILY INSIGHT', style: TextStyle(color: AppTokens.signal, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
+                const SizedBox(height: 4),
+                Text(
+                  insight.text,
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.w600, height: 1.35),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

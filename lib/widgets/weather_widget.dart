@@ -8,7 +8,7 @@ import '../theme/design_tokens.dart';
 import '../utils/greeting_utils.dart';
 import '../utils/sky_gradient.dart';
 import 'animated_pressable.dart';
-import 'sky_particles.dart';
+import 'weather_ambience.dart';
 
 enum WeatherShapeType { sun, moon, clouds, rain, snow, storm, fog }
 
@@ -255,8 +255,8 @@ class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserv
   String _userName = "";
   // Slowly drifts the hero gradient's direction and the glow behind the
   // weather icon so the background never sits perfectly still - separate
-  // from SkyParticlesLayer's own faster-cycling controller (stars/shooting
-  // stars), which is a different rhythm entirely.
+  // from WeatherAmbienceLayer's own faster-cycling controller (rain/snow/
+  // clouds/stars), which is a different rhythm entirely.
   late final AnimationController _driftController;
 
   @override
@@ -431,7 +431,7 @@ class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserv
         },
         child: Stack(
           children: [
-            Positioned.fill(child: SkyParticlesLayer(night: isNight, vivid: true)),
+            Positioned.fill(child: WeatherAmbienceLayer(weatherCode: _weatherData!.weatherCode, isDay: day)),
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
