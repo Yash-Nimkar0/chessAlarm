@@ -243,7 +243,16 @@ class _AnimatedWeatherIconState extends State<AnimatedWeatherIcon> with SingleTi
 }
 
 class WeatherWidget extends StatefulWidget {
-  const WeatherWidget({Key? key}) : super(key: key);
+  // When the screen behind this widget already paints its own full-page
+  // sky gradient + WeatherAmbienceLayer (Morning screen does), painting a
+  // second independent copy inside the hero card - on its own animation
+  // clock, at the hero's own smaller size - produced two differently
+  // sized, differently phased cloud patterns competing right at the
+  // hero's edge. Seamless mode drops the hero's own gradient/shadow/cloud
+  // layer entirely and lets the page's single sky show straight through,
+  // so there is exactly one gradient and one set of clouds on screen.
+  final bool seamless;
+  const WeatherWidget({Key? key, this.seamless = false}) : super(key: key);
 
   @override
   State<WeatherWidget> createState() => _WeatherWidgetState();
@@ -350,6 +359,15 @@ class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserv
         : null;
 
     if (_isLoading && _weatherData == null) {
+      final spinner = Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: widget.seamless ? Colors.white.withValues(alpha: 0.6) : textColor.withValues(alpha: 0.3),
+        ),
+      );
+      if (widget.seamless) {
+        return SizedBox(height: 120, width: double.infinity, child: spinner);
+      }
       return Container(
         height: 120,
         width: double.infinity,
@@ -359,11 +377,23 @@ class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserv
           border: border,
           boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, 4))],
         ),
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: textColor.withValues(alpha: 0.3))),
+        child: spinner,
       );
     }
 
     if (_weatherData == null) {
+      final promptTextColor = widget.seamless ? Colors.white : textColor;
+      final promptSubColor = widget.seamless ? Colors.white.withValues(alpha: 0.78) : subTextColor;
+      final content = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Personalize your mornings", style: AppTokens.display.copyWith(color: promptTextColor, fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text("Use location for:\n✓ weather\n✓ sunrise\n✓ daily conditions", style: AppTokens.body.copyWith(color: promptSubColor)),
+          const SizedBox(height: 12),
+          Text("Tap to allow →", style: AppTokens.body.copyWith(color: AppTokens.signal, fontWeight: FontWeight.bold)),
+        ],
+      );
       return AnimatedPressable(
         onTap: () async {
           final perm = await Geolocator.requestPermission();
@@ -372,25 +402,18 @@ class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserv
             _fetchWeather();
           }
         },
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-            border: border,
-            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, 4))],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("Personalize your mornings", style: AppTokens.display.copyWith(color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text("Use location for:\n✓ weather\n✓ sunrise\n✓ daily conditions", style: AppTokens.body.copyWith(color: subTextColor)),
-              const SizedBox(height: 12),
-              Text("Tap to allow →", style: AppTokens.body.copyWith(color: AppTokens.signal, fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ),
+        child: widget.seamless
+            ? Padding(padding: const EdgeInsets.all(20), child: content)
+            : Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+                  border: border,
+                  boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, 4))],
+                ),
+                child: content,
+              ),
       );
     }
 
@@ -412,27 +435,7 @@ class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserv
     final heroSub = Colors.white.withValues(alpha: 0.78);
     final glassBg = Colors.white.withValues(alpha: 0.14);
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
-      child: AnimatedBuilder(
-        animation: _driftController,
-        builder: (context, child) {
-          final drift = _driftController.value; // 0..1, reverses forever
-          final begin = Alignment(-1.0 + drift * 0.5, -1.0 + drift * 0.3);
-          final end = Alignment(1.0 - drift * 0.3, 1.0 - drift * 0.5);
-          return Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: skyColors, begin: begin, end: end),
-              boxShadow: [BoxShadow(color: skyColors.last.withValues(alpha: 0.35), blurRadius: 24, offset: const Offset(0, 10))],
-            ),
-            child: child,
-          );
-        },
-        child: Stack(
-          children: [
-            Positioned.fill(child: WeatherAmbienceLayer(weatherCode: _weatherData!.weatherCode, isDay: day)),
-            Padding(
+    final heroContent = Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -541,7 +544,37 @@ class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserv
                   ),
                 ],
               ),
+            );
+
+    // Seamless mode leaves the page's own gradient + WeatherAmbienceLayer
+    // as the only sky and cloud layer on screen - painting a second one
+    // here, on a different clock and a different size, is exactly what
+    // caused the clouds to look out of sync with the background.
+    if (widget.seamless) {
+      return heroContent;
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: AnimatedBuilder(
+        animation: _driftController,
+        builder: (context, child) {
+          final drift = _driftController.value; // 0..1, reverses forever
+          final begin = Alignment(-1.0 + drift * 0.5, -1.0 + drift * 0.3);
+          final end = Alignment(1.0 - drift * 0.3, 1.0 - drift * 0.5);
+          return Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: skyColors, begin: begin, end: end),
+              boxShadow: [BoxShadow(color: skyColors.last.withValues(alpha: 0.35), blurRadius: 24, offset: const Offset(0, 10))],
             ),
+            child: child,
+          );
+        },
+        child: Stack(
+          children: [
+            Positioned.fill(child: WeatherAmbienceLayer(weatherCode: _weatherData!.weatherCode, isDay: day)),
+            heroContent,
           ],
         ),
       ),

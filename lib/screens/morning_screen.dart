@@ -165,7 +165,7 @@ class _MorningScreenState extends State<MorningScreen> with SingleTickerProvider
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 16),
-                          const WeatherWidget(),
+                          const WeatherWidget(seamless: true),
                           const SizedBox(height: 24),
                           _buildDailyInsightCard(),
                           const SizedBox(height: 16),
