@@ -13,7 +13,17 @@ class WakelyTabBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  const WakelyTabBar({super.key, required this.currentIndex, required this.onTap});
+  /// True when the currently active tab paints its own dark/saturated
+  /// full-bleed background regardless of the app's light/dark theme
+  /// setting (the Morning tab's time-of-day sky gradient, which - like its
+  /// own hero content - always uses light text since the gradient is never
+  /// pastel-light enough for dark text to read). The bar has no way to see
+  /// what's actually behind its own blur, so the active screen has to say
+  /// so explicitly instead of this just following the app theme, which is
+  /// a different, unrelated question from "is what's behind me dark".
+  final bool forceLightContent;
+
+  const WakelyTabBar({super.key, required this.currentIndex, required this.onTap, this.forceLightContent = false});
 
   /// The bar's own content height, not counting the bottom safe-area inset
   /// SafeArea adds beneath it. Screens whose body now extends behind this
@@ -33,11 +43,17 @@ class WakelyTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final isDark = scheme.brightness == Brightness.dark;
+    final isDark = forceLightContent || scheme.brightness == Brightness.dark;
+    // The theme's auto-derived `onSurfaceVariant` rendered too close in
+    // luminance to this bar's own light-mode background to read clearly —
+    // an explicit, deliberately-contrasted color instead of an ambient one
+    // that happened to wash out here.
+    final unselectedColor = isDark ? Colors.white.withValues(alpha: 0.6) : AppTokens.nightBg.withValues(alpha: 0.62);
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.14) : scheme.onSurface.withValues(alpha: 0.08);
 
     return Container(
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: scheme.onSurface.withValues(alpha: 0.08), width: 1)),
+        border: Border(top: BorderSide(color: borderColor, width: 1)),
       ),
       child: SafeArea(
         top: false,
@@ -102,7 +118,7 @@ class WakelyTabBar extends StatelessWidget {
                                     child: Icon(
                                       selected ? item.filled : item.outline,
                                       key: ValueKey(selected),
-                                      color: selected ? AppTokens.signal : scheme.onSurfaceVariant,
+                                      color: selected ? AppTokens.signal : unselectedColor,
                                       size: 24,
                                     ),
                                   ),
@@ -113,7 +129,7 @@ class WakelyTabBar extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                                    color: selected ? AppTokens.signal : scheme.onSurfaceVariant,
+                                    color: selected ? AppTokens.signal : unselectedColor,
                                   ),
                                   child: Text(item.label),
                                 ),

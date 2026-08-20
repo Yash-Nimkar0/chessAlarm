@@ -44,16 +44,22 @@ class _MainScreenState extends State<MainScreen> {
         Haptics.vibrate(HapticsType.selection);
         setState(() => _currentIndex = index);
       },
+      // Index 2 is the Morning tab - its sky gradient always uses light
+      // text for the same reason its own hero content does, regardless of
+      // the app's light/dark theme setting.
+      forceLightContent: _currentIndex == 2,
     );
 
     if (Platform.isIOS) {
+      // No tint at all now - any solid-color wash, even faint or in the
+      // "right" direction, still reads as a separate sheet sitting on top
+      // rather than nothing. Pure blur with zero color underneath it is
+      // the only way for the bar to have literally no distinct color of
+      // its own - it just shows whatever's actually behind it, blurred.
       bottomNavBar = ClipRRect(
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-            child: bottomNavBar,
-          ),
+          child: bottomNavBar,
         ),
       );
     } else {
