@@ -2,12 +2,15 @@ import 'report_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import '../widgets/weather_widget.dart';
-import '../widgets/platform_theme.dart';
 import '../widgets/animated_pressable.dart';
 import '../widgets/animated_counter.dart';
+import '../widgets/sky_particles.dart';
+import '../widgets/weather_ambience.dart';
 import '../services/elo_service.dart';
 import '../services/analytics_service.dart';
+import '../services/weather_service.dart';
 import '../theme/design_tokens.dart';
+import '../utils/sky_gradient.dart';
 
 import 'package:haptic_feedback/haptic_feedback.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,7 +23,7 @@ class MorningScreen extends StatefulWidget {
   State<MorningScreen> createState() => _MorningScreenState();
 }
 
-class _MorningScreenState extends State<MorningScreen> {
+class _MorningScreenState extends State<MorningScreen> with SingleTickerProviderStateMixin {
   int _currentStreak = 0;
   int _morningsWon = 0;
   int _morningsWonThisWeek = 0;
@@ -28,10 +31,30 @@ class _MorningScreenState extends State<MorningScreen> {
   int _sleepMomentsCaptured = 0;
   bool _isLoading = true;
 
+  WeatherData? _weatherData;
+  // Same slow drift used by the hero card itself, so the full-screen sky
+  // background and the hero's own gradient move in the same rhythm instead
+  // of reading as two separate, independently-animated surfaces.
+  late final AnimationController _driftController;
+
   @override
   void initState() {
     super.initState();
+    _driftController = AnimationController(vsync: this, duration: const Duration(seconds: 16))..repeat(reverse: true);
+    if (WeatherService.cachedWeather != null) _weatherData = WeatherService.cachedWeather;
     _loadData();
+    _loadWeather();
+  }
+
+  Future<void> _loadWeather() async {
+    final data = await WeatherService.getCurrentWeather();
+    if (mounted) setState(() => _weatherData = data);
+  }
+
+  @override
+  void dispose() {
+    _driftController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -97,43 +120,74 @@ class _MorningScreenState extends State<MorningScreen> {
     }
   }
 
+  // The screen used to sit on the app's flat neutral background with only
+  // the hero card carrying any color - everything below it was a plain
+  // page. This makes the whole Morning tab live inside the same animated
+  // sky (gradient + weather ambience) the hero itself uses, so the hero
+  // reads as part of one continuous surface instead of a colorful box
+  // floating on a dull page.
+  Widget _buildSkyBackground() {
+    final now = DateTime.now();
+    final skyColors = SkyGradient.colorsFor(now);
+    final isNight = !SkyGradient.isDay(now);
+    return AnimatedBuilder(
+      animation: _driftController,
+      builder: (context, child) {
+        final drift = _driftController.value;
+        final begin = Alignment(-1.0 + drift * 0.5, -1.0 + drift * 0.3);
+        final end = Alignment(1.0 - drift * 0.3, 1.0 - drift * 0.5);
+        return Container(
+          decoration: BoxDecoration(gradient: LinearGradient(colors: skyColors, begin: begin, end: end)),
+          child: child,
+        );
+      },
+      child: _weatherData != null
+          ? WeatherAmbienceLayer(weatherCode: _weatherData!.weatherCode, isDay: !isNight)
+          : SkyParticlesLayer(night: isNight),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const PlatformScaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          Positioned.fill(child: _buildSkyBackground()),
+          SafeArea(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                : SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 16),
+                          const WeatherWidget(),
+                          const SizedBox(height: 24),
+                          _buildDailyInsightCard(),
+                          const SizedBox(height: 16),
 
-    return PlatformScaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 16),
-                const WeatherWidget(),
-                const SizedBox(height: 24),
-                _buildDailyInsightCard(),
-                const SizedBox(height: 16),
-
-                if (_sleepMomentsCaptured > 0) ...[
-                  _buildMorningSleepDiscoveryCard(),
-                  const SizedBox(height: 16),
-                ],
-                if (_morningsWon < 7) ...[
-                  _buildFirstWeekJourneyCard(),
-                  const SizedBox(height: 16),
-                ] else ...[
-                  _buildDailyDiscoveryCard(),
-                  const SizedBox(height: 16),
-                ],
-
-              ],
-            ),
+                          if (_sleepMomentsCaptured > 0) ...[
+                            _buildMorningSleepDiscoveryCard(),
+                            const SizedBox(height: 16),
+                          ],
+                          if (_morningsWon < 7) ...[
+                            _buildFirstWeekJourneyCard(),
+                            const SizedBox(height: 16),
+                          ] else ...[
+                            _buildDailyDiscoveryCard(),
+                            const SizedBox(height: 16),
+                          ],
+                          const SizedBox(height: 12),
+                        ],
+                      ),
+                    ),
+                  ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -167,9 +221,10 @@ class _MorningScreenState extends State<MorningScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppTokens.signal.withValues(alpha: 0.1),
+        color: Color.alphaBlend(AppTokens.signal.withValues(alpha: 0.1), Theme.of(context).colorScheme.surface),
         borderRadius: BorderRadius.circular(AppTokens.radiusLg),
         border: Border.all(color: AppTokens.signal.withValues(alpha: 0.3)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.14), blurRadius: 16, offset: const Offset(0, 6))],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,9 +265,10 @@ class _MorningScreenState extends State<MorningScreen> {
         width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppTokens.signal.withValues(alpha: 0.2),
+          color: Color.alphaBlend(AppTokens.signal.withValues(alpha: 0.2), Theme.of(context).colorScheme.surface),
           borderRadius: BorderRadius.circular(AppTokens.radiusLg),
           border: Border.all(color: AppTokens.signal.withValues(alpha: 0.3)),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.14), blurRadius: 16, offset: const Offset(0, 6))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -240,9 +296,10 @@ class _MorningScreenState extends State<MorningScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTokens.signal.withValues(alpha: 0.1),
+        color: Color.alphaBlend(AppTokens.signal.withValues(alpha: 0.1), Theme.of(context).colorScheme.surface),
         borderRadius: BorderRadius.circular(AppTokens.radiusLg),
         border: Border.all(color: AppTokens.signal.withValues(alpha: 0.3)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.14), blurRadius: 16, offset: const Offset(0, 6))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,9 +348,10 @@ class _MorningScreenState extends State<MorningScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+        color: Color.alphaBlend(Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), Theme.of(context).colorScheme.surface),
         borderRadius: BorderRadius.circular(AppTokens.radiusLg),
         border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.14), blurRadius: 16, offset: const Offset(0, 6))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
