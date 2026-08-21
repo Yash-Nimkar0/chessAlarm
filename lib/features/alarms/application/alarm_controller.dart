@@ -9,6 +9,7 @@ import '../domain/platform_alarm_state.dart';
 import '../data/alarm_kit_uuid.dart';
 import '../domain/wake_check_id.dart';
 import 'wake_session_controller.dart';
+import '../../../services/alarm_announcement_service.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -55,13 +56,27 @@ class AlarmController extends ChangeNotifier {
   Future<bool> snoozeAlarm(int id) async {
     final used = _snoozeCounts[id] ?? 0;
     if (used >= maxSnoozesPerRing) return false;
+    // Reserve the slot synchronously, before any `await` - a rapid
+    // double-tap that calls this twice would otherwise have both calls
+    // read the same stale `used` (both awaits start from the same
+    // pre-increment state), both pass the limit check, and both
+    // independently cancel+reschedule the native alarm, while the counter
+    // only ever advanced by 1. Incrementing here, with no suspension point
+    // between the check and the write, closes that window.
+    _snoozeCounts[id] = used + 1;
 
     final alarm = await _repository.getById(id);
-    if (alarm == null) return false;
+    if (alarm == null) {
+      _snoozeCounts[id] = used; // nothing was scheduled - give the slot back
+      return false;
+    }
 
     await _scheduler.cancel(id);
     await _scheduler.schedule(alarm.copyWith(time: DateTime.now().add(snoozeDuration)));
-    _snoozeCounts[id] = used + 1;
+    // This ring session is over - the next firing (in `snoozeDuration`) is a
+    // fresh one and should speak its ring announcement again rather than
+    // staying silent because of the earlier firing's dedupe window.
+    AlarmAnnouncementService.clearDedupe(id);
     return true;
   }
 
@@ -514,8 +529,11 @@ class AlarmController extends ChangeNotifier {
     final alarm = await _repository.getById(id);
     if (alarm == null) return;
 
-    // This ring cycle is over - a future firing gets a fresh snooze budget.
+    // This ring cycle is over - a future firing gets a fresh snooze budget
+    // and, if a ring announcement is configured, speaks again rather than
+    // staying silent because of this firing's dedupe window.
     _snoozeCounts.remove(id);
+    AlarmAnnouncementService.clearDedupe(id);
 
     // Always cancel current first to prevent any race conditions or duplicates
     await _scheduler.cancel(id);

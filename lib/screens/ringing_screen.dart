@@ -221,12 +221,19 @@ class _RingingScreenState extends State<RingingScreen> with TickerProviderStateM
       );
       return;
     }
+    // Set before the first `await` so a rapid double-tap can't fire this
+    // twice - AlarmController.snoozeAlarm's own counter is race-safe, but
+    // without this a double-tap would still legitimately burn two snoozes
+    // (and two redundant native reschedules) from what the user meant as
+    // one tap.
+    setState(() => _isProcessing = true);
     Haptics.vibrate(HapticsType.medium);
     final snoozed = await WakeSessionController.instance.snoozeSession();
     if (!mounted) return;
     if (snoozed) {
       Navigator.of(context).popUntil((route) => route.isFirst);
     } else {
+      setState(() => _isProcessing = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No snoozes left for this alarm.')),
       );

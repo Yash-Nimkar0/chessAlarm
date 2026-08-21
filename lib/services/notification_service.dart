@@ -102,7 +102,19 @@ class NotificationService {
       title: 'Still there?',
       body: body,
       scheduledDate: tz.TZDateTime.now(tz.local).add(const Duration(days: 3)),
+      // Without `android:`, flutter_local_notifications' Android side
+      // throws on zonedSchedule (a null-details NullPointerException in its
+      // own NotificationDetails.readPlatformSpecifics, confirmed live via
+      // `flutter run` on an Android emulator) — every scheduled reminder
+      // silently failed to schedule on Android, every single time.
       notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'wakle_reminders',
+          'Wakle Reminders',
+          channelDescription: 'Bedtime and re-engagement reminders',
+          importance: Importance.defaultImportance,
+          priority: Priority.defaultPriority,
+        ),
         iOS: DarwinNotificationDetails(
            presentAlert: true,
            presentBadge: true,
@@ -128,7 +140,19 @@ class NotificationService {
       title: 'Bedtime Reminder',
       body: message,
       scheduledDate: tz.TZDateTime.from(reminderTime, tz.local),
+      // Without `android:`, flutter_local_notifications' Android side
+      // throws on zonedSchedule (a null-details NullPointerException in its
+      // own NotificationDetails.readPlatformSpecifics, confirmed live via
+      // `flutter run` on an Android emulator) — every scheduled reminder
+      // silently failed to schedule on Android, every single time.
       notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'wakle_reminders',
+          'Wakle Reminders',
+          channelDescription: 'Bedtime and re-engagement reminders',
+          importance: Importance.defaultImportance,
+          priority: Priority.defaultPriority,
+        ),
         iOS: DarwinNotificationDetails(
            presentAlert: true,
            presentBadge: true,

@@ -89,6 +89,18 @@ class LegacyPluginAlarmScheduler implements PlatformAlarmScheduler {
       'missionRounds': alarm.mission.rounds,
       'missionData': alarm.mission.data,
       'label': alarm.label,
+      // This is a separate payload builder from WakelyAlarm.toAlarmSettings()
+      // (used by the AlarmKit iOS path) - missionChain/announcementMode/
+      // announce* were added there but never mirrored here, so on Android
+      // every alarm silently lost its mission chain (beyond the first
+      // mission) and its ring announcement always evaluated to 'off'
+      // regardless of what the user configured.
+      'missionChain': alarm.missionChain.map((m) => m.toJson()).toList(),
+      'announcementMode': alarm.announcementMode.toStringValue(),
+      'announceDay': alarm.announceDay,
+      'announceDate': alarm.announceDate,
+      'announceTime': alarm.announceTime,
+      'announceWeather': alarm.announceWeather,
     };
     return jsonEncode(payload);
   }

@@ -1,9 +1,17 @@
+import 'dart:io';
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
 
 /// Pushes the next-alarm time and current streak into the shared App Group
 /// container so the iOS home screen widget (WakleWidget, in ios/WakleWidget)
 /// can display them without launching the app.
+///
+/// iOS-only — there's no Android widget provider in this project. Calling
+/// `HomeWidget.updateWidget` without an `androidName` on Android throws
+/// (it tries to resolve a widget provider class literally named "null" and
+/// crashes with a ClassNotFoundException) — confirmed live via `flutter run`
+/// on an Android emulator, printing an unhandled PlatformException on every
+/// single call (every alarm/weather sync, i.e. constantly).
 class HomeWidgetService {
   static const String _appGroupId = 'group.com.yashnimkar.chessAlarm';
   static const String _iOSWidgetName = 'WakleWidget';
@@ -14,6 +22,7 @@ class HomeWidgetService {
     int? weatherCode,
     bool? isDay,
   }) async {
+    if (!Platform.isIOS) return;
     await HomeWidget.setAppGroupId(_appGroupId);
 
     final label = nextAlarmTime == null ? 'No alarm set' : DateFormat.jm().format(nextAlarmTime);

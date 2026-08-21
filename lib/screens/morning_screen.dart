@@ -151,7 +151,25 @@ class _MorningScreenState extends State<MorningScreen> with SingleTickerProvider
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
+      // The actual root cause of the full-bleed background stopping short,
+      // found via live constraint logging on a real Android build: Scaffold
+      // always gives `body` LOOSE height constraints (minHeight: 0) - not
+      // just here but at every level of the ancestor chain, regardless of
+      // any StackFit.expand fixes further up (they're moot once Scaffold
+      // re-loosens things at this level). Under a StackFit.loose Stack (the
+      // default), the SingleChildScrollView below - as the Stack's other,
+      // non-positioned child - reports its own CONTENT height, not the
+      // screen height, and that becomes the whole Stack's size. On a
+      // shorter card list (confirmed: this fresh install had no "sleep
+      // moments" card) that content height was less than the screen, so
+      // Positioned.fill's background was cut off exactly where the content
+      // ended, revealing the plain scaffold color below it. This isn't
+      // Android-specific - any account with a short enough Morning tab
+      // would hit it on iOS too, it just never came up because this
+      // session's own test data always had enough cards to exceed the
+      // screen height and mask it.
       body: Stack(
+        fit: StackFit.expand,
         children: [
           Positioned.fill(child: _buildSkyBackground()),
           SafeArea(

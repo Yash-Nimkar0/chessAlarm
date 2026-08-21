@@ -68,26 +68,51 @@ class _WakelyAppLoaderState extends State<WakelyAppLoader> {
     await ThemeService().init();
     await WallpaperService().init();
 
-    // Timeout Alarm.init in case of audio session deadlocks on iOS
+    // Each of these used to share one try/catch: a hung/failing Alarm.init()
+    // (the 5s timeout exists because of a real, documented iOS audio-session
+    // deadlock) silently skipped EVERYTHING after it too, including
+    // AlarmController.instance.init() - which is what actually reconciles
+    // persisted alarms against native state and arms the native event
+    // listener. On a real device (slower hardware, cold start under memory
+    // pressure - conditions this session's simulator-only testing never hit)
+    // that one early failure could silently leave every alarm unscheduled,
+    // with no retry and no user-facing signal, just a debugPrint. Isolating
+    // each step means a problem with one doesn't cascade into skipping the
+    // rest.
     try {
       // Restore Alarm.init() since we resolved the crash
       await Alarm.init().timeout(const Duration(seconds: 5));
-      
+    } catch (e) {
+      debugPrint("Alarm.init failed or timed out: $e");
+    }
+
+    try {
       // Initialize AlarmController which sets up the correct PlatformScheduler and native event listeners
       await AlarmController.instance.init();
-      
+    } catch (e) {
+      debugPrint("AlarmController.init failed: $e");
+    }
+
+    try {
       await NotificationService.initialize();
       await NotificationService.setupSleepReminders();
       await NotificationService.scheduleReEngagementReminder();
+    } catch (e) {
+      debugPrint("NotificationService init failed: $e");
+    }
+
+    try {
       await SleepService.cleanupOldClips();
       await SleepService.recoverOrphanedSession();
-      
+    } catch (e) {
+      debugPrint("SleepService init failed: $e");
+    }
+
+    try {
       await AnalyticsService.init();
       await AnalyticsService.checkRetention();
-
-
     } catch (e) {
-      debugPrint("Alarm init failed or timed out: $e");
+      debugPrint("AnalyticsService init failed: $e");
     }
 
     // Run alarm migration if necessary

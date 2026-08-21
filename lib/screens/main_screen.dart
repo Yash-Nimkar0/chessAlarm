@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:haptic_feedback/haptic_feedback.dart';
@@ -50,24 +49,21 @@ class _MainScreenState extends State<MainScreen> {
       forceLightContent: _currentIndex == 2,
     );
 
-    if (Platform.isIOS) {
-      // No tint at all now - any solid-color wash, even faint or in the
-      // "right" direction, still reads as a separate sheet sitting on top
-      // rather than nothing. Pure blur with zero color underneath it is
-      // the only way for the bar to have literally no distinct color of
-      // its own - it just shows whatever's actually behind it, blurred.
-      bottomNavBar = ClipRRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: bottomNavBar,
-        ),
-      );
-    } else {
-      bottomNavBar = Container(
-        color: Theme.of(context).colorScheme.surface,
+    // No tint at all - any solid-color wash, even faint or in the "right"
+    // direction, still reads as a separate sheet sitting on top rather than
+    // nothing. Pure blur with zero color underneath it is the only way for
+    // the bar to have literally no distinct color of its own - it just
+    // shows whatever's actually behind it, blurred. BackdropFilter isn't
+    // iOS-specific, so this is the same on both platforms now - Android
+    // used to get a flat opaque Container(color: colorScheme.surface)
+    // instead, which is exactly the "different box" look this was fixed
+    // for on iOS.
+    bottomNavBar = ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: bottomNavBar,
-      );
-    }
+      ),
+    );
 
     // Wrap everything in one PlatformScaffold for the background.
     // The inner screens will just use standard transparent Scaffolds.
@@ -81,6 +77,25 @@ class _MainScreenState extends State<MainScreen> {
         duration: const Duration(milliseconds: 260),
         switchInCurve: Curves.easeOutCubic,
         switchOutCurve: Curves.easeIn,
+        // AnimatedSwitcher's default layoutBuilder stacks children with
+        // `fit: StackFit.loose` — the Stack sizes itself to its CURRENT
+        // child's own measured size, not to the space actually available,
+        // and nothing forces a fresh layout pass once a transition
+        // finishes settled on that size. Confirmed live on Android: the
+        // Morning tab's full-bleed sky background measured ~30% shorter
+        // than the real screen height after switching tabs, leaving a
+        // block of the plain page color exposed above the tab bar - a
+        // known AnimatedSwitcher gotcha. `StackFit.expand` forces every
+        // child, at every point during and after a transition, to fill
+        // exactly the space AnimatedSwitcher itself was given.
+        layoutBuilder: (currentChild, previousChildren) => Stack(
+          fit: StackFit.expand,
+          alignment: Alignment.center,
+          children: [
+            ...previousChildren,
+            if (currentChild != null) currentChild,
+          ],
+        ),
         transitionBuilder: (child, animation) => FadeTransition(
           opacity: animation,
           child: SlideTransition(

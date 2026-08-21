@@ -24,11 +24,33 @@ class AlarmAnnouncementService {
 
   // A ring cycle can trigger a speak attempt from more than one place (a
   // best-effort pre-interaction hook, then the guaranteed RingingScreen/
-  // SlideToStopScreen hook) — de-duped per alarm id within a short window,
-  // rather than forever, so a later genuine re-ring (a Wake Check re-alert,
-  // or a snoozed alarm firing again) can still speak.
+  // SlideToStopScreen hook) — de-duped per alarm id so it speaks once, not
+  // once from each trigger point.
+  //
+  // This window must outlast the Wake Check relentless re-alert chain, not
+  // just cover "two triggers landing close together": re-alerts fire every
+  // kWakeCheckIntervalSeconds (3s) for up to kMaxWakeCheckReAlerts (200)
+  // cycles - a ~10 minute worst case. A short window (this used to be 3
+  // minutes) meant the phrase would arbitrarily speak AGAIN partway through
+  // a single continuous, still-unanswered ring - not "repeats every re-alert"
+  // and not "silent for the whole chain," just one jarring, unintended
+  // repeat at whatever moment the window happened to expire. 20 minutes
+  // safely covers the real 10-minute max with margin. The right trigger for
+  // "speak again" is a NEW ring session, not a timer - see [clearDedupe],
+  // called once a session actually ends (completed, escaped, or snoozed),
+  // so the next genuine ring (tomorrow's occurrence, or a snoozed alarm
+  // firing again in 5 minutes) always speaks fresh regardless of this
+  // window.
   static final Map<int, DateTime> _lastSpokenAt = {};
-  static const Duration _dedupeWindow = Duration(minutes: 3);
+  static const Duration _dedupeWindow = Duration(minutes: 20);
+
+  /// Call once a ring session genuinely ends (completed, emergency-escaped,
+  /// or snoozed) so the NEXT ring for this alarm - whether that's a snoozed
+  /// re-fire minutes later or tomorrow's occurrence - speaks again
+  /// immediately instead of waiting out [_dedupeWindow].
+  static void clearDedupe(int alarmId) {
+    _lastSpokenAt.remove(alarmId);
+  }
 
   static Future<void> _ensureConfigured() async {
     if (_configured) return;

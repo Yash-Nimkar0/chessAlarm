@@ -31,6 +31,7 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
   late AnimationController _bgAnimController;
   WeatherData? _weatherData;
   MissionSettings? _missionSettings;
+  bool _isSnoozing = false;
   
   @override
   void initState() {
@@ -100,6 +101,8 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
   }
 
   void _handleSnooze() async {
+    if (_isSnoozing) return;
+    setState(() => _isSnoozing = true);
     // No wake session exists yet at this point in the flow (one only
     // starts once the user actually slides to stop), so this is a direct,
     // simple reschedule - nothing to tear down.
@@ -109,6 +112,7 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
       Haptics.vibrate(HapticsType.medium);
       Navigator.of(context).popUntil((route) => route.isFirst);
     } else {
+      setState(() => _isSnoozing = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No snoozes left for this alarm.')),
       );
@@ -290,7 +294,14 @@ class SlideAction extends StatefulWidget {
   State<SlideAction> createState() => _SlideActionState();
 }
 
-class _SlideActionState extends State<SlideAction> with SingleTickerProviderStateMixin {
+// Was SingleTickerProviderStateMixin, but this State creates TWO
+// AnimationControllers (_snapBackController and _glowController) — that
+// throws immediately ("A SingleTickerProviderStateMixin can only be used
+// as a TickerProvider once"), confirmed live: an alarm fired for real on
+// an Android device and the slide-to-stop control rendered as a crashed
+// red error screen instead of the actual slider, with no way to dismiss
+// the alarm through its primary control.
+class _SlideActionState extends State<SlideAction> with TickerProviderStateMixin {
   double _dragPosition = 0.0;
   bool _submitted = false;
   bool _pastThreshold = false;

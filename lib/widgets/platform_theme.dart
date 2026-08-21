@@ -106,7 +106,19 @@ class PlatformScaffold extends StatelessWidget {
         appBar: appBar,
         floatingActionButton: floatingActionButton,
         floatingActionButtonLocation: floatingActionButtonLocation,
+        // Scaffold gives `body` LOOSE constraints (minHeight: 0), not tight
+        // ones — so a plain Stack (StackFit.loose, the default) sizes
+        // itself to its biggest non-positioned child's own natural height,
+        // not to the full available space. That child is `insetBody`,
+        // which has no natural height opinion of its own to report back up
+        // - the actual value that surfaced depended on incidental content
+        // sizing several widgets down the tree. Confirmed live on Android:
+        // this Stack measured ~30% shorter than the true screen height,
+        // exposing the plain scaffold background below the Morning tab's
+        // full-bleed sky background. `StackFit.expand` makes this Stack
+        // simply fill whatever constraints Scaffold actually gave it.
         body: Stack(
+          fit: StackFit.expand,
           children: [
             _backgroundLayer(context),
             insetBody,
@@ -123,7 +135,19 @@ class PlatformScaffold extends StatelessWidget {
         extendBody: bottomNavigationBar != null,
         bottomNavigationBar: bottomNavigationBar,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        // Scaffold gives `body` LOOSE constraints (minHeight: 0), not tight
+        // ones — so a plain Stack (StackFit.loose, the default) sizes
+        // itself to its biggest non-positioned child's own natural height,
+        // not to the full available space. That child is `insetBody`,
+        // which has no natural height opinion of its own to report back up
+        // - the actual value that surfaced depended on incidental content
+        // sizing several widgets down the tree. Confirmed live on Android:
+        // this Stack measured ~30% shorter than the true screen height,
+        // exposing the plain scaffold background below the Morning tab's
+        // full-bleed sky background. `StackFit.expand` makes this Stack
+        // simply fill whatever constraints Scaffold actually gave it.
         body: Stack(
+          fit: StackFit.expand,
           children: [
             _backgroundLayer(context),
             insetBody,
