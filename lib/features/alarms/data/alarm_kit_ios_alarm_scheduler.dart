@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../domain/alarm_model.dart';
 import '../domain/mission_config.dart';
@@ -45,9 +46,14 @@ class AlarmKitIOSAlarmScheduler implements PlatformAlarmScheduler {
       await _channel.invokeMethod('cancelAlarm', {
         'id': alarmId.toString(),
       });
-    } on PlatformException {
-      // If the alarm is already deleted or not found natively, it throws an error.
-      // We can safely ignore this because the goal of cancel is achieved (alarm is gone).
+    } on PlatformException catch (e) {
+      // Most of these are the alarm already being gone natively, which is
+      // fine - the goal of cancel is achieved either way. But swallowing
+      // every failure here with zero trace made a genuine native cancel
+      // failure (leaving a stale alarm armed and able to fire again later)
+      // completely invisible - there was no way to tell "already gone,
+      // harmless" apart from "cancel actually failed" after the fact.
+      debugPrint('AlarmKitIOSAlarmScheduler.cancel($alarmId) failed: $e');
     }
   }
 

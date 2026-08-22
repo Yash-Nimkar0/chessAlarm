@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
+import 'dart:async';
 import 'dart:math' as math;
 import '../services/weather_service.dart';
 import '../services/preferences_service.dart';
@@ -267,6 +268,16 @@ class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserv
   // from WeatherAmbienceLayer's own faster-cycling controller (rain/snow/
   // clouds/stars), which is a different rhythm entirely.
   late final AnimationController _driftController;
+  // build()'s SkyGradient.colorsFor(now) call only runs when this State's
+  // build() itself runs - it isn't inside _driftController's AnimatedBuilder,
+  // so 16s of continuous drift ticking does NOT by itself refresh the
+  // time-of-day gradient. And since every call site of this widget passes
+  // `const WeatherWidget(...)`, a parent's own rebuild can't force this
+  // through either - Flutter skips rebuilding an unchanged const child.
+  // Without its own timer this hero's background stays frozen at whatever
+  // time it first mounted, confirmed live for the equivalent bug in
+  // MorningScreen's full-screen background (same SkyGradient system).
+  Timer? _skyRefreshTimer;
 
   @override
   void initState() {
@@ -279,6 +290,9 @@ class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserv
     }
     _fetchWeather();
     _loadName();
+    _skyRefreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
   }
 
   Future<void> _loadName() async {
@@ -293,15 +307,27 @@ class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserv
     }
   }
 
+  // Whether location permission is actually granted - tracked separately
+  // from `_weatherData` so the prompt can tell "you haven't granted
+  // permission yet" apart from "permission's fine, the fetch itself just
+  // failed" (weak GPS signal, cold start, no network) instead of always
+  // showing the same "Tap to allow" copy regardless of which is true. That
+  // was confirmed misleading live: permission was already granted at the OS
+  // level, yet the widget kept showing a permission prompt every time the
+  // location fix or network call happened to fail.
+  bool _hasPermission = false;
+
   Future<void> _fetchWeather() async {
+    final hasPermission = await WeatherService.hasLocationPermission();
     final data = await WeatherService.getCurrentWeather();
-    if (mounted) setState(() { _weatherData = data; _isLoading = false; });
+    if (mounted) setState(() { _weatherData = data; _isLoading = false; _hasPermission = hasPermission; });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _driftController.dispose();
+    _skyRefreshTimer?.cancel();
     super.dispose();
   }
 
@@ -386,21 +412,29 @@ class _WeatherWidgetState extends State<WeatherWidget> with WidgetsBindingObserv
       final promptSubColor = widget.seamless ? Colors.white.withValues(alpha: 0.78) : subTextColor;
       final content = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("Personalize your mornings", style: AppTokens.display.copyWith(color: promptTextColor, fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text("Use location for:\n✓ weather\n✓ sunrise\n✓ daily conditions", style: AppTokens.body.copyWith(color: promptSubColor)),
-          const SizedBox(height: 12),
-          Text("Tap to allow →", style: AppTokens.body.copyWith(color: AppTokens.signal, fontWeight: FontWeight.bold)),
-        ],
+        children: _hasPermission
+            ? [
+                Text("Weather unavailable", style: AppTokens.display.copyWith(color: promptTextColor, fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text("Couldn't get your location or connect right now.", style: AppTokens.body.copyWith(color: promptSubColor)),
+                const SizedBox(height: 12),
+                Text("Tap to retry →", style: AppTokens.body.copyWith(color: AppTokens.signal, fontWeight: FontWeight.bold)),
+              ]
+            : [
+                Text("Personalize your mornings", style: AppTokens.display.copyWith(color: promptTextColor, fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text("Use location for:\n✓ weather\n✓ sunrise\n✓ daily conditions", style: AppTokens.body.copyWith(color: promptSubColor)),
+                const SizedBox(height: 12),
+                Text("Tap to allow →", style: AppTokens.body.copyWith(color: AppTokens.signal, fontWeight: FontWeight.bold)),
+              ],
       );
       return AnimatedPressable(
         onTap: () async {
-          final perm = await Geolocator.requestPermission();
-          if (perm != LocationPermission.denied && perm != LocationPermission.deniedForever) {
-            setState(() => _isLoading = true);
-            _fetchWeather();
+          if (!_hasPermission) {
+            await Geolocator.requestPermission();
           }
+          setState(() => _isLoading = true);
+          _fetchWeather();
         },
         child: widget.seamless
             ? Padding(padding: const EdgeInsets.all(20), child: content)

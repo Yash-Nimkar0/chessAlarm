@@ -5,7 +5,6 @@ import 'dart:async';
 import 'package:haptic_feedback/haptic_feedback.dart';
 import '../features/alarms/application/alarm_controller.dart';
 import '../features/alarms/application/wake_session_controller.dart';
-import 'ringing_screen.dart';
 import 'wake_success_screen.dart';
 import '../models/mission_settings.dart';
 import '../services/weather_service.dart';
@@ -148,15 +147,32 @@ class _SlideToStopScreenState extends State<SlideToStopScreen> with SingleTicker
       // startAudio is false because the `alarm` plugin already owns
       // playback on this path; WakeAudioSessionController must not also
       // start audio and double up.
+      // WakeSessionController.startSession() calls notifyListeners() partway
+      // through its own body, BEFORE this await returns control here - so by
+      // the time execution resumes below, main.dart's WakeSessionController
+      // listener (_onWakeSessionChanged) has already reactively pushed a
+      // RingingScreen on top of this one. Also pushing our own RingingScreen
+      // here (as this used to) races that listener: Navigator.of(context)
+      // resolves to the same shared root Navigator regardless of which
+      // screen's context it came from, so pushReplacement always replaces
+      // whatever is CURRENTLY ON TOP - which by then is main.dart's
+      // RingingScreen, not this one. That left this slide screen buried one
+      // level down, and confirmed live: after solving the mission and
+      // dismissing the success screen with Navigator.pop(), this slide
+      // screen resurfaced instead of returning to the alarm list.
+      // removeRoute targets THIS screen's own route specifically, so it's
+      // correct regardless of whether the listener's push has already
+      // happened or hasn't yet - either way exactly one RingingScreen ends
+      // up on the stack and this screen is gone from it.
       await WakeSessionController.instance.startSession(widget.alarmSettings.id, startAudio: false);
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => RingingScreen(alarmSettings: widget.alarmSettings),
-        ),
-      );
+      final ownRoute = ModalRoute.of(context);
+      if (ownRoute != null) {
+        Navigator.of(context).removeRoute(ownRoute);
+      }
     } else {
       await AlarmController.instance.completeAlarm(widget.alarmSettings.id);
+      if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => WakeSuccessScreen(

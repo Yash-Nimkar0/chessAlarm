@@ -130,6 +130,36 @@ class AlarmController extends ChangeNotifier {
       // Legacy Android/iOS behavior: still reconcile local vs native based on plugin state
       final nativeAlarms = await _scheduler.getScheduledAlarms();
       await _reconcile(nativeAlarms);
+
+      // Mirror the AlarmKit event-channel wiring above for this platform's
+      // own native "alarm stopped" signal. The `alarm` plugin doesn't
+      // expose a dedicated "stopped" stream - a stopped alarm is simply
+      // REMOVED from Alarm.ringing's set, so a stop is detected as a
+      // before/after diff on that stream. Without this, a native stop
+      // that never goes through completeAlarm()/emergencyEscape() was
+      // completely invisible to WakeSessionController on this platform -
+      // confirmed live: swiping the ringing notification away fully
+      // silences the alarm via the plugin's own ACTION_ALARM_STOP handler
+      // with zero mission check and zero re-arm, because the existing
+      // reactive Wake Check fallback (_scheduleWakeCheckFallback,
+      // triggered via _routeNativeEvent(..., AlarmInteractionType.stop))
+      // was only ever wired to the iOS AlarmKit event channel above, even
+      // though the fallback mechanism itself (a real native reschedule
+      // via _scheduler.schedule()) is fully platform-agnostic.
+      // completeAlarm/emergencyEscape/completeSession already stamp
+      // _recentlyCompletedOriginalId within a 10s echo window, so a
+      // legitimate in-app mission completion's own resulting "removed
+      // from ringing" transition is correctly ignored downstream, not
+      // double-handled as an unauthorized stop.
+      Set<int> previouslyRinging = Alarm.ringing.value.alarms.map((a) => a.id).toSet();
+      Alarm.ringing.listen((alarmSet) {
+        final nowRinging = alarmSet.alarms.map((a) => a.id).toSet();
+        final stopped = previouslyRinging.difference(nowRinging);
+        for (final id in stopped) {
+          _routeNativeEvent(id, AlarmNativeState.unknown, AlarmInteractionType.stop);
+        }
+        previouslyRinging = nowRinging;
+      });
     }
   }
 
@@ -220,13 +250,26 @@ class AlarmController extends ChangeNotifier {
       // Confirmed live, repeatedly: a killed app reopened while its Wake
       // Check chain kept relentlessly ringing showed the normal alarm list
       // instead of recovering into the mission screen.
-      if (activeSessionId == alarm.id || isFiringForOriginal(alarm.id)) {
-        debugPrint('Reconcile: Alarm ${alarm.id} was the active session or is currently firing natively. Recovering WakeSession.');
+      if (isFiringForOriginal(alarm.id)) {
+        debugPrint('Reconcile: Alarm ${alarm.id} is currently firing natively. Recovering WakeSession.');
         if (!alarm.enabled) {
           await _repository.save(alarm.copyWith(enabled: true, updatedAt: now));
         }
         _routeNativeEvent(alarm.id, AlarmNativeState.firing, AlarmInteractionType.none);
         continue;
+      } else if (activeSessionId == alarm.id) {
+        // The durable marker says this alarm's session was active before
+        // this cold start, but the platform's own LIVE state (checked
+        // just above) says nothing is actually ringing for it right now.
+        // That combination only happens when an abrupt termination
+        // (crash, force-stop) skipped the normal completeSession()/
+        // emergencyEscape()/stopSession() cleanup that would have cleared
+        // this marker - trusting it here would recover into a "ringing"
+        // mission screen for an alarm that isn't ringing anywhere.
+        // Confirmed live, repeatedly. Clear it and fall through to normal
+        // handling below instead of recovering.
+        debugPrint('Reconcile: Alarm ${alarm.id} has a stale active-session marker but nothing is firing natively. Clearing it.');
+        await WakeSessionController.instance.clearStaleDurableSession(alarm.id);
       }
 
       if (!alarm.enabled) {
@@ -464,6 +507,23 @@ class AlarmController extends ChangeNotifier {
   /// Cancels the schedule and removes it from persistence.
   Future<void> deleteAlarm(int id) async {
     await _scheduler.cancel(id);
+    // cancel() above only tears down the primary alarm's own native
+    // schedule. On iOS AlarmKit, a mission alarm that has ever fired can
+    // also have a reactive Wake Check re-alert (its own separate id,
+    // kWakeCheckIdOffset + id - armed by the native "Stop" button's own
+    // StopAlarmIntent handler, entirely independent of whether the user
+    // ever opens the app to complete the mission) and/or a pre-scheduled
+    // 30-entry blind chain, both armed entirely natively with no
+    // Dart-side record of their own (see AlarmController._reconcile's
+    // Pass 2 comment). Deleting the alarm from the list left both kinds
+    // armed and able to fire on their own regardless of the primary
+    // alarm being gone - confirmed as the explanation for a real report
+    // of a one-time alarm ringing again a full day after being dismissed
+    // via the native Stop button and later deleted from the list.
+    // Harmless no-op on Android/legacy and for an alarm that never had a
+    // mission or never fired.
+    await _scheduler.cancel(wakeCheckAlarmIdFor(id));
+    await _scheduler.cancelWakeCheckChain(id);
     await _repository.delete(id);
     notifyListeners();
   }

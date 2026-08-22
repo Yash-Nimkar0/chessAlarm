@@ -112,6 +112,23 @@ class WakeSessionController extends ChangeNotifier {
     return prefs.getInt(_activeSessionKey);
   }
 
+  /// Clears the durable active-session marker for [originalId] WITHOUT
+  /// touching in-memory session state, audio, or notifyListeners() - unlike
+  /// stopSession()/completeSession(). For the one specific case where this
+  /// marker is discovered stale on cold start: it was left behind by an
+  /// abrupt termination (crash, force-stop) that skipped the normal
+  /// cleanup, and the platform's own live state confirms nothing is
+  /// actually ringing for it any more. Without this, AlarmController's
+  /// reconcile would keep trusting the stale marker forever and recover
+  /// into a "ringing" mission screen for an alarm that isn't ringing
+  /// anywhere - confirmed live, repeatedly.
+  Future<void> clearStaleDurableSession(int originalId) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getInt(_activeSessionKey) == originalId) {
+      await prefs.remove(_activeSessionKey);
+    }
+  }
+
   /// Handles canonical alarm events from the native event normalizer.
   Future<void> handleAlarmEvent(AlarmEvent event) async {
     // Check if we are already active for this alarm and currently own the audio.
@@ -276,9 +293,36 @@ class WakeSessionController extends ChangeNotifier {
     if (isAlreadyActive) {
       debugPrint('WakeSessionController: Session for $alarmId is already active. Checking audio handoff.');
     } else {
-      // Prevent overlapping sessions (highly unlikely, but safe)
+      // Prevent overlapping sessions - but ONLY safe to switch tracking away
+      // from the current one once ITS mission is actually resolved.
+      // stopSession() doesn't touch the previous alarm's native alert at
+      // all (it only clears Wakely's own audio/tracking state) and marks
+      // its session "completed" as a bare fallback regardless of whether
+      // the mission was ever solved. If a second mission alarm fires while
+      // the first is still ringing unresolved (allowAlarmOverlap makes
+      // this a completely ordinary scenario - e.g. a backup alarm a few
+      // minutes after the primary), blindly switching here would silently
+      // abandon the first alarm's enforcement: its native alert keeps
+      // ringing completely unsupervised - no session, no Wake Check
+      // re-arm, nothing - while its own state gets falsely recorded as
+      // "completed" even though the mission was never touched. Refusing to
+      // switch here costs nothing: the new alarm's own native alert keeps
+      // ringing/alerting independently either way (that's the OS/plugin
+      // layer, not this tracking), so it isn't silenced by this - only
+      // Wakely's own foreground mission screen won't switch to it until
+      // the current one is actually resolved.
+      final currentUnresolved = isActive &&
+          _sessionState != WakeSessionState.completed &&
+          _sessionState != WakeSessionState.emergencyEscaped &&
+          _sessionState != WakeSessionState.snoozed;
+      if (currentUnresolved) {
+        debugPrint('WakeSessionController: Alarm ${_activeAlarm?.id} is still active with its mission unresolved - '
+            'refusing to hijack tracking for new alarm $alarmId. It keeps ringing natively on its own; '
+            'Wakely will pick it up once the current mission is resolved.');
+        return;
+      }
       if (isActive) {
-        debugPrint('WakeSessionController: Another session is active. Terminating old session first.');
+        debugPrint('WakeSessionController: Another (already-resolved) session is active. Terminating old session first.');
         await stopSession();
       }
 

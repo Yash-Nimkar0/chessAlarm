@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'report_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -36,6 +37,17 @@ class _MorningScreenState extends State<MorningScreen> with SingleTickerProvider
   // background and the hero's own gradient move in the same rhythm instead
   // of reading as two separate, independently-animated surfaces.
   late final AnimationController _driftController;
+  // _buildSkyBackground() reads DateTime.now() outside the AnimatedBuilder
+  // that _driftController drives, so the drift ticking every frame does NOT
+  // by itself refresh the time-of-day gradient - without this timer forcing
+  // a rebuild, the background stays frozen at whatever time this screen was
+  // last (re)built (e.g. when the tab was opened) until something unrelated
+  // - switching tabs, changing the theme - happens to rebuild it. Confirmed
+  // live: leaving this tab open across a gradient boundary showed "night"
+  // well into actual daytime until a theme change forced a fresh build.
+  // HomeScreen's own hero uses the same SkyGradient system and already has
+  // an equivalent per-minute timer for exactly this reason.
+  Timer? _skyRefreshTimer;
 
   @override
   void initState() {
@@ -44,6 +56,9 @@ class _MorningScreenState extends State<MorningScreen> with SingleTickerProvider
     if (WeatherService.cachedWeather != null) _weatherData = WeatherService.cachedWeather;
     _loadData();
     _loadWeather();
+    _skyRefreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
   }
 
   Future<void> _loadWeather() async {
@@ -54,6 +69,7 @@ class _MorningScreenState extends State<MorningScreen> with SingleTickerProvider
   @override
   void dispose() {
     _driftController.dispose();
+    _skyRefreshTimer?.cancel();
     super.dispose();
   }
 

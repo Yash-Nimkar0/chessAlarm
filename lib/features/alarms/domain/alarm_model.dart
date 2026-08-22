@@ -329,6 +329,10 @@ class WakelyAlarm {
             ? 'Time to wake up and solve your challenge.'
             : 'Your alarm is ringing.',
       ),
+      // Kept in sync with LegacyPluginAlarmScheduler's real scheduling
+      // construction - see its comment for why this can't be left at the
+      // plugin's own false default.
+      allowAlarmOverlap: true,
       payload: jsonEncode({
         'type': type.toStringValue(),
         'mission': mission.type.toStringValue(),

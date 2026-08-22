@@ -40,6 +40,9 @@ class FakeAlarmScheduler extends AlarmScheduler {
   Future<bool> isScheduled(int alarmId) async {
     return scheduledAlarms.any((a) => a.id == alarmId);
   }
+
+  @override
+  Future<void> cancelWakeCheckChain(int alarmId) async {}
 }
 
 void main() {

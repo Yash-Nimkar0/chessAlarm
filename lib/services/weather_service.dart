@@ -104,6 +104,15 @@ class WeatherService {
   /// trusting presence alone.
   static Duration? get cacheAge => _lastFetchTime == null ? null : DateTime.now().difference(_lastFetchTime!);
 
+  /// Whether location permission is granted at the OS level.
+  /// Note: this intentionally does NOT check isLocationServiceEnabled()
+  /// because we have an IP-geolocation fallback, so the relevant question
+  /// for the UI is "has the user ever granted permission?" not "is GPS on?".
+  static Future<bool> hasLocationPermission() async {
+    final permission = await Geolocator.checkPermission();
+    return permission == LocationPermission.always || permission == LocationPermission.whileInUse;
+  }
+
   static Future<WeatherData?> getCurrentWeather() async {
     if (cachedWeather != null && _lastFetchTime != null) {
       if (DateTime.now().difference(_lastFetchTime!).inMinutes < 60) {
@@ -111,34 +120,65 @@ class WeatherService {
       }
     }
 
-    // Do NOT request permissions here, only check if already granted
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return cachedWeather;
+    double? lat;
+    double? lon;
 
-    final permission = await Geolocator.checkPermission();
-    if (permission != LocationPermission.always && permission != LocationPermission.whileInUse) {
-      return cachedWeather;
+    // Try GPS first (only if permission granted)
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (serviceEnabled) {
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+        try {
+          Position position = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.low,
+              timeLimit: Duration(seconds: 8),
+            )
+          );
+          lat = position.latitude;
+          lon = position.longitude;
+        } catch (e) {
+          if (kDebugMode) print('Weather: GPS failed ($e), trying IP fallback...');
+        }
+      }
     }
 
-    try {
-      double lat;
-      double lon;
-      
+    // Fall back to IP geolocation if GPS wasn't available or failed
+    if (lat == null || lon == null) {
       try {
-        Position position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.low,
-            timeLimit: Duration(seconds: 4),
-          )
-        );
-        lat = position.latitude;
-        lon = position.longitude;
+        // Try multiple IP geolocation endpoints
+        final endpoints = [
+          'https://ipwho.is/',
+          'https://ip-api.com/json/',
+          'https://ipapi.co/json/',
+        ];
+        for (final endpoint in endpoints) {
+          try {
+            final ipResp = await http.get(Uri.parse(endpoint)).timeout(const Duration(seconds: 5));
+            if (ipResp.statusCode == 200) {
+              final ipData = json.decode(ipResp.body);
+              // Different APIs use different field names
+              final latRaw = ipData['latitude'] ?? ipData['lat'];
+              final lonRaw = ipData['longitude'] ?? ipData['lon'];
+              if (latRaw != null && lonRaw != null) {
+                lat = (latRaw as num).toDouble();
+                lon = (lonRaw as num).toDouble();
+                if (kDebugMode) print('Weather: Using IP location from $endpoint ($lat, $lon)');
+                break;
+              }
+            }
+          } catch (e) {
+            if (kDebugMode) print('Weather: $endpoint failed: $e');
+          }
+        }
       } catch (e) {
-        // If we fail to get location, don't use a hardcoded fallback.
-        // Return existing cache or null.
-        return cachedWeather;
+        if (kDebugMode) print('Weather: All IP fallbacks failed: $e');
       }
+    }
 
+    if (lat == null || lon == null) return cachedWeather;
+
+    try {
       final url = Uri.parse(
         'https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true&hourly=temperature_2m,weathercode,precipitation_probability&daily=sunrise,sunset,weathercode,temperature_2m_max,temperature_2m_min&timezone=auto'
       );
